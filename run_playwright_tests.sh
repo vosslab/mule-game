@@ -83,6 +83,12 @@ if [ ! -f playwright.config.ts ]; then
 	exit 1
 fi
 
+# Random port per run, exported so playwright.config.ts (reloaded per worker
+# process) reads the same value for both use.baseURL and webServer. PW_PORT
+# env var overrides.
+export PW_PORT="${PW_PORT:-$((4100 + RANDOM % 900))}"
+echo "==> Using PW_PORT=${PW_PORT}"
+
 # Build gate: rebuild dist/ when forced or when expected outputs are missing.
 if [ "$FORCE_BUILD" -eq 1 ]; then
 	echo "==> --build flag set: rebuilding dist/..."

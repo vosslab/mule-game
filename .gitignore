@@ -6,6 +6,8 @@ _temp*.?*
 OTHER_REPOS/
 # === LOCAL ===
 # Template-only ignores.
+*.nes
+# reference ROM stays untracked
 # === PYTHON ===
 build/
 dist/

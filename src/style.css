@@ -1,0 +1,278 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #1a1a2e;
+  color: #e6e6e6;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+}
+
+.screen.active {
+  display: flex;
+}
+
+.store-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1rem 3rem;
+  width: 100%;
+  max-width: 480px;
+}
+
+.store-screen-status {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 1.1rem;
+}
+
+.store-screen-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.store-screen-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.store-screen-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.store-screen-plot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 0.75rem;
+}
+
+.store-screen-plot-button {
+  min-height: 56px;
+  min-width: 56px;
+  font-size: 1.25rem;
+}
+
+#screen-map,
+#screen-game {
+  justify-content: flex-start;
+  padding-bottom: 5rem; /* clear any future fixed-position dock on mobile */
+}
+
+.land-grant-panel,
+.waiting-panel,
+.production-panel,
+.scoring-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  width: 100%;
+  max-width: 480px;
+}
+
+.land-grant-button,
+.scoring-button {
+  min-height: 44px;
+  min-width: 88px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.production-list,
+.scoring-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.production-item,
+.scoring-item {
+  padding: 0.25rem 0;
+  font-size: 1.1rem;
+}
+
+.scoring-winner {
+  font-weight: bold;
+}
+
+button:focus-visible,
+.store-screen-button:focus-visible,
+.land-grant-button:focus-visible,
+.scoring-button:focus-visible,
+.auction-screen-button:focus-visible {
+  outline: 3px solid #ffd23f;
+  outline-offset: 2px;
+}
+
+.plot-cursor rect {
+  stroke: #ffd23f;
+  stroke-width: 4;
+  stroke-dasharray: 6 3;
+}
+
+.map-svg {
+  display: block;
+  margin: 0 auto;
+  /* 280px reserves HUD + caption + button + padding; 1.8 = viewBox 9:5 aspect */
+  width: min(92vw, calc((100vh - 280px) * 1.8), 1200px);
+  height: auto;
+}
+
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.hud-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 56px; /* meets the min touch-target height on mobile */
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: #22223a;
+  font-size: 1rem;
+}
+
+.hud-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+}
+
+.hud-label {
+  font-weight: bold;
+}
+
+.hud-money {
+  color: #ffd23f;
+}
+
+.hud-goods {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.auction-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1rem 3rem;
+  width: 100%;
+  max-width: 480px;
+}
+
+.auction-screen-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 1.1rem;
+}
+
+.auction-screen-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.auction-screen-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.auction-screen-role-panel {
+  gap: 0.75rem;
+}
+
+.auction-track-svg {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+}
+
+.auction-track-axis {
+  stroke: #4a4a68;
+  stroke-width: 2;
+}
+
+.auction-track-store-buy-line,
+.auction-track-store-sell-line {
+  stroke: #e6e6e6;
+  stroke-width: 1;
+  stroke-dasharray: 6 4;
+}
+
+.auction-track-token {
+  stroke: #1a1a2e;
+  stroke-width: 1;
+}
+
+.auction-track-token-label {
+  fill: #1a1a2e;
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.auction-screen-trade-log {
+  width: 100%;
+}
+
+.auction-screen-trade-flash {
+  color: #ffd23f;
+  font-weight: bold;
+}
+
+.auction-screen-trade-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.auction-screen-intent-controls {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.auction-screen-intent-button {
+  min-height: 44px;
+  min-width: 88px;
+}
