@@ -13,7 +13,6 @@ import type {
   GameState,
 } from "../engine/game_state";
 import { PLAYER_COLORS } from "./sprites";
-import { bindKeys } from "./input";
 
 /** Height (in SVG units) of the price track, top to bottom. */
 const TRACK_HEIGHT = 400;
@@ -379,12 +378,25 @@ function bindPriceIntentControls(
     dispatch({ type: "set_auction_intent", playerId: humanPlayerId, intent });
   };
 
-  const unbindKeyboard = bindKeys({
-    ArrowUp: () => setIntent("up"),
-    ArrowDown: () => setIntent("down"),
-  });
+  // Intent is a held state, so ignore OS key auto-repeat (event.repeat): the
+  // first keydown already set the intent and repeats are redundant dispatches
+  // that would otherwise churn the auction clock. A dedicated keydown listener
+  // is used here instead of bindKeys because bindKeys does not expose repeat.
+  const keydownListener = (event: KeyboardEvent): void => {
+    if (event.repeat) {
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setIntent("up");
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setIntent("down");
+    }
+  };
+  document.addEventListener("keydown", keydownListener);
 
-  // bindKeys only covers keydown; add a keyup listener to release the hold.
+  // Release the hold on keyup so a released arrow returns intent to "hold".
   const keyupListener = (event: KeyboardEvent): void => {
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       setIntent("hold");
@@ -412,7 +424,7 @@ function bindPriceIntentControls(
   root.appendChild(controls);
 
   return () => {
-    unbindKeyboard();
+    document.removeEventListener("keydown", keydownListener);
     document.removeEventListener("keyup", keyupListener);
   };
 }

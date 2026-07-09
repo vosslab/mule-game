@@ -1,0 +1,6 @@
+git clone --depth 1 https://github.com/parasj/MULE parasj-MULE
+git clone --depth 1 https://github.com/caseybennett18/2340MULE caseybennett18-2340MULE
+git clone --depth 1 https://github.com/KnightsWhoSayNi0/MULE KnightsWhoSayNi0-MULE
+git clone --depth 1 https://github.com/NightHawks26/MULE NightHawks26-MULE
+git clone --depth 1 https://github.com/nik0kin/mule nik0kin-mule
+git clone --depth 1 https://github.com/TSavo/mule-game.git TSavo-mule-game
