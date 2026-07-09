@@ -1,7 +1,7 @@
 // Selector contract: this spec depends on the ?demo=map hook in
-// src/ui/main.ts (renderFixtureDemo, buildFixtureState/buildFixturePlots),
-// the "screen-map" id from src/index.html, and the data-terrain/data-owner
-// attributes written by src/ui/map_render.ts's renderPlotCell/renderMuleGlyph.
+// src/ui/main.tsx, the "screen-map" id it defines, and the
+// data-terrain/data-owner attributes written by src/ui/solid/map_layer.tsx's
+// plot-cell rendering (intentionally preserved across the Solid port).
 
 import { test, expect } from "@playwright/test";
 

@@ -249,3 +249,39 @@ The tool needs the `playwright` dev dependency. If it is not installed yet:
 ```bash
 npm install --save-dev playwright
 ```
+
+## Visual render gate (repo-specific)
+
+`tests/playwright/visual_render.spec.mjs` plus its shared helper module
+`tests/pixel_metrics.mjs` form this repo's art gate: a programmatic pixel check
+that catches blank-canvas, solid-color-smear, and off-palette-fill regressions
+that DOM/attribute assertions cannot see. `tests/pixel_metrics.mjs` decodes a
+`page.screenshot()`/`locator.screenshot()` PNG buffer and exposes:
+
+- `computeCoverageRatio` -- the fraction of sampled pixels that differ from a
+  given background color (deltaE-tolerant), asserted inside a calibrated band
+  so a scene is neither blank nor a full-bleed smear.
+- `countDistinctColors` -- the count of distinct quantized non-background
+  colors, asserted inside a band so a scene shows multiple deliberate fills
+  rather than one flat block.
+- `computePaletteConformanceRatio` -- the fraction of non-background pixels
+  that land within a deltaE tolerance of a real `src/ui/sprites/palette.ts`
+  token, catching off-palette fills while tolerating anti-aliasing/shading
+  blends.
+- `deltaEBetweenRgb` (with `meanColor`) -- pairwise CIE76 deltaE between two
+  regions' mean colors, used to assert that adjacent terrain tiles (river,
+  plains, mountain) render as visibly distinct colors, not near-identical
+  shades.
+
+Each threshold in `visual_render.spec.mjs` carries a comment recording the
+measured value from calibration runs and the reasoning for the margin chosen
+around it (see the sprite-gallery `conformanceMin` comments for an example of
+a structurally-explained lower bound). Recalibrate a threshold by running the
+spec twice locally, confirming the two runs land on the same value (or a
+tight, explainable range), and updating the threshold comment with the new
+measured value and margin -- do not loosen a threshold without recording a
+fresh pair of measured runs.
+
+```bash
+./run_playwright_tests.sh tests/playwright/visual_render.spec.mjs
+```

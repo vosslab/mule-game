@@ -1,5 +1,12 @@
-// Keyboard binding helper shared by screens so keyboard interaction stays
+// Keyboard binding helpers shared by screens so keyboard interaction stays
 // consistent with on-screen buttons (arrows, enter, escape parity).
+//
+// Two input models coexist:
+//   - Edge-triggered menu input (`bindKeys`, `bindRovingFocus`): one handler
+//     call per key press, for buttons and discrete claims.
+//   - A held-key `KeyState` poller: a live set of currently-pressed keys the
+//     rAF scene loop samples each frame (`update`), for continuous motion. This
+//     is the spatial-scene input path; menu screens keep using `bindKeys`.
 
 /**
  * Bind a map of key names to handlers on the document, returning an unbind
@@ -58,4 +65,59 @@ export function bindRovingFocus(container: Element, selector: string): () => voi
     ArrowDown: () => moveFocus(1),
     ArrowRight: () => moveFocus(1),
   });
+}
+
+//============================================
+/**
+ * A live held-key poller. Tracks which keys are currently pressed via
+ * document keydown/keyup, so a scene's per-frame `update` can sample held
+ * state (`isDown`) rather than reacting to discrete key events. Key names
+ * match `KeyboardEvent.key` (for example "ArrowUp", "w"). Keydown auto-repeat
+ * is idempotent (the key is already in the set), so held motion stays smooth.
+ */
+export interface KeyState {
+  /** Whether `key` is currently held down. */
+  readonly isDown: (key: string) => boolean;
+  /** Whether any of `keys` is currently held down. */
+  readonly anyDown: (keys: readonly string[]) => boolean;
+  /** Remove the listeners and clear all held state. */
+  readonly stop: () => void;
+}
+
+//============================================
+/**
+ * Create a held-key poller bound to the document. The returned `KeyState` is
+ * sampled by scenes each frame; call `stop` on scene exit to unbind.
+ *
+ * @returns A `KeyState` exposing `isDown`, `anyDown`, and `stop`.
+ */
+export function createKeyState(): KeyState {
+  const held = new Set<string>();
+
+  const onKeyDown = (event: KeyboardEvent): void => {
+    held.add(event.key);
+  };
+  const onKeyUp = (event: KeyboardEvent): void => {
+    held.delete(event.key);
+  };
+  // A blurred window never delivers keyup, so drop all held keys on blur to
+  // avoid a stuck direction when focus leaves the page mid-press.
+  const onBlur = (): void => {
+    held.clear();
+  };
+
+  document.addEventListener("keydown", onKeyDown);
+  document.addEventListener("keyup", onKeyUp);
+  window.addEventListener("blur", onBlur);
+
+  const isDown = (key: string): boolean => held.has(key);
+  const anyDown = (keys: readonly string[]): boolean => keys.some((key) => held.has(key));
+  const stop = (): void => {
+    document.removeEventListener("keydown", onKeyDown);
+    document.removeEventListener("keyup", onKeyUp);
+    window.removeEventListener("blur", onBlur);
+    held.clear();
+  };
+
+  return { isDown, anyDown, stop };
 }

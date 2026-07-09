@@ -14,9 +14,13 @@
 #     aborts with an actionable error if missing.
 #   - Verifies src/index.html references dist/main.js with a module script
 #     tag (warns if missing -- the page will load but main.js is dead).
-#   - Bundles the entry into dist/main.js with esbuild (ESM, es2020,
-#     browser, minified, with sourcemap).
+#   - Bundles the entry into dist/main.js via pipeline/build.mjs (esbuild
+#     JS-API + esbuild-plugin-solid for SolidJS JSX; ESM, es2020, browser,
+#     minified, with sourcemap).
 #   - Copies src/index.html and src/style.css into dist/.
+#   - Copies src/manifest.json and src/sw.js (PWA install: manifest + offline
+#     cache) verbatim into dist/, and generates dist/icons/icon-192.png /
+#     icon-512.png via tools/generate_pwa_icons.mjs.
 #   - Writes dist/.nojekyll so GitHub Pages serves files starting with _.
 #   - Asserts dist/index.html and dist/main.js exist before exiting.
 #
@@ -37,7 +41,7 @@ else
 fi
 
 # Verify required static assets before any destructive step.
-for required in src/index.html src/style.css; do
+for required in src/index.html src/style.css src/manifest.json src/sw.js; do
 	if [ ! -f "$required" ]; then
 		echo "ERROR: required source file missing: $required" >&2
 		case "$required" in
@@ -45,6 +49,10 @@ for required in src/index.html src/style.css; do
 				echo "  Create src/index.html with a <script type=\"module\" src=\"main.js\"></script> tag." >&2 ;;
 			src/style.css)
 				echo "  Create src/style.css (empty file is fine)." >&2 ;;
+			src/manifest.json)
+				echo "  Create src/manifest.json (PWA manifest: name, icons, start_url, display)." >&2 ;;
+			src/sw.js)
+				echo "  Create src/sw.js (offline-cache service worker)." >&2 ;;
 		esac
 		exit 1
 	fi
@@ -62,20 +70,25 @@ mkdir -p dist
 
 npx tsc --noEmit -p tsconfig.json
 
-npx esbuild "$ENTRY" \
-	--bundle \
-	--format=esm \
-	--target=es2020 \
-	--platform=browser \
-	--minify \
-	--sourcemap \
-	--outfile=dist/main.js
+# Bundle via the esbuild JS-API (pipeline/build.mjs) rather than the esbuild
+# CLI: the SolidJS JSX transform needs esbuild-plugin-solid, which the CLI
+# cannot load. The script produces the same single ESM bundle (es2020, browser,
+# minified, with sourcemap) into dist/main.js. See docs/TYPESCRIPT_STYLE.md
+# "esbuild CLI vs JS-API".
+node pipeline/build.mjs "$ENTRY"
 
 cp src/index.html dist/index.html
 cp src/style.css dist/style.css
+cp src/manifest.json dist/manifest.json
+cp src/sw.js dist/sw.js
+node tools/generate_pwa_icons.mjs dist/icons
 touch dist/.nojekyll
 
 test -f dist/index.html
 test -f dist/main.js
+test -f dist/manifest.json
+test -f dist/sw.js
+test -f dist/icons/icon-192.png
+test -f dist/icons/icon-512.png
 
 echo "Built dist/ (GitHub Pages-ready)."

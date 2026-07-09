@@ -1,14 +1,30 @@
-// Selector contract: this spec depends on src/ui/main.ts's #new-game-button
-// wiring, src/ui/game_driver.ts's #screen-game/#game-hud/#game-map/#game-panel
-// containers and phase panels (land-grant-pass-button, store-screen-*,
-// auction-screen-*), src/ui/map_render.ts's data-row/data-col/data-outfit
-// plot attributes, and src/ui/hud.ts's .hud-player markup. Player 0 is always
-// the human and always picks first in round 1 (src/engine/land_grant.ts).
+// Selector contract: this spec depends on src/ui/main.tsx's #new-game-button
+// wiring, src/ui/solid/game_screen.tsx's #screen-game / #game-hud / #game-map /
+// #game-panel containers and phase panels (land-grant-pass-button,
+// develop-end-turn-button, auction-screen-*), src/ui/solid/map_layer.tsx's
+// data-row / data-col plot attributes, src/ui/scenes/overworld_scene.tsx's
+// overworld avatar (.overworld-svg g[data-actor="player-0"]), and
+// src/ui/solid/hud.tsx's .hud-player markup. Buying, outfitting, and placing a
+// M.U.L.E. moved to the walkable town scene (tests/playwright/town_scene.spec.mjs
+// owns that loop); this spec covers the broad phase flow. Player 0 is always the
+// human and always picks first in round 1 (src/engine/land_grant.ts).
 
 import { test, expect } from "@playwright/test";
 
 /** Upper bound on land-grant pass clicks before we conclude something is stuck. */
 const MAX_PASS_ITERATIONS = 50;
+
+/**
+ * Claim whichever plot the land-grant sweep cursor (src/engine/land_grant.ts)
+ * is currently on, via the same Enter key `claim_current_plot` binds to
+ * (land_grant_panel.tsx). The cursor's position is engine-driven and
+ * timing-dependent, so this is the robust way to claim a plot in a spec --
+ * clicking a specific locator would race the sweep and could miss.
+ */
+async function claimCurrentLandGrantPlot(page) {
+  await page.locator("#game-map .map-svg g[data-row][data-col]").first().waitFor();
+  await page.keyboard.press("Enter");
+}
 
 /**
  * Click the land-grant Pass button until it disappears (AI turns finish and
@@ -53,65 +69,51 @@ test("game flow: start a game and reach the land grant map", async ({ page }) =>
   expect(await plots.count()).toBeGreaterThan(0);
 });
 
-test("game flow: claim a plot, buy and outfit a M.U.L.E., and place it", async ({ page }) => {
-  await page.goto("/");
+test("game flow: claim a plot, reach the human develop turn, and end it", async ({ page }) => {
+  // A random seed sometimes draws a round-1 colony land auction, which runs on
+  // its own real-time cadence (src/ui/scenes/scene_manager.ts); speed=8 keeps
+  // the develop turn well inside this test's default timeout regardless.
+  await page.goto("/?speed=8");
   await page.locator("#new-game-button").click();
 
-  // Claim the first unowned, non-town plot as the human (player 0 picks first).
-  const claimablePlot = page
-    .locator("#game-map .map-svg g[data-row][data-col]:not([data-terrain='town'])")
-    .first();
-  await expect(claimablePlot).toBeVisible();
-  await claimablePlot.click();
+  // Claim whichever plot the sweep cursor lands on, as the human (player 0
+  // picks first).
+  await claimCurrentLandGrantPlot(page);
 
-  // Pass on any further land-grant turns until AI turns finish and the
-  // develop phase reaches the human's turn with the store screen enabled.
   await passThroughLandGrant(page);
 
-  // Wait for the human's develop turn: the buy button becomes enabled once
-  // the store screen renders for player 0.
-  const buyButton = page.locator(".store-screen-buy-button");
-  await expect(buyButton).toBeVisible({ timeout: 30_000 });
-  await expect(buyButton).toBeEnabled({ timeout: 30_000 });
-  await buyButton.click();
+  // The human's develop turn: the overworld avatar mounts and the develop panel
+  // offers an off-map End turn button.
+  const avatar = page.locator(".overworld-svg [data-actor='player-0']");
+  await expect(avatar).toHaveCount(1, { timeout: 30_000 });
+  const endTurnButton = page.locator(".develop-end-turn-button");
+  await expect(endTurnButton).toBeVisible();
 
-  // Outfit panel appears next; pick the first resource outfit offered.
-  const outfitButton = page.locator(".store-screen-outfit-button").first();
-  await expect(outfitButton).toBeVisible();
-  await expect(outfitButton).toBeEnabled();
-  await outfitButton.click();
-
-  // Placement panel appears; place on the first available owned plot button.
-  const plotButton = page.locator(".store-screen-plot-button").first();
-  await expect(plotButton).toBeVisible();
-  await plotButton.click();
-
-  // A M.U.L.E. glyph now renders on the map for the placed plot.
-  const muleGlyphs = page.locator("#game-map .map-svg g[data-outfit]");
-  await expect(muleGlyphs.first()).toBeVisible();
-  expect(await muleGlyphs.count()).toBeGreaterThan(0);
+  // Ending the turn tears down the develop overlay (the avatar unmounts).
+  await endTurnButton.click();
+  await expect(avatar).toHaveCount(0, { timeout: 30_000 });
 });
 
 test("game flow: buy role in the auction moves the human token on the price track", async ({
   page,
 }) => {
-  await page.goto("/");
+  // A random seed sometimes draws a round-1 colony land auction, which runs on
+  // its own real-time cadence (src/ui/scenes/scene_manager.ts); speed=8 keeps
+  // the full develop -> production -> auction run well inside this test's
+  // default timeout regardless.
+  await page.goto("/?speed=8");
   await page.locator("#new-game-button").click();
 
   // Claim a plot, then pass through the remainder of land grant.
-  const claimablePlot = page
-    .locator("#game-map .map-svg g[data-row][data-col]:not([data-terrain='town'])")
-    .first();
-  await expect(claimablePlot).toBeVisible();
-  await claimablePlot.click();
+  await claimCurrentLandGrantPlot(page);
 
   await passThroughLandGrant(page);
 
-  // Skip the human's develop turn immediately (Enter ends the turn); the
-  // remaining AI develop turns and production interstitial run on timers.
-  const buyMuleButton = page.locator(".store-screen-buy-button");
-  await expect(buyMuleButton).toBeVisible({ timeout: 30_000 });
-  await page.keyboard.press("Enter");
+  // End the human's develop turn immediately; the remaining AI develop turns and
+  // the production interstitial run on timers into the auction.
+  const endTurnButton = page.locator(".develop-end-turn-button");
+  await expect(endTurnButton).toBeVisible({ timeout: 30_000 });
+  await endTurnButton.click();
 
   // Wait through production into the auction's role-choice panel.
   const roleButtons = page.locator(".auction-screen-role-button");
@@ -156,23 +158,34 @@ test("game flow: buy role in the auction moves the human token on the price trac
   await expect(tradeLog).toBeVisible();
 });
 
-test("keyboard nav: arrow keys move the land-grant cursor and Enter claims a plot", async ({
+test("keyboard nav: the land-grant sweep cursor animates and Enter claims its plot", async ({
   page,
 }) => {
-  await page.goto("/");
+  // ?speed= scales the scene-manager clock, including the land-grant sweep
+  // cadence, so the cursor advances quickly enough for this spec to observe
+  // it moving without a long real-time wait.
+  await page.goto("/?speed=8");
   await page.locator("#new-game-button").click();
 
   const plots = page.locator("#game-map .map-svg g[data-row][data-col]");
   await expect(plots.first()).toBeVisible();
 
-  // The cursor starts at plot (0, 0); it is a town, so ArrowRight moves onto
-  // the next unowned, non-town plot before Enter claims it.
-  await page.keyboard.press("ArrowRight");
+  // The sweep cursor is engine-driven (src/engine/land_grant.ts): exactly one
+  // plot carries the highlight at all times, and it moves on its own.
   const cursoredPlot = page.locator("#game-map .map-svg g.plot-cursor");
   await expect(cursoredPlot).toHaveCount(1);
-  await expect(cursoredPlot).toHaveAttribute("data-row", "0");
-  await expect(cursoredPlot).toHaveAttribute("data-col", "1");
+  const startRow = await cursoredPlot.getAttribute("data-row");
+  const startCol = await cursoredPlot.getAttribute("data-col");
 
+  await expect
+    .poll(async () => {
+      const row = await cursoredPlot.getAttribute("data-row");
+      const col = await cursoredPlot.getAttribute("data-col");
+      return `${row},${col}`;
+    })
+    .not.toBe(`${startRow},${startCol}`);
+
+  // Enter claims whichever plot the cursor sits on right now.
   const targetRow = await cursoredPlot.getAttribute("data-row");
   const targetCol = await cursoredPlot.getAttribute("data-col");
   await page.keyboard.press("Enter");
@@ -181,37 +194,4 @@ test("keyboard nav: arrow keys move the land-grant cursor and Enter claims a plo
     `#game-map .map-svg g[data-row="${targetRow}"][data-col="${targetCol}"]`,
   );
   await expect(claimedPlot).toHaveAttribute("data-owner", "0");
-});
-
-test("keyboard nav: arrow keys rove store-screen button focus", async ({ page }) => {
-  await page.goto("/");
-  await page.locator("#new-game-button").click();
-
-  const claimablePlot = page
-    .locator("#game-map .map-svg g[data-row][data-col]:not([data-terrain='town'])")
-    .first();
-  await expect(claimablePlot).toBeVisible();
-  await claimablePlot.click();
-
-  await passThroughLandGrant(page);
-
-  const buyButton = page.locator(".store-screen-buy-button");
-  const endTurnButton = page.locator(".store-screen-end-turn-button");
-  await expect(buyButton).toBeVisible({ timeout: 30_000 });
-  await expect(buyButton).toBeEnabled({ timeout: 30_000 });
-  await expect(buyButton).toBeFocused();
-
-  // The buy panel's roving group is [buy, end turn]; ArrowDown advances to
-  // end turn, and a second ArrowDown wraps back to buy.
-  await page.keyboard.press("ArrowDown");
-  await expect(endTurnButton).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  await expect(buyButton).toBeFocused();
-
-  // Enter activates whichever button is focused (buy).
-  await page.keyboard.press("Enter");
-
-  const outfitButton = page.locator(".store-screen-outfit-button").first();
-  await expect(outfitButton).toBeVisible();
-  await expect(outfitButton).toBeFocused();
 });

@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>M.U.L.E.</title>
     <link rel="stylesheet" href="style.css" />
+    <!-- PWA install: src/manifest.json is copied verbatim
+         into dist/ and src/sw.js's offline cache is registered from
+         src/ui/pwa_register.ts (called once by src/ui/main.tsx). -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="theme-color" content="#1a1a2e" />
   </head>
   <body>
-    <div id="screen-title" class="screen">
-      <h1>M.U.L.E.</h1>
-      <button id="new-game-button" type="button">New Game</button>
-    </div>
-    <div id="screen-game" class="screen">
-      <div id="game-hud"></div>
-      <div id="game-map"></div>
-      <div id="game-panel"></div>
-    </div>
-    <div id="screen-map" class="screen">
-      <div id="hud-container"></div>
-      <div id="map-container"></div>
-    </div>
+    <!-- The SolidJS root app (src/ui/solid/app.tsx) is mounted here by
+         src/ui/main.tsx. Its phase-router renders the title, game, and map
+         screens as Solid components; the live game screen (GameScreen) renders
+         the HUD, board, and active phase panel reactively from the store, while
+         the rAF scene manager drives ticks and AI turns. -->
+    <div id="app"></div>
     <script type="module" src="main.js"></script>
   </body>
 </html>

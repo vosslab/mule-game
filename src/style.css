@@ -18,7 +18,213 @@ body {
   display: flex;
 }
 
-.store-screen {
+.title-screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.title-screen-defs-host {
+  position: absolute;
+}
+
+.title-screen-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.title-screen-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+/* Screen-reader-visible heading; the wordmark SVG is the sighted-user title. */
+.title-screen-sr-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.title-screen-wordmark {
+  width: min(80vw, 420px);
+  height: auto;
+}
+
+.title-screen-new-game-button {
+  min-height: 44px;
+  min-width: 160px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1a1a2e;
+  background-color: #ffd23f;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.title-screen-new-game-button:hover {
+  background-color: #ffdd66;
+}
+
+/* Title-screen Resume, saved-game notice, and replay entry. */
+.title-screen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.title-screen-resume-button {
+  min-height: 44px;
+  min-width: 160px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1a1a2e;
+  background-color: #7cc4ff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.title-screen-resume-button:hover {
+  background-color: #a2d6ff;
+}
+
+.title-screen-saved-notice {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+  background-color: #ffd23f;
+  border-radius: 6px;
+}
+
+.title-screen-watch-replay-button {
+  min-height: 44px;
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  color: #e6e6e6;
+  background-color: transparent;
+  border: 1px solid #7c7c99;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.title-screen-watch-replay-button:hover {
+  border-color: #b3b3cc;
+  color: #ffffff;
+}
+
+/* Replay viewer: a transport bar above the reused game
+   screen. The stage hosts the ordinary GameScreen driven by the recorded log. */
+.replay-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.replay-transport {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #16213e;
+  color: #e6e6e6;
+}
+
+.replay-transport-button,
+.replay-speed-option {
+  min-height: 40px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+  background-color: #ffd23f;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.replay-speed {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.replay-speed-option {
+  background-color: #3a3a5c;
+  color: #e6e6e6;
+}
+
+.replay-speed-option[aria-checked="true"] {
+  background-color: #ffd23f;
+  color: #1a1a2e;
+  font-weight: bold;
+}
+
+.replay-progress {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-stage {
+  flex: 1;
+  position: relative;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .title-screen-star {
+    animation: title-screen-twinkle 3.6s ease-in-out infinite;
+  }
+
+  .title-screen-ship {
+    animation: title-screen-drift 6s ease-in-out infinite;
+  }
+}
+
+@keyframes title-screen-twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes title-screen-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Develop-turn side panel: the human buys/outfits in the
+   walkable town now, so this panel only carries the live money/tick readout,
+   a walk-in hint, and an off-map End turn button. */
+.develop-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -28,23 +234,26 @@ body {
   max-width: 480px;
 }
 
-.store-screen-status {
+.develop-panel-status {
   display: flex;
   justify-content: space-between;
   width: 100%;
   font-size: 1.1rem;
 }
 
-.store-screen-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
+.develop-panel-money {
+  color: #ffd23f;
 }
 
-.store-screen-button {
+.develop-panel-hint {
+  margin: 0;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.develop-end-turn-button {
   min-height: 44px;
-  min-width: 44px;
+  min-width: 120px;
   padding: 0.5rem 1rem;
   font-size: 1rem;
   border-radius: 8px;
@@ -52,31 +261,15 @@ body {
   cursor: pointer;
 }
 
-.store-screen-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.store-screen-plot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
-  gap: 0.75rem;
-}
-
-.store-screen-plot-button {
-  min-height: 56px;
-  min-width: 56px;
-  font-size: 1.25rem;
-}
-
 #screen-map,
+#screen-town,
 #screen-game {
   justify-content: flex-start;
   padding-bottom: 5rem; /* clear any future fixed-position dock on mobile */
 }
 
 .land-grant-panel,
-.waiting-panel,
+.land-auction-panel,
 .production-panel,
 .scoring-panel {
   display: flex;
@@ -89,6 +282,7 @@ body {
 }
 
 .land-grant-button,
+.land-auction-button,
 .scoring-button {
   min-height: 44px;
   min-width: 88px;
@@ -99,8 +293,29 @@ body {
   cursor: pointer;
 }
 
-.production-list,
-.scoring-list {
+.land-auction-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.land-auction-high-bidder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.land-auction-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+}
+
+.land-auction-going {
+  font-weight: bold;
+}
+
+.production-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -108,19 +323,276 @@ body {
   text-align: center;
 }
 
-.production-item,
-.scoring-item {
+.production-item {
   padding: 0.25rem 0;
   font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+/* Yield-pop entrance animation: each resource value scales/
+   fades in with a per-resource stagger (production_panel.tsx's
+   YIELD_POP_STAGGER_MS sets the animation-delay). Under reduced motion the
+   values render at their rest state immediately (no animation), matching
+   event_banner.tsx's established gating pattern. */
+.production-yield-value {
+  display: inline-block;
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .production-yield-value[data-reduced-motion="false"] {
+    animation: production-yield-pop 0.35s ease-out forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .production-yield-value {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.production-yield-value[data-reduced-motion="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes production-yield-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scoring screen: a colony status banner, an
+   optional First Founder callout, and the ranked score-breakdown table. */
+.scoring-panel {
+  max-width: 640px;
+}
+
+.scoring-colony-status {
+  margin: 0;
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.scoring-colony-failed {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.scoring-first-founder {
+  margin: 0;
+  font-weight: bold;
+  color: #ffd23f;
+}
+
+.scoring-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.scoring-table th,
+.scoring-table td {
+  padding: 0.4rem 0.6rem;
+  text-align: right;
+  border-bottom: 1px solid #33334f;
+}
+
+.scoring-table th:first-child,
+.scoring-table td:first-child {
+  text-align: left;
 }
 
 .scoring-winner {
   font-weight: bold;
+  background-color: #22223a;
+}
+
+/* Event banner: a vignette icon, title, and effect line for
+   a fired personal or colony event. The left accent border is the player's
+   color for a personal event, or transparent for a colony event (no single
+   player owns it). The dismiss timing is JS-driven (src/ui/solid/event_banner.tsx)
+   and identical under reduced motion; only the entrance animation below is
+   gated off. */
+.event-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 480px;
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 0.5rem;
+  background-color: #22223a;
+  border-left: 4px solid #4a4a68;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.event-banner-icon {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.event-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.event-banner-title {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e6e6e6;
+}
+
+.event-banner-effect {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #ffd23f;
+}
+
+.event-banner[data-event-polarity="bad"] .event-banner-effect {
+  color: #f2665e;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .event-banner[data-reduced-motion="false"] {
+    animation: event-banner-pop 0.25s ease-out;
+  }
+}
+
+@keyframes event-banner-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* First-run tutorial hint: a small dismissible notice,
+   one per phase kind (src/ui/hint_store.ts's HintKind), styled after the
+   event banner's accent-bordered panel but with its own cyan (info, not
+   event-polarity) accent so the two never read as the same kind of message.
+   No entrance animation -- unlike the event banner, a tutorial hint is not a
+   transient alert, so it should not draw extra attention on mount. */
+.tutorial-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 480px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: #22223a;
+  border-left: 4px solid #4fd8ff;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.tutorial-hint-text {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  color: #e6e6e6;
+}
+
+.tutorial-hint-dismiss {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid #4fd8ff;
+  background-color: transparent;
+  color: #4fd8ff;
+  font-size: 0.8rem;
+}
+
+/* Overlay variant (human_develop_layer.tsx's town-entry hint): corner-pinned
+   within #game-map, the same positioning context the overworld avatar and its
+   timer bar already use (see #game-map's own comment below), so it floats
+   over the walkable canvas without shifting layout or covering the town
+   scene's own footer. `pointer-events: none` on the wrapper keeps the
+   walkable scene beneath fully clickable/keyboard-driven; the dismiss button
+   opts back into pointer events for itself only. */
+.tutorial-hint-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.tutorial-hint-overlay .tutorial-hint-dismiss {
+  pointer-events: auto;
+}
+
+/* Mule-escape vignette: radiation's deterministic
+   "a mule fled" moment in the production interstitial. Under reduced motion
+   the sprite renders in its resting spot with no flee animation (a snap, not
+   a tween) -- only the keyframe rule below is gated. */
+.mule-escape-vignette {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 480px;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 0.5rem;
+  background-color: #22223a;
+  border-left: 4px solid #f2665e;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.mule-escape-vignette-icon {
+  flex: 0 0 auto;
+}
+
+.mule-escape-vignette-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #f2665e;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mule-escape-vignette[data-reduced-motion="false"] .mule-escape-vignette-icon {
+    animation: mule-escape-flee 1.2s ease-in forwards;
+  }
+}
+
+@keyframes mule-escape-flee {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(48px);
+  }
 }
 
 button:focus-visible,
-.store-screen-button:focus-visible,
+.develop-end-turn-button:focus-visible,
+.town-end-turn-button:focus-visible,
 .land-grant-button:focus-visible,
+.land-auction-button:focus-visible,
 .scoring-button:focus-visible,
 .auction-screen-button:focus-visible {
   outline: 3px solid #ffd23f;
@@ -139,6 +611,235 @@ button:focus-visible,
   /* 280px reserves HUD + caption + button + padding; 1.8 = viewBox 9:5 aspect */
   width: min(92vw, calc((100vh - 280px) * 1.8), 1200px);
   height: auto;
+}
+
+/* Ambient animation: a subtle river-tile shimmer and a
+   gentle installed-M.U.L.E. idle bob, both purely decorative and both gated
+   behind `@media (prefers-reduced-motion: no-preference)` -- under reduced
+   motion the `<use>` elements these target render exactly as they did before
+   this workstream (no extra DOM, no color/attribute change), so the
+   calibrated visual_render.spec.mjs thresholds (measured with reduced motion
+   emulated) are unaffected. Applies the same "animate the existing CSS
+   `transform`/`opacity` of an SVG `<use>`" technique the title screen's ship
+   drift already proved out (see .title-screen-ship above). */
+@media (prefers-reduced-motion: no-preference) {
+  g[data-terrain="river"] > .terrain-tile-use {
+    animation: river-shimmer 2.4s ease-in-out infinite;
+  }
+
+  .mule-installed-glyph {
+    animation: mule-idle-bob 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes river-shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes mule-idle-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Overworld overlay: the walkable develop-turn avatar
+   layer sits over the map. #game-map is the positioning context; the avatar SVG
+   matches the map SVG box exactly (same width formula, centered, top-aligned).
+   No CSS transitions or animations on the avatar: motion is written per-frame
+   through the transform attribute, and reduced motion holds the rest frame, so
+   the reduced-motion spec finds no animated styles. */
+#game-map {
+  position: relative;
+  /* Reserves room above the map's top tile row for .overworld-timer (art
+     gate round 3 POLISH: the timer bar previously overlapped the top row). */
+  margin-top: 16px;
+}
+
+.overworld-svg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92vw, calc((100vh - 280px) * 1.8), 1200px);
+  height: auto;
+  /* Never intercept clicks: the map cells beneath stay clickable. */
+  pointer-events: none;
+}
+
+.overworld-timer {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(60vw, 360px);
+  height: 8px;
+  background-color: #22223a;
+  border-radius: 4px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.overworld-timer-fill {
+  height: 100%;
+  background-color: #ffd23f;
+}
+
+/* Wampus catch banner: a brief bounty confirmation,
+   styled after the event banner's accent-bordered panel. */
+.overworld-wampus-catch-banner {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.4rem 0.9rem;
+  background-color: #22223a;
+  border-left: 4px solid #ffd23f;
+  border-radius: 6px;
+  color: #ffd23f;
+  font-weight: bold;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Pub payout banner: a brief self-dismissing confirmation for
+   a human gamble's payout, styled after the wampus catch banner. Appended
+   directly to document.body (src/ui/scenes/town_scene.tsx) rather than
+   rendered by Solid, so it survives the town scene unmounting the instant the
+   gamble action ends the turn -- hence `position: fixed` rather than
+   `absolute` (it has no positioned Solid-owned ancestor to anchor to). */
+.pub-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.4rem 0.9rem;
+  background-color: #22223a;
+  border-left: 4px solid #ffd23f;
+  border-radius: 6px;
+  color: #ffd23f;
+  font-weight: bold;
+  z-index: 6;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pub-banner[data-reduced-motion="false"] {
+    animation: event-banner-pop 0.25s ease-out;
+  }
+}
+
+/* Touch d-pad: a fixed-position cross of 4 direction
+   buttons, shown only on coarse (touch) pointers. `pointer: coarse` is the
+   accessibility-recommended feature query for "primary input is a touch
+   surface", so a mouse-driven desktop (even one that also has a touch
+   screen, if its primary pointer is a mouse) never sees it, and keyboard
+   input stays completely unaffected either way -- src/ui/scenes/dpad.tsx
+   only ever dispatches synthetic Arrow key events, never intercepts real
+   ones. */
+.dpad {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .dpad {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(2, 56px);
+    gap: 4px;
+  }
+}
+
+.dpad-button {
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 8px;
+  border: none;
+  background-color: rgba(34, 34, 58, 0.85);
+  touch-action: none;
+}
+
+.dpad-button-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-button-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-button-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-button-down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Walkable town interior: a full-cover scene over #game-map,
+   entered from the overworld town cell. Like the overworld avatar, motion is
+   written per-frame through transform attributes, so there are no CSS
+   transitions or animations here for the reduced-motion spec to find. */
+.town-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #14142a;
+  z-index: 4;
+}
+
+.town-svg {
+  width: min(92vw, calc((100vh - 280px) * 2.28), 1200px);
+  height: auto;
+}
+
+.town-hud {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.town-notice {
+  margin: 0;
+  font-size: 0.95rem;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.town-end-turn-button {
+  min-height: 44px;
+  min-width: 120px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.plot-crystite-badge text {
+  font-family: monospace;
+  font-weight: bold;
 }
 
 .hud {
@@ -242,12 +943,6 @@ button:focus-visible,
   stroke-width: 1;
 }
 
-.auction-track-token-label {
-  fill: #1a1a2e;
-  font-size: 10px;
-  text-anchor: middle;
-}
-
 .auction-screen-trade-log {
   width: 100%;
 }
@@ -275,4 +970,234 @@ button:focus-visible,
 .auction-screen-intent-button {
   min-height: 44px;
   min-width: 88px;
+}
+
+/* Spatial auction scene (M4). Avatar motion is driven by the scene-manager rAF
+   writing SVG transforms imperatively; no CSS transition is applied to the
+   avatar groups, so a reduced-motion render carries no tween artifacts. */
+.auction-avatar {
+  pointer-events: none;
+}
+
+.auction-avatar-sprite {
+  /* `color` sets the player tint the species symbols resolve via currentColor. */
+  overflow: visible;
+}
+
+.auction-trade-goods,
+.auction-trade-flash-burst {
+  pointer-events: none;
+}
+
+/* Trade-pop polish: the burst still appears instantly
+   under reduced motion (auction_screen.tsx's addFlash runs unconditionally,
+   per the module doc's "a trade shows an instant flash with no travel"); only
+   this entrance pop is gated, matching every other ambient effect in this
+   file. */
+@media (prefers-reduced-motion: no-preference) {
+  .auction-trade-flash-burst {
+    /* fill-box + center: scale grows from the flash's own center, not the
+       SVG viewport's (0,0) origin CSS transforms default to on SVG elements. */
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: auction-trade-pop 0.3s ease-out;
+  }
+}
+
+@keyframes auction-trade-pop {
+  from {
+    opacity: 0.4;
+    transform: scale(1.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.auction-price-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 320px;
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  color: #e6e6e6;
+}
+
+.auction-price-store {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.auction-price-good-name {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ffd23f;
+}
+
+.auction-price-store-quote {
+  color: #e6e6e6;
+}
+
+.auction-price-players {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.auction-price-player {
+  display: grid;
+  grid-template-columns: 1rem 3ch 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.auction-price-swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+}
+
+.auction-price-role {
+  font-size: 0.8rem;
+  color: #b9b9c6;
+}
+
+.auction-price-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+}
+
+/* Title screen mode/species pickers: two ARIA
+   radiogroups between the wordmark and the New Game button. */
+.title-screen-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.title-screen-picker-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b9b9c6;
+}
+
+.title-screen-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.title-screen-mode-option {
+  min-height: 40px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  color: #e6e6e6;
+  background-color: #22223a;
+  border: 2px solid #4a4a68;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.title-screen-mode-option[aria-checked="true"] {
+  color: #1a1a2e;
+  background-color: #ffd23f;
+  border-color: #ffd23f;
+}
+
+.title-screen-species-options {
+  max-width: min(90vw, 420px);
+}
+
+.title-screen-species-option {
+  width: 44px;
+  height: 44px;
+  padding: 0.3rem;
+  background-color: #22223a;
+  border: 2px solid #4a4a68;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.title-screen-species-option[aria-checked="true"] {
+  border-color: #ffd23f;
+  background-color: #33334f;
+}
+
+/* Relaxed-timer toggle: an ARIA switch beside the mode/
+   species pickers. */
+.title-screen-relaxed-timer-toggle {
+  min-height: 40px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  color: #e6e6e6;
+  background-color: #22223a;
+  border: 2px solid #4a4a68;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.title-screen-relaxed-timer-toggle[aria-checked="true"] {
+  color: #1a1a2e;
+  background-color: #ffd23f;
+  border-color: #ffd23f;
+}
+
+.title-screen-picker-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #8b8ba0;
+}
+
+/* AI develop-turn presentation layer: mirrors the
+   overworld avatar overlay's positioning trick (position: relative on the
+   scene's container, position: absolute on the avatar SVG so it lays over
+   the board without intercepting clicks). Motion is written per-frame
+   through transform attributes, so there is nothing here for the
+   reduced-motion spec to find. */
+.ai-actor-demo {
+  position: relative;
+}
+
+.ai-actor-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+}
+
+.ai-actor-skip-button {
+  min-height: 36px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+  background-color: #ffd23f;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ai-actor-svg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92vw, calc((100vh - 280px) * 1.8), 1200px);
+  height: auto;
+  pointer-events: none;
 }

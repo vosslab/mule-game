@@ -1,24 +1,39 @@
 # M.U.L.E. Game
 
-A browser remake of the 1983 economic strategy classic's core loop, for one human player against three AI opponents. Players claim land, place production robots, then trade food, energy, and ore in a real-time market auction.
+A browser remake of the 1983 economic strategy classic, for one human player against three AI opponents, with a walkable colony, live events, and land auctions layered onto the original claim-develop-trade loop.
 
-## Features (v1 scope)
+## Features
 
-- 6-round beginner game session
-- Land grant phase with snake-order plot picking
-- M.U.L.E. purchase, outfitting, and placement on owned plots
-- Production phase for food, energy, and smithore
-- Real-time auction phase with live price bidding
-- TypeScript and SVG rendering, deployable as a static site on GitHub Pages
+- Land grant (snake-order plot picking) and colony land auctions for the plots left over
+- A walkable overworld and town interior for buying, outfitting, and placing M.U.L.E.s,
+  visiting the assay office, and encountering the wampus creature
+- Personal and colony events each round (fortune, misfortune, and colony-wide effects)
+- Production phase for food, energy, smithore, and crystite, then a real-time
+  four-good auction with live price bidding
+- End-of-game scoring with a colony rating and a First Founder callout
+- Beginner (6-round) and standard (12-round) modes, with a species pick for
+  the human player
+- Keyboard and touch play (on-screen d-pad), a relaxed-timer option, and an
+  accessibility pass (live status regions, focus management, reduced-motion
+  support)
+- The wampus creature and gambling at the pub, alongside the assay office
+- Autosave and resume, a replay viewer for a committed demo game, three named
+  AI personalities (land baron, ore speculator, farmer), first-run tutorial
+  hints, ambient animation (reduced-motion aware), and installable offline
+  (PWA) play
+- SolidJS and SVG rendering, deployable as a static site on GitHub Pages
 
-Status: the core game loop is under active development; not all rounds and
-phases are complete yet.
+Status: a full game (New Game through scoring, both modes) plays start to
+finish with an automated headless playthrough gate, and every release
+balance/AI gate is green (see [docs/CHANGELOG.md](docs/CHANGELOG.md) for the
+current numbers); a version bump for the release cut is pending.
 
 <!-- screenshots:begin (managed by screenshot-docs) -->
-![Title screen with the New Game button](docs/screenshots/title_screen.png)
-![Land grant map with owned plots and placed M.U.L.E.s](docs/screenshots/land_grant_map.png)
-![Store screen for buying and outfitting a M.U.L.E.](docs/screenshots/store_screen.png)
-![Real-time auction price track with player tokens](docs/screenshots/auction_track.png)
+![Title screen with mode and species pickers, relaxed-timer toggle, and the New Game button](docs/screenshots/title_screen.png)
+![Overworld map with textured terrain tiles and an outfitted M.U.L.E. for each player](docs/screenshots/overworld_map.png)
+![Walkable town interior with the corral, outfit counters, and pub](docs/screenshots/town_interior.png)
+![Real-time spatial goods auction with buyer and seller avatars on the price track](docs/screenshots/auction_track.png)
+![End-of-game scoring screen with ranked players, colony total, and Federation rating](docs/screenshots/scoring_screen.png)
 <!-- screenshots:end -->
 
 ## Quick start
@@ -47,13 +62,26 @@ bash run_playwright_tests.sh
 
 ## Documentation
 
-- [docs/CHANGELOG.md](docs/CHANGELOG.md): chronological record of changes
+### Getting started
+
+- [docs/INSTALL.md](docs/INSTALL.md): setup steps and environment requirements
+- [docs/USAGE.md](docs/USAGE.md): how to run the game and its scripts
+
+### Architecture
+
 - [docs/CODE_ARCHITECTURE.md](docs/CODE_ARCHITECTURE.md): engine/AI/UI layer boundaries and data flow
 - [docs/FILE_STRUCTURE.md](docs/FILE_STRUCTURE.md): directory map of the codebase
-- [docs/INSTALL.md](docs/INSTALL.md): setup steps and environment requirements
+
+### Testing
+
 - [docs/PLAYWRIGHT_USAGE.md](docs/PLAYWRIGHT_USAGE.md): browser test usage
+
+### Project notes
+
+- [docs/CHANGELOG.md](docs/CHANGELOG.md): chronological record of changes
+- [docs/RULE_SOURCES.md](docs/RULE_SOURCES.md): per-rule authority decisions where historical sources conflict
+- [docs/REFERENCE_REPOS.md](docs/REFERENCE_REPOS.md): reference repos consulted for rules and data
 - [docs/TODO.md](docs/TODO.md): backlog of deferred tuning and fidelity work
-- [docs/USAGE.md](docs/USAGE.md): how to run the game and its scripts
 
 ## License
 

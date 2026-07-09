@@ -21,15 +21,17 @@ function buildPlayer(overrides) {
     isHuman: true,
     colorSlot: 0,
     money: 0,
-    goods: { food: 0, energy: 0, smithore: 0 },
+    goods: { food: 0, energy: 0, smithore: 0, crystite: 0 },
     ...overrides,
   };
 }
 
-test("mule purchase cost is the base price plus the outfit cost", () => {
+test("mule purchase cost is the store's current mule price plus the outfit cost", () => {
   const store = createInitialStoreState();
-  const cost = computeMulePurchaseCost("smithore");
-  assert.equal(cost, MULE_BASE_PRICE + computeOutfitCost("smithore"));
+  const cost = computeMulePurchaseCost(store, "smithore");
+  assert.equal(cost, store.mulePrice + computeOutfitCost("smithore"));
+  // At game start the store's mule price is seeded from MULE_BASE_PRICE.
+  assert.equal(store.mulePrice, MULE_BASE_PRICE);
   assert.ok(store.stock.smithore > 0);
 });
 
@@ -55,7 +57,7 @@ test("a richer player scores higher with an otherwise identical board", () => {
   const plots = [[{ terrain: "plain", owner: null, muleOutfit: null }]];
   const richPlayer = buildPlayer({ id: 0, money: 5000 });
   const poorPlayer = buildPlayer({ id: 1, money: 100 });
-  const state = { players: [richPlayer, poorPlayer], plots };
+  const state = { players: [richPlayer, poorPlayer], plots, store: createInitialStoreState() };
   const scores = computeScores(state);
   assert.ok(scores[0] > scores[1]);
 });
@@ -69,7 +71,11 @@ test("owning more land raises a player's score", () => {
   ];
   const landedPlayer = buildPlayer({ id: 0, money: 0 });
   const landlessPlayer = buildPlayer({ id: 1, money: 0 });
-  const state = { players: [landedPlayer, landlessPlayer], plots };
+  const state = {
+    players: [landedPlayer, landlessPlayer],
+    plots,
+    store: createInitialStoreState(),
+  };
   const scores = computeScores(state);
   assert.ok(scores[0] > scores[1]);
 });
@@ -79,6 +85,7 @@ test("the winner is the player with the highest score", () => {
   const state = {
     players: [buildPlayer({ id: 0, money: 10 }), buildPlayer({ id: 1, money: 999 })],
     plots,
+    store: createInitialStoreState(),
   };
   assert.equal(computeWinnerIndex(state), 1);
 });
@@ -88,6 +95,7 @@ test("ties are broken by the lowest player index", () => {
   const state = {
     players: [buildPlayer({ id: 0, money: 500 }), buildPlayer({ id: 1, money: 500 })],
     plots,
+    store: createInitialStoreState(),
   };
   assert.equal(computeWinnerIndex(state), 0);
 });

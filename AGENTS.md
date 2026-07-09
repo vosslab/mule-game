@@ -16,6 +16,13 @@
 - File layout: docs/FILE_STRUCTURE.md
 - Install: docs/INSTALL.md
 - Usage / how to run: docs/USAGE.md
+- Troubleshooting: docs/TROUBLESHOOTING.md
+- Roadmap and backlog: docs/ROADMAP.md, docs/TODO.md
+
+## Game rule fidelity
+
+- Formula and constant provenance: docs/RULE_SOURCES.md
+- Reading the local reference repos: docs/REFERENCE_REPOS.md
 
 ## Workflow
 

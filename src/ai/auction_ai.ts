@@ -5,14 +5,21 @@
  * id, choose the next auction action (role or intent), or null when the
  * player already sits in its desired role and intent this tick.
  *
- * Role and target price are both derived from need/surplus: a player short
- * of the auctioned good relative to a fixed target stock buys, raising its
- * bid toward the store's sell price (never overpaying versus the store) so
- * it crosses a seller's ask; a player with surplus sells, lowering its ask
- * toward the store's buy price (never underselling versus the store) so it
- * crosses a buyer's bid. A player at its target sits the good out. The AI
- * also keeps a food-safety money reserve: it never declares a buyer role
- * that could spend it below the reserve.
+ * Role and target price both derive from planet_mule's per-resource critical
+ * threshold (`auctionResourceCritical`): a player holding less than the good's
+ * critical amount buys, walking its bid up toward the store's sell price (never
+ * overpaying versus the store) so it crosses a seller's ask; a player holding
+ * more than critical sells, walking its ask down toward the store's buy price
+ * (never underselling versus the store) so it crosses a buyer's bid -- and
+ * since smithore and crystite are never critical (target 0), any holder sells
+ * every unit. A player already at its critical target sits the good out. The AI
+ * also keeps a food-safety money reserve: it never declares a buyer role that
+ * could spend it below the reserve.
+ *
+ * The buyer's price ceiling also scales by the deciding player's persona
+ * buyer-price factor (see `personas.ts`), capped at 1
+ * for every personality so a personality can only ever buy more cautiously
+ * than the baseline, never pay past the store's sell price.
  *
  * DOM-free by design: no mutation, no randomness, no module-level state.
  */
@@ -24,26 +31,15 @@ import type {
   AuctionRole,
   GameState,
 } from "../engine/game_state";
-import type { Resource } from "../engine/player";
-import { ENERGY_UPKEEP_BASE, FOOD_UPKEEP_BASE, STORE_BASE_PRICE } from "../engine/constants";
+import { auctionResourceCritical } from "../engine/auction";
+import { STORE_BASE_PRICE } from "../engine/constants";
+import { personaParamsForPlayer } from "./personas";
 
 /**
  * Money the AI keeps in reserve at all times, matching the develop-phase
  * reserve so a player never bids away the cash it needs for emergency food.
  */
 const AI_MONEY_RESERVE = STORE_BASE_PRICE.food * 10;
-
-/**
- * Target stock level per resource: the inventory a player tries to hold
- * going into the next round. Food and energy targets are three rounds of
- * upkeep at the base rate, a comfortable buffer; smithore targets a flat
- * stockpile for future outfit purchases, since it has no upkeep of its own.
- */
-const AUCTION_TARGET_STOCK: Readonly<Record<Resource, number>> = {
-  food: FOOD_UPKEEP_BASE * 3,
-  energy: ENERGY_UPKEEP_BASE * 3,
-  smithore: 5,
-};
 
 /**
  * Find `playerId`'s participant entry, or null if the id has no entry.
@@ -65,30 +61,32 @@ function findParticipant(
 }
 
 /**
- * Decide the desired role for `playerId` given the good's target stock and
- * the player's money reserve: buy when short of target and affording it
- * would not dip below the reserve, sell when in surplus, otherwise sit out.
+ * Decide the desired role for `playerId` given the good's critical target and
+ * the player's money reserve: sell when holding more than the target, buy when
+ * holding less (only when affording it keeps the reserve intact), otherwise sit
+ * out. Smithore and crystite have a critical target of 0, so any holder sells
+ * every unit and a non-holder sits out.
  *
- * @param stock - Player's current inventory of the auctioned good.
- * @param target - Target stock level for the good.
+ * @param holdings - Player's current inventory of the auctioned good.
+ * @param target - The good's critical target for the player.
  * @param money - Player's current money.
  * @param storeBuyPrice - Store's buy price, used as a worst-case buy cost.
  * @returns The desired auction role.
  */
 function desiredRole(
-  stock: number,
+  holdings: number,
   target: number,
   money: number,
   storeBuyPrice: number,
 ): AuctionRole {
-  if (stock < target) {
+  if (holdings > target) {
+    return "seller";
+  }
+  if (holdings < target) {
     if (money - storeBuyPrice >= AI_MONEY_RESERVE) {
       return "buyer";
     }
     return "out";
-  }
-  if (stock > target) {
-    return "seller";
   }
   return "out";
 }
@@ -107,13 +105,12 @@ function clampToBand(value: number, priceFloor: number, priceCeiling: number): n
 
 /**
  * Decide the desired price intent for a role: a trade only executes once the
- * highest bid meets the lowest ask, so buyers must raise their bid and
- * sellers must lower their ask to cross. A buyer walks its price up toward a
- * limit (the cheaper of the store's sell price, so it never overpays versus
- * just buying from the store, and what it can afford while keeping its money
- * reserve). A seller walks its price down toward a floor (the store's buy
- * price, so it never undersells versus just selling to the store). A player
- * already at its target price holds.
+ * highest bid meets the lowest ask, so buyers must raise their bid and sellers
+ * must lower their ask to cross. A buyer walks its price up toward a limit (the
+ * cheaper of the store's sell price, so it never overpays versus buying from the
+ * store, and what it can afford while keeping its money reserve). A seller walks
+ * its price down toward a floor (the store's buy price, so it never undersells
+ * versus selling to the store). A player already at its target price holds.
  *
  * @param role - The player's current or desired role.
  * @param price - The player's current price.
@@ -122,6 +119,10 @@ function clampToBand(value: number, priceFloor: number, priceCeiling: number): n
  * @param storeBuyPrice - Store's buy price (the seller's floor target).
  * @param storeSellPrice - Store's sell price (the buyer's ceiling target).
  * @param money - The player's current money, used to bound the buyer's limit.
+ * @param buyerLimitFactor - The deciding player's persona buyer-price factor
+ *   (see `personas.ts`), capped at 1 for every
+ *   personality so this never raises the buyer's ceiling above
+ *   `storeSellPrice` -- only ever holds it at or below the plain baseline.
  * @returns The desired price intent.
  */
 function desiredIntent(
@@ -132,10 +133,11 @@ function desiredIntent(
   storeBuyPrice: number,
   storeSellPrice: number,
   money: number,
+  buyerLimitFactor: number,
 ): AuctionIntent {
   if (role === "buyer") {
     const limit = clampToBand(
-      Math.min(storeSellPrice, money - AI_MONEY_RESERVE),
+      Math.min(storeSellPrice * buyerLimitFactor, money - AI_MONEY_RESERVE),
       priceFloor,
       priceCeiling,
     );
@@ -149,12 +151,12 @@ function desiredIntent(
 }
 
 /**
- * Decide the next auction action for `playerId`. Returns null when no
- * action is needed this tick: the game is not in the auction phase, the
- * player has no participant entry, the auction has already finished, or the
- * player's role and intent already match the desired values. Always
- * resolves to a role of `out` (never buyer/seller) in every degenerate case,
- * so the AI can never softlock the sequencer.
+ * Decide the next auction action for `playerId`. Returns null when no action
+ * is needed this tick: the game is not in the auction phase, the auction has
+ * finished (or was skipped), the player has no participant entry, or the
+ * player's role and intent already match the desired values. Always resolves to
+ * a role of `out` (never buyer/seller) in every degenerate case, so the AI can
+ * never softlock the sequencer.
  *
  * @param state - Current game state.
  * @param playerId - AI player id deciding.
@@ -177,14 +179,17 @@ export function decideAuctionActions(state: GameState, playerId: number): Action
     return null;
   }
 
-  const target = AUCTION_TARGET_STOCK[payload.good];
-  const stock = player.goods[payload.good];
-  const role = desiredRole(stock, target, player.money, payload.storeBuyPrice);
+  const target = auctionResourceCritical(payload.good, playerId, state.plots, state.round);
+  const holdings = player.goods[payload.good];
+  const role = desiredRole(holdings, target, player.money, payload.storeBuyPrice);
 
   if (participant.role !== role) {
     return { type: "set_auction_role", playerId, role };
   }
 
+  // The deciding player's persona buyer-price factor, or
+  // 1 (identical to pre-persona behavior) for the human seat.
+  const persona = personaParamsForPlayer(state, playerId);
   const intent = desiredIntent(
     role,
     participant.price,
@@ -193,6 +198,7 @@ export function decideAuctionActions(state: GameState, playerId: number): Action
     payload.storeBuyPrice,
     payload.storeSellPrice,
     player.money,
+    persona.auctionBuyerLimitFactor,
   );
   if (participant.intent !== intent) {
     return { type: "set_auction_intent", playerId, intent };

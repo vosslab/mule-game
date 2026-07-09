@@ -19,11 +19,26 @@ import type { Terrain } from "../engine/game_state";
  * below; ratios computed via the WCAG relative-luminance formula).
  */
 export const PLAYER_COLORS: readonly [string, string, string, string] = [
-  "#ff5a5f", // player 0: coral red, ~5.7:1 on #1a1a2e
-  "#4fd8ff", // player 1: cyan, ~10.9:1 on #1a1a2e
-  "#ffd23f", // player 2: gold, ~13.9:1 on #1a1a2e
-  "#c77dff", // player 3: violet, ~6.4:1 on #1a1a2e
+  "#ff5a5f", // player 0: coral red, ~5.6:1 on #1a1a2e
+  "#4fd8ff", // player 1: cyan, ~10.2:1 on #1a1a2e
+  "#3aaa18", // player 2: green, ~5.6:1 on #1a1a2e (moved off shared gold hex)
+  "#f872e8", // player 3: orchid, ~7.0:1 on #1a1a2e
 ];
+
+/**
+ * Look up a player's identity color, so callers do not index `PLAYER_COLORS`
+ * directly (which `noUncheckedIndexedAccess` types as possibly `undefined`).
+ *
+ * @param id - Player id, expected in range `[0, PLAYER_COLORS.length)`.
+ * @returns The player's hex color string.
+ */
+export function playerColor(id: number): string {
+  const color = PLAYER_COLORS[id];
+  if (color === undefined) {
+    throw new Error(`no player color for id ${id}`);
+  }
+  return color;
+}
 
 /** Fill color for each board terrain, chosen for mutual hue separation. */
 export const TERRAIN_FILLS: Readonly<Record<Terrain, string>> = {
@@ -33,13 +48,24 @@ export const TERRAIN_FILLS: Readonly<Record<Terrain, string>> = {
   mountain2: "#8a6f52",
   mountain3: "#5c4736",
   town: "#d9a441",
+  // Scorched meteorite-crater terrain (M6 events widened the engine Terrain
+  // union). Reuses the palette's dark slate token, hue-separated from the
+  // mountain browns and the town gold; the art lane owns the final crater tile
+  // in sprites_terrain.ts.
+  crater: "#4a4a68",
 };
 
-/** Fill color for each resource's outfit icon, distinct per resource. */
+/**
+ * Fill color for each resource's outfit icon, distinct per resource.
+ * Crystite temporarily reuses the smithore icon shape (see
+ * `buildCrystiteIconSymbol`) with this distinct fill until a dedicated
+ * crystite sprite lands with the art pass.
+ */
 export const RESOURCE_ICON_FILLS: Readonly<Record<Resource, string>> = {
   food: "#8fd14f",
   energy: "#ffe066",
   smithore: "#c0c0c0",
+  crystite: "#ff6ec7",
 };
 
 /**
@@ -51,6 +77,9 @@ export const RESOURCE_ICON_FILLS: Readonly<Record<Resource, string>> = {
  *   body, used for the HUD player badges.
  * - `sprite-icon-food`, `sprite-icon-energy`, `sprite-icon-smithore`: small
  *   glyphs (leaf, bolt, ore chunk) distinguishable at map scale.
+ * - `sprite-icon-crystite`: reuses the smithore ore-chunk shape (a distinct
+ *   `RESOURCE_ICON_FILLS` color tells it apart) as a placeholder until a
+ *   dedicated crystite sprite lands with the art pass.
  *
  * @returns Raw SVG markup for a single `<defs>` element.
  */
@@ -61,6 +90,7 @@ export function buildSpriteDefsMarkup(): string {
   markup += buildFoodIconSymbol();
   markup += buildEnergyIconSymbol();
   markup += buildSmithoreIconSymbol();
+  markup += buildCrystiteIconSymbol();
   markup += "</defs>";
   return markup;
 }
@@ -113,6 +143,17 @@ function buildEnergyIconSymbol(): string {
 function buildSmithoreIconSymbol(): string {
   // Ore chunk: an irregular hexagon reading as a rough mineral nugget.
   let markup = '<symbol id="sprite-icon-smithore" viewBox="0 0 16 16">';
+  markup += '<polygon points="8,0 14,4 16,11 10,16 3,14 0,6" />';
+  markup += "</symbol>";
+  return markup;
+}
+
+//============================================
+function buildCrystiteIconSymbol(): string {
+  // Placeholder: same ore-chunk silhouette as smithore, distinguished by
+  // RESOURCE_ICON_FILLS's fill color, until a dedicated crystite sprite
+  // lands with the art pass.
+  let markup = '<symbol id="sprite-icon-crystite" viewBox="0 0 16 16">';
   markup += '<polygon points="8,0 14,4 16,11 10,16 3,14 0,6" />';
   markup += "</symbol>";
   return markup;

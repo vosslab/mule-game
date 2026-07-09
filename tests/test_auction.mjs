@@ -1,42 +1,27 @@
-// Node unit tests for the tick-based auction engine (auction.ts).
+// Node unit tests for the tick-based goods-auction engine (auction.ts).
+// Covers per-good bands from live store quotes, role auto-assignment from
+// critical thresholds, the skip-when-no-trade-possible rule, per-good price
+// steps, store and player trades, the crystite store-sink, the transfer-rate
+// cooldown, and the idle-timeout window end.
 // Run via check_codebase.sh: node --import tsx --test tests/test_*.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { applyAction } from "../src/engine/game_state.ts";
 import { createInitialGameState } from "../src/engine/turn.ts";
-import { AUCTION_STORE_ID } from "../src/engine/auction.ts";
+import { AUCTION_STORE_ID, createAuctionPayload } from "../src/engine/auction.ts";
+import { storeBuyQuote, storeSellQuote } from "../src/engine/store.ts";
 import {
-  AUCTION_TICKS,
-  AUCTION_PRICE_STEP,
-  AUCTION_PRICE_CEILING,
-  AUCTION_PRICE_FLOOR,
-  STORE_BASE_PRICE,
-  AUCTION_STORE_SPREAD,
+  AUCTION_IDLE_TIMEOUT,
+  AUCTION_PRICE_STEP_BY_GOOD,
+  AUCTION_QUIET_TICK_BUDGET,
 } from "../src/engine/constants.ts";
 
-// Drive a fresh game to the auction phase for the given good. Every player
-// passes the land grant and ends their develop turn, so no M.U.L.E.s are
-// placed and players keep their starting money and (zero) goods.
-function auctionState(seed, good) {
-  let current = applyAction(createInitialGameState(seed), { type: "start_game" });
-  while (current.phase.kind === "land_grant") {
-    const payload = current.phase.payload;
-    const picker = payload.pickOrder[payload.pickIndex];
-    current = applyAction(current, { type: "pass", playerId: picker });
-  }
-  for (let i = 0; i < 4; i += 1) {
-    current = applyAction(current, {
-      type: "end_turn",
-      playerId: current.phase.payload.activePlayer,
-    });
-  }
-  // Production -> first good's auction.
-  current = applyAction(current, { type: "tick" });
-  while (current.phase.payload.good !== good) {
-    current = applyAction(current, { type: "end_auction" });
-  }
-  return current;
+// A round-1, post-start state whose players and store can be overridden before
+// an auction payload is built from it. Land grant has not run, so the board is
+// empty (no installed M.U.L.E.s -> energy critical is 1).
+function baseState(seed) {
+  return applyAction(createInitialGameState(seed), { type: "start_game" });
 }
 
 // Replace the four-player tuple with edited copies (money/goods overrides).
@@ -49,6 +34,27 @@ function withPlayers(state, overrides) {
   return { ...state, players };
 }
 
+// Build a live auction state for `good` from a base state, then optionally
+// override the seated participants for a precise engine test. Forces the
+// window live (not skipped) so the engine actually ticks.
+function auctionOf(state, good, participantOverrides) {
+  const payload = createAuctionPayload(state, good);
+  let participants = payload.participants;
+  if (participantOverrides !== undefined) {
+    participants = participants.map((entry) => ({
+      ...entry,
+      ...(participantOverrides[entry.playerId] ?? {}),
+    }));
+  }
+  return {
+    ...state,
+    phase: {
+      kind: "auction",
+      payload: { ...payload, participants, skipped: false, finished: false },
+    },
+  };
+}
+
 // Look up a participant entry by player id.
 function participant(state, playerId) {
   return state.phase.payload.participants.find((entry) => entry.playerId === playerId);
@@ -59,101 +65,116 @@ function totalMoney(state) {
   return state.players.reduce((sum, player) => sum + player.money, 0);
 }
 
-// Total units of a good across players plus the store stock (invariant across
-// every trade type: player-to-player, store-sell, and store-buy).
+// Total units of a good across players plus the store stock.
 function totalGoods(state, good) {
   const held = state.players.reduce((sum, player) => sum + player.goods[good], 0);
   return held + state.store.stock[good];
 }
 
-test("initial auction payload seats every player out at the store band midpoint", () => {
-  const state = auctionState(42, "food");
-  const payload = state.phase.payload;
+test("the food band is the store's live buy/sell quotes and holders auto-seat by role", () => {
+  // Starting food 4 exceeds round-1 critical (3), so every player is a seller.
+  const state = baseState(42);
+  const payload = createAuctionPayload(state, "food");
   assert.equal(payload.good, "food");
-  assert.equal(payload.ticksRemaining, AUCTION_TICKS);
-  assert.equal(payload.finished, false);
-  assert.equal(payload.storeBuyPrice, STORE_BASE_PRICE.food - AUCTION_STORE_SPREAD);
-  assert.equal(payload.storeSellPrice, STORE_BASE_PRICE.food + AUCTION_STORE_SPREAD);
-  assert.equal(payload.participants.length, 4);
-  const mid = Math.round((payload.storeBuyPrice + payload.storeSellPrice) / 2);
+  assert.equal(payload.priceFloor, storeBuyQuote(state.store, "food"));
+  assert.equal(payload.priceCeiling, storeSellQuote(state.store, "food"));
+  assert.equal(payload.storeBuyPrice, payload.priceFloor);
+  assert.equal(payload.storeSellPrice, payload.priceCeiling);
+  assert.ok(payload.priceFloor < payload.priceCeiling);
+  assert.equal(payload.priceStep, AUCTION_PRICE_STEP_BY_GOOD.food);
+  assert.equal(payload.ticksRemaining, AUCTION_QUIET_TICK_BUDGET);
+  assert.equal(payload.skipped, false);
   for (const entry of payload.participants) {
-    assert.equal(entry.role, "out");
-    assert.equal(entry.intent, "hold");
-    assert.equal(entry.price, mid);
+    assert.equal(entry.role, "seller");
+    // Sellers enter at the ceiling and walk down.
+    assert.equal(entry.price, payload.priceCeiling);
+    assert.equal(entry.intent, "down");
   }
 });
 
-test("price moves up for a raising participant and down for a lowering one per tick", () => {
-  let state = auctionState(1, "food");
-  const start = participant(state, 0).price;
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "buyer" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 0, intent: "up" });
-  state = applyAction(state, { type: "set_auction_role", playerId: 1, role: "seller" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 1, intent: "down" });
-  const ticked = applyAction(state, { type: "tick" });
-  assert.equal(participant(ticked, 0).price, start + AUCTION_PRICE_STEP);
-  assert.equal(participant(ticked, 1).price, start - AUCTION_PRICE_STEP);
+test("a below-critical holder auto-seats as a buyer at the band floor", () => {
+  const state = withPlayers(baseState(7), { 0: { goods: { food: 0 } } });
+  const payload = createAuctionPayload(state, "food");
+  const p0 = payload.participants.find((entry) => entry.playerId === 0);
+  assert.equal(p0.role, "buyer");
+  assert.equal(p0.price, payload.priceFloor);
+  assert.equal(p0.intent, "up");
 });
 
-test("prices clamp to the auction band and never escape it", () => {
-  let state = auctionState(2, "food");
-  const start = participant(state, 0).price;
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "out" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 0, intent: "up" });
-  state = applyAction(state, { type: "set_auction_role", playerId: 3, role: "out" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 3, intent: "down" });
-  // Run the full auction window; an out participant never trades.
-  for (let i = 0; i < AUCTION_TICKS; i += 1) {
-    state = applyAction(state, { type: "tick" });
-  }
-  // The rising price stays within the ceiling; the falling price bottoms out
-  // at the floor (it would have gone negative without clamping).
-  const rising = participant(state, 0).price;
-  const falling = participant(state, 3).price;
-  assert.equal(rising, Math.min(start + AUCTION_TICKS * AUCTION_PRICE_STEP, AUCTION_PRICE_CEILING));
-  assert.ok(rising <= AUCTION_PRICE_CEILING);
-  assert.equal(falling, AUCTION_PRICE_FLOOR);
-  assert.ok(falling >= AUCTION_PRICE_FLOOR);
+test("crystite uses a price step of 4 and is skipped when no crystite exists", () => {
+  const state = baseState(3);
+  const payload = createAuctionPayload(state, "crystite");
+  assert.equal(payload.priceStep, 4);
+  assert.equal(payload.priceStep, AUCTION_PRICE_STEP_BY_GOOD.crystite);
+  // No player holds crystite and the store stocks none, so nothing can trade.
+  assert.equal(payload.skipped, true);
+  assert.equal(payload.finished, true);
 });
 
-test("a crossed buyer and seller trade one unit at the seller's ask, conserving money and goods", () => {
-  let state = auctionState(3, "food");
-  state = withPlayers(state, {
+test("a window with no seller and no below-critical buyer is skipped", () => {
+  // Everyone exactly at food critical (3): nobody sells, nobody needs to buy.
+  const state = withPlayers(baseState(9), {
+    0: { goods: { food: 3 } },
+    1: { goods: { food: 3 } },
+    2: { goods: { food: 3 } },
+    3: { goods: { food: 3 } },
+  });
+  const payload = createAuctionPayload(state, "food");
+  assert.equal(payload.skipped, true);
+});
+
+test("a below-critical buyer with store stock keeps the window live", () => {
+  const state = withPlayers(baseState(9), {
+    0: { goods: { food: 0 } },
+    1: { goods: { food: 3 } },
+    2: { goods: { food: 3 } },
+    3: { goods: { food: 3 } },
+  });
+  const payload = createAuctionPayload(state, "food");
+  assert.equal(payload.skipped, false);
+});
+
+test("crossed buyer and seller trade one unit at the seller's ask, conserving money and goods", () => {
+  let state = withPlayers(baseState(3), {
     0: { money: 1000, goods: { food: 0 } },
     1: { money: 0, goods: { food: 5 } },
   });
+  const mid = Math.round(
+    (storeBuyQuote(state.store, "food") + storeSellQuote(state.store, "food")) / 2,
+  );
+  // Seat a buyer and a seller crossing at the midpoint, others out.
+  state = auctionOf(state, "food", {
+    0: { role: "buyer", price: mid, intent: "hold" },
+    1: { role: "seller", price: mid, intent: "hold" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
+  });
   const moneyBefore = totalMoney(state);
   const goodsBefore = totalGoods(state, "food");
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "buyer" });
-  state = applyAction(state, { type: "set_auction_role", playerId: 1, role: "seller" });
-  // Both sit at the midpoint and hold, so they cross immediately at that price.
-  const ask = participant(state, 1).price;
   state = applyAction(state, { type: "tick" });
   const trades = state.phase.payload.trades;
   assert.equal(trades.length, 1);
   assert.equal(trades[0].buyerId, 0);
   assert.equal(trades[0].sellerId, 1);
-  assert.equal(trades[0].price, ask);
-  assert.equal(trades[0].quantity, 1);
+  assert.equal(trades[0].price, mid);
   assert.equal(state.players[0].goods.food, 1);
   assert.equal(state.players[1].goods.food, 4);
-  assert.equal(state.players[0].money, 1000 - ask);
-  assert.equal(state.players[1].money, ask);
-  // Player-to-player trade conserves total money and total goods.
   assert.equal(totalMoney(state), moneyBefore);
   assert.equal(totalGoods(state, "food"), goodsBefore);
 });
 
 test("a lone buyer purchases from the store at the store sell price", () => {
-  let state = auctionState(4, "food");
-  state = withPlayers(state, { 0: { money: 1000, goods: { food: 0 } } });
+  let state = withPlayers(baseState(4), { 0: { money: 1000, goods: { food: 0 } } });
   const goodsBefore = totalGoods(state, "food");
   const stockBefore = state.store.stock.food;
+  state = auctionOf(state, "food", {
+    0: { role: "buyer", intent: "up" },
+    1: { role: "out", intent: "hold" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
+  });
   const sellPrice = state.phase.payload.storeSellPrice;
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "buyer" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 0, intent: "up" });
-  // Raise the bid until it reaches the store's sell price, then it lifts a unit.
-  for (let i = 0; i < AUCTION_TICKS && state.phase.payload.trades.length === 0; i += 1) {
+  for (let i = 0; i < 100 && state.phase.payload.trades.length === 0; i += 1) {
     state = applyAction(state, { type: "tick" });
   }
   const trades = state.phase.payload.trades;
@@ -161,21 +182,22 @@ test("a lone buyer purchases from the store at the store sell price", () => {
   assert.equal(trades[0].sellerId, AUCTION_STORE_ID);
   assert.equal(trades[0].price, sellPrice);
   assert.equal(state.players[0].goods.food, 1);
-  assert.equal(state.players[0].money, 1000 - sellPrice);
   assert.equal(state.store.stock.food, stockBefore - 1);
-  // Store fills from stock: total goods stay conserved.
   assert.equal(totalGoods(state, "food"), goodsBefore);
 });
 
 test("a lone seller sells to the store at the store buy price", () => {
-  let state = auctionState(5, "food");
-  state = withPlayers(state, { 0: { money: 0, goods: { food: 5 } } });
+  let state = withPlayers(baseState(5), { 0: { money: 0, goods: { food: 5 } } });
   const goodsBefore = totalGoods(state, "food");
   const stockBefore = state.store.stock.food;
+  state = auctionOf(state, "food", {
+    0: { role: "seller", intent: "down" },
+    1: { role: "out", intent: "hold" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
+  });
   const buyPrice = state.phase.payload.storeBuyPrice;
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "seller" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 0, intent: "down" });
-  for (let i = 0; i < AUCTION_TICKS && state.phase.payload.trades.length === 0; i += 1) {
+  for (let i = 0; i < 100 && state.phase.payload.trades.length === 0; i += 1) {
     state = applyAction(state, { type: "tick" });
   }
   const trades = state.phase.payload.trades;
@@ -183,98 +205,118 @@ test("a lone seller sells to the store at the store buy price", () => {
   assert.equal(trades[0].buyerId, AUCTION_STORE_ID);
   assert.equal(trades[0].price, buyPrice);
   assert.equal(state.players[0].goods.food, 4);
-  assert.equal(state.players[0].money, buyPrice);
   assert.equal(state.store.stock.food, stockBefore + 1);
   assert.equal(totalGoods(state, "food"), goodsBefore);
 });
 
-test("an all-out auction times out with no trade and then advances on end_auction", () => {
-  let state = auctionState(6, "energy");
-  for (let i = 0; i < AUCTION_TICKS; i += 1) {
-    state = applyAction(state, { type: "tick" });
-  }
-  assert.equal(state.phase.payload.finished, true);
-  assert.equal(state.phase.payload.ticksRemaining, 0);
-  assert.equal(state.phase.payload.trades.length, 0);
-  // Extra ticks past the timeout stay finished with no new trades.
-  state = applyAction(state, { type: "tick" });
-  assert.equal(state.phase.payload.trades.length, 0);
-  // The driver dispatches end_auction; the sequencer moves to the next good.
-  const advanced = applyAction(state, { type: "end_auction" });
-  assert.equal(advanced.phase.payload.good, "smithore");
-});
-
-test("a zero-seller auction (only holding buyers) ends cleanly with no trade", () => {
-  let state = auctionState(7, "food");
-  state = withPlayers(state, { 0: { money: 1000 }, 1: { money: 1000 } });
-  // Buyers sit at the midpoint below the store sell price and hold, so they
-  // never cross the store's ask.
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "buyer" });
-  state = applyAction(state, { type: "set_auction_role", playerId: 1, role: "buyer" });
-  for (let i = 0; i < AUCTION_TICKS; i += 1) {
-    state = applyAction(state, { type: "tick" });
-  }
-  assert.equal(state.phase.payload.finished, true);
-  assert.equal(state.phase.payload.trades.length, 0);
-});
-
-test("a zero-buyer auction (only holding sellers) ends cleanly with no trade", () => {
-  let state = auctionState(8, "food");
-  state = withPlayers(state, { 0: { goods: { food: 5 } }, 1: { goods: { food: 5 } } });
-  // Sellers sit at the midpoint above the store buy price and hold.
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "seller" });
-  state = applyAction(state, { type: "set_auction_role", playerId: 1, role: "seller" });
-  for (let i = 0; i < AUCTION_TICKS; i += 1) {
-    state = applyAction(state, { type: "tick" });
-  }
-  assert.equal(state.phase.payload.finished, true);
-  assert.equal(state.phase.payload.trades.length, 0);
-});
-
-test("fixed AI-vs-AI trace: streaming units at descending ask until the seller runs dry", () => {
-  let state = auctionState(12345, "food");
-  state = withPlayers(state, {
-    0: { money: 1000, goods: { food: 0 } },
-    1: { money: 0, goods: { food: 3 } },
+test("crystite sold to the store is sunk: store crystite stock stays zero", () => {
+  let state = withPlayers(baseState(6), { 0: { money: 0, goods: { crystite: 4 } } });
+  assert.equal(state.store.stock.crystite, 0);
+  state = auctionOf(state, "crystite", {
+    0: { role: "seller", intent: "down" },
+    1: { role: "out", intent: "hold" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
   });
-  const mid = participant(state, 0).price;
-  // Scripted buyer walks its bid up; scripted seller walks its ask down.
-  state = applyAction(state, { type: "set_auction_role", playerId: 0, role: "buyer" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 0, intent: "up" });
-  state = applyAction(state, { type: "set_auction_role", playerId: 1, role: "seller" });
-  state = applyAction(state, { type: "set_auction_intent", playerId: 1, intent: "down" });
+  for (let i = 0; i < 100 && state.phase.payload.trades.length === 0; i += 1) {
+    state = applyAction(state, { type: "tick" });
+  }
+  const trades = state.phase.payload.trades;
+  assert.equal(trades.length, 1);
+  assert.equal(trades[0].buyerId, AUCTION_STORE_ID);
+  // The player parted with a crystite unit for money, but the store did not gain it.
+  assert.equal(state.players[0].goods.crystite, 3);
+  assert.equal(state.store.stock.crystite, 0);
+});
 
-  // Tick 0: prices step to mid+1 / mid-1, cross, trade at the seller's ask mid-1.
-  state = applyAction(state, { type: "tick" });
-  assert.equal(participant(state, 0).price, mid + 1);
-  assert.equal(participant(state, 1).price, mid - 1);
-  assert.deepEqual(
-    state.phase.payload.trades.map((trade) => trade.price),
-    [mid - 1],
+test("crystite prices step by 4 and clamp to the band", () => {
+  // Give one player crystite so the crystite window is live (has a seller).
+  let state = withPlayers(baseState(2), { 0: { goods: { crystite: 6 } } });
+  const built = createAuctionPayload(state, "crystite");
+  const floor = built.priceFloor;
+  // Seat a seller two steps above the floor; it walks down by 4 per tick and
+  // clamps at the floor rather than passing it.
+  state = auctionOf(state, "crystite", {
+    0: { role: "seller", price: floor + 5, intent: "down" },
+    1: { role: "out", intent: "hold" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
+  });
+  const ticked = applyAction(state, { type: "tick" });
+  // floor + 5 - 4 = floor + 1 (still one step of 4 above the floor).
+  assert.equal(participant(ticked, 0).price, floor + 1);
+  const twice = applyAction(ticked, { type: "tick" });
+  assert.equal(participant(twice, 0).price, floor);
+  assert.ok(participant(twice, 0).price >= floor);
+});
+
+test("the transfer-rate cooldown throttles successive units below one per tick", () => {
+  let state = withPlayers(baseState(8), {
+    0: { money: 100000, goods: { food: 0 } },
+    1: { money: 0, goods: { food: 6 } },
+  });
+  const mid = Math.round(
+    (storeBuyQuote(state.store, "food") + storeSellQuote(state.store, "food")) / 2,
   );
+  state = auctionOf(state, "food", {
+    0: { role: "buyer", price: mid, intent: "hold" },
+    1: { role: "seller", price: mid, intent: "hold" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
+  });
+  for (let i = 0; i < 6; i += 1) {
+    if (state.phase.kind === "auction" && !state.phase.payload.finished) {
+      state = applyAction(state, { type: "tick" });
+    }
+  }
+  const traded = state.phase.payload.trades.length;
+  // A cooldown after each unit means six ticks cannot stream six units.
+  assert.ok(traded > 0, "at least one unit trades");
+  assert.ok(traded < 6, `cooldown throttles the stream, got ${traded} in 6 ticks`);
+});
 
-  // Tick 1: mid+2 / mid-2, trade at mid-2.
-  state = applyAction(state, { type: "tick" });
-  assert.equal(participant(state, 0).price, mid + 2);
-  assert.equal(participant(state, 1).price, mid - 2);
-  assert.deepEqual(
-    state.phase.payload.trades.map((trade) => trade.price),
-    [mid - 1, mid - 2],
-  );
+test("an idle window (nobody trades or moves) ends at the idle timeout", () => {
+  let state = withPlayers(baseState(11), { 0: { goods: { food: 0 } } });
+  // Everyone out and holding: no movement, no trade -> quiet ticks accrue.
+  state = auctionOf(state, "food", {
+    0: { role: "out", intent: "hold" },
+    1: { role: "out", intent: "hold" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
+  });
+  for (let i = 0; i < AUCTION_IDLE_TIMEOUT; i += 1) {
+    assert.equal(state.phase.payload.finished, false);
+    state = applyAction(state, { type: "tick" });
+  }
+  assert.equal(state.phase.payload.finished, true);
+  assert.equal(state.phase.payload.idleTicks, AUCTION_IDLE_TIMEOUT);
+  assert.equal(state.phase.payload.trades.length, 0);
+});
 
-  // Tick 2: mid+3 / mid-3, trade at mid-3; seller's third and last unit.
+test("end_auction advances to the next good in planet_mule order", () => {
+  // Drive to the first (smithore) auction, then step the good chain.
+  let state = baseState(6);
+  while (state.phase.kind === "land_grant") {
+    const payload = state.phase.payload;
+    state = applyAction(state, { type: "pass", playerId: payload.pickOrder[payload.pickIndex] });
+  }
+  // Skip cleanly through any colony land-auction slots (no bidding) before
+  // develop, the same way land_grant's snake order was passed through above.
+  while (state.phase.kind === "land_auction") {
+    while (!state.phase.payload.finished) {
+      state = applyAction(state, { type: "tick" });
+    }
+    state = applyAction(state, { type: "end_land_auction" });
+  }
+  for (let i = 0; i < 4; i += 1) {
+    state = applyAction(state, { type: "end_turn", playerId: state.phase.payload.activePlayer });
+  }
   state = applyAction(state, { type: "tick" });
-  assert.deepEqual(
-    state.phase.payload.trades.map((trade) => trade.price),
-    [mid - 1, mid - 2, mid - 3],
-  );
-
-  // Tick 3: the seller is out of goods, so no further unit trades.
-  state = applyAction(state, { type: "tick" });
-  assert.equal(state.phase.payload.trades.length, 3);
-  assert.equal(state.players[1].goods.food, 0);
-  const proceeds = mid - 1 + (mid - 2) + (mid - 3);
-  assert.equal(state.players[1].money, proceeds);
-  assert.equal(state.players[0].money, 1000 - proceeds);
-  assert.equal(state.players[0].goods.food, 3);
+  assert.equal(state.phase.payload.good, "smithore");
+  state = applyAction(state, { type: "end_auction" });
+  assert.equal(state.phase.payload.good, "crystite");
+  state = applyAction(state, { type: "end_auction" });
+  assert.equal(state.phase.payload.good, "food");
+  state = applyAction(state, { type: "end_auction" });
+  assert.equal(state.phase.payload.good, "energy");
 });

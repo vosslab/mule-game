@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 
 import { applyAction } from "../src/engine/game_state.ts";
 import { createInitialGameState } from "../src/engine/turn.ts";
-import { decideLandGrantAction } from "../src/ai/land_ai.ts";
+import { decideLandGrantAction, decideLandAuctionAction } from "../src/ai/land_ai.ts";
 import { decideDevelopAction } from "../src/ai/develop_ai.ts";
 import { decideAuctionActions } from "../src/ai/auction_ai.ts";
 import { RESOURCES } from "../src/engine/player.ts";
@@ -53,6 +53,18 @@ function playFullGame(seed) {
       const picker = phase.payload.pickOrder[phase.payload.pickIndex];
       const action = decideLandGrantAction(state, picker);
       state = applyAction(state, action);
+    } else if (phase.kind === "land_auction") {
+      if (phase.payload.finished) {
+        state = applyAction(state, { type: "end_land_auction" });
+      } else {
+        for (let playerId = 0; playerId < 4; playerId += 1) {
+          const action = decideLandAuctionAction(state, playerId);
+          if (action !== null) {
+            state = applyAction(state, action);
+          }
+        }
+        state = applyAction(state, { type: "tick" });
+      }
     } else if (phase.kind === "develop") {
       const active = phase.payload.activePlayer;
       const action = decideDevelopAction(state, active);

@@ -58,3 +58,29 @@ export function createRng(seedOrState: number): Rng {
 
   return { next, nextInt, getState };
 }
+
+/**
+ * Draw one sample from an approximately-standard-normal distribution (mean 0,
+ * standard deviation 1) by summing twelve uniform `[0, 1)` draws and
+ * subtracting six. This is the central-limit approximation the store's
+ * smithore price jitter uses; the sum of twelve uniforms has mean 6 and
+ * variance 1, so subtracting 6 centers it on 0 with unit variance. Output is
+ * bounded to `[-6, 6)`.
+ *
+ * Advances the generator by exactly twelve steps, so callers threading a
+ * serialized `rngState` must capture `getState()` afterward.
+ *
+ * Source: `OTHER_REPOS/planet_mule/data_decompiled/com/turborilla/mule/MuleMath.java`
+ * lines 50-56, `normalDistributed(Random)`: `for (i=0; i<12; i++) f +=
+ * random.nextFloat(); return f - 6.0f`.
+ *
+ * @param rng - Seeded generator to draw from (advanced by twelve steps).
+ * @returns A sample in `[-6, 6)`, mean 0, standard deviation 1.
+ */
+export function normalDistributed(rng: Rng): number {
+  let sum = 0;
+  for (let draw = 0; draw < 12; draw += 1) {
+    sum += rng.next();
+  }
+  return sum - 6;
+}

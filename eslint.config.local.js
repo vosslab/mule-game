@@ -17,6 +17,8 @@
 //     },
 //   ];
 //
+import globals from "globals";
+
 // Engine purity gate: src/engine/** and src/ai/** are pure TypeScript
 // operating on GameState values; only src/ui/** touches the DOM (see
 // docs/archive/mule_core_loop_plan.md, "Architecture boundaries
@@ -24,6 +26,14 @@
 // no-restricted-imports catches importing from the UI layer. src/ai
 // importing from src/engine is unaffected (only ../ui/ paths are blocked).
 export default [
+  {
+    // The offline-cache service worker runs in its own
+    // ServiceWorkerGlobalScope, not the page's window/DOM scope the rest of
+    // src/ui/ gets via the canonical config's globals.browser -- it needs
+    // self/caches/clients/fetch instead.
+    files: ["src/sw.js"],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
   {
     files: ["src/engine/**/*.{ts,tsx}", "src/ai/**/*.{ts,tsx}"],
     rules: {
