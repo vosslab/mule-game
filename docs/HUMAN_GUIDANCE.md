@@ -9,9 +9,13 @@ project decisions, not transient task notes; detailed history stays in
 
 ## Summary
 
-modern Graphics follow Planet M.U.L.E.; but in general we want a unique modern look
-Game rules and screen layout follow 1983/1990 NES M.U.L.E. game
-User interaction is designed around mouse + arrow keys + enter key
+A. modern Graphics follow Planet M.U.L.E.; but in general we want a unique modern look
+
+B. Game rules and screen layout follow 1983/1990 NES M.U.L.E. game
+the layout rule is not pixel strict, 
+we can switch from portrait to landscape in auction to better fill the 16:10 aspect
+
+C. User interaction is designed around mouse + arrow keys + enter key
 
 ## Rule fidelity targets game mechanics, not input devices
 

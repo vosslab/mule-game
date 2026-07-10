@@ -6,10 +6,24 @@ already shipped and [TODO.md](TODO.md) for the smaller task backlog.
 
 ## Near term
 
-- Auction seller-out-of-goods store fallback: when a human or AI seller runs
-  out of a good mid-auction, decide whether the store should step in as a
-  fallback counterparty rather than leaving the window to time out. See
-  [TODO.md](TODO.md).
+- Goods-auction rebuild to the Planet M.U.L.E. `AuctionPainter` composition:
+  the user rejected the horizontal landscape track (2026-07-10) and wants the
+  auction rebuilt to match the reference painter's layout -- a vertical price
+  axis, per-player lanes, a buyer/seller meet line, a store price/stock meter,
+  and a bottom player dock. See [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md), "Goods
+  Auction (the trading floor)."
+- Town rework toward the NES / Planet M.U.L.E. entry model: replace the current
+  street-of-doors town with the reference entry model -- walk INTO buildings
+  (rooms/facades) and per-resource labeled outfitting shops. This also fixes
+  the reproduced glide-auto-outfit bug and the post-buy stranding surfaced in
+  the 2026-07-10 investigation. See [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md),
+  "Town / store interior."
+- Species and color selection screen after New Game: add a human-only pick of
+  species (cosmetic) and color between starting a new game and the first phase.
+  Requires decoupling `playerColor` from player id via a `colorSlot` at roughly
+  11 render sites so a human can hold a color that does not match seat order.
+  See [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md), "Setup: color" and
+  "Setup: species."
 - Walk-speed tuning (WP-2A, applied 2026-07-10): `WALKER_SPEED_PX_PER_SEC`
   raised from 80 to 320 px/s (well outside the originally hypothesized
   120-160 range -- the corral purchase panel and the no-longer-turn-ending
@@ -55,45 +69,20 @@ Open items for a future manager agent to pick up cold, with file:line
 references verified against the current tree. See
 [TODO.md](TODO.md) for the short backlog pointers these expand on.
 
-### Auction engine: insolvent top bidder blocks solvent trades
+### Auction engine: insolvent top bidder blocks solvent trades -- shipped
 
-Symptom: when the best-priced bidder in a goods auction cannot afford the
-trade, the engine does not fall through to the next solvent bidder (or to
-the store's own standing bid), so a trade that should clear is blocked
-instead.
-
-Evidence: `bestBid` (`src/engine/auction.ts:432-451`) and `bestAsk`
-(`src/engine/auction.ts:461-484`) each select a single best offer and
-return it, with no ranked list of runner-up offers. `resolveTrade`
-(`src/engine/auction.ts:669-722`) calls `canExecute` (`src/engine/
-auction.ts:514-534`) once against that single `bid`/`ask` pair; when
-`canExecute` returns false because the bidder is insolvent, `resolveTrade`
-falls straight to the "nothing crossed" branch (lines 713-721) and resets
-the transaction run, rather than retrying with the next-best solvent
-bidder. Documented at the time the bug was found: `docs/CHANGELOG.md`
-(2026-07-09, Decisions and Failures, walkthrough-harness Patch 9 fix
-round) and `docs/TODO.md` ("Auction fidelity" section).
-
-Suggested approach: change `bestBid`/`bestAsk` to return an ordered list of
-offers (best first) instead of a single best offer, and have
-`resolveTrade` walk that list until it finds a pair where `canExecute`
-succeeds, or exhausts the list. Before implementing, check
-`OTHER_REPOS/planet_mule/data_decompiled/` (see
-[REFERENCE_REPOS.md](REFERENCE_REPOS.md), "planet_mule (primary rule
-authority)", which points at `Shop.java` for store/auction state) for the
-reference matching/fallthrough behavior, and record the citation in
-[RULE_SOURCES.md](RULE_SOURCES.md) once the fix lands.
-
-Verify: add an engine unit test that seats an insolvent bidder above a
-solvent second bidder (and above the store's standing bid) in the same
-auction tick, and assert the solvent trade still executes. Then
-re-strengthen `tests/test_auction_termination.mjs`'s third case ("a
-sold-out seller with no store stock terminates instead of spinning",
-`tests/test_auction_termination.mjs:144-164`) from its current
-termination-only assertion (`trades.length >= 1`, line 163) back to an
-exact expected trade count, since the weakening was a direct symptom of
-this bug (see the comment at lines 160-162 and `docs/CHANGELOG.md`
-2026-07-09 Patch 9 fix-round entry).
+Fixed by M1 (WP-1B, 2026-07-10). `bestBid`/`bestAsk` were replaced with
+ranked offer lists and `resolveTrade` now walks them until it finds a
+crossed solvent pair, so an insolvent best-priced bidder no longer blocks
+a lower solvent bidder or the store's standing offer; the store's limited
+stock is the natural seller-out-of-goods fallback. The
+`tests/test_auction_termination.mjs` third case was re-strengthened from
+`trades.length >= 1` back to an exact trade count, and
+`tests/test_auction_solvent_fallthrough.mjs` pins the buyer- and
+seller-side traversal. The dead-auction-window rate was re-measured at 100
+seeds/mode (0.7% beginner, 0.8% standard, gate < 0.2), and the traversal
+citation landed in [RULE_SOURCES.md](RULE_SOURCES.md). See
+`docs/CHANGELOG.md` 2026-07-10 (WP-1A/WP-1B/WP-1C/WP-1D).
 
 ### Town interaction model diverges from the NES M.U.L.E. target -- shipped
 
@@ -107,39 +96,31 @@ funds. All of it has shipped: collision, the walk-in trigger, and the
 corral purchase modal (`src/ui/solid/corral_purchase_panel.tsx`). See
 `docs/CHANGELOG.md` 2026-07-10 (WP-3A/WP-3B/WP-3C/WP-3D, WP-4A/WP-4B/WP-4C).
 
-### Walker gaps: hunt_wampus/assay_plot develop plans have no spatial executor
+### Walker harness: deterministic stall at 320 px/s (harness, not game)
 
-Symptom: when the develop AI proposes a `hunt_wampus` or `assay_plot`
-plan, the E2E walkthrough harness does not execute it spatially; it logs
-the skip and ends the turn instead. This was an agreed fallback during the
-walkthrough-harness plan, not an accidental gap.
+Symptom: after the WP-2A walk-speed raise (`WALKER_SPEED_PX_PER_SEC` 80 to
+320, `src/ui/scenes/walker.ts:60`), the walkthrough sweep stalls
+deterministically on seeds 1 and 3 at the counter-smithore door, logged as
+"town avatar left the street." Seed 7 passes both modes. This is a
+walker-harness artifact, not a product bug: the seek/gesture constants
+(`WALK_TAP_MS`, overshoot correction in
+`tests/e2e/walkthrough_helpers.mjs`) were tuned for the old 80 px/s speed
+and were never retuned for 320. On this evidence the user demoted the
+sweep from a release gate to a diagnostic (2026-07-10, "the deterministic
+walker is suspect, do not keep as a gate").
 
-Evidence: `skipOpportunisticDevelopPlan`
-(`tests/e2e/e2e_walkthrough.mjs:383-390`) logs `"develop plan ... is
-opportunistic with no spatial executor yet; ending the turn"` and calls
-`endDevelopTurn`. `executeDevelopPlan`'s dispatch table
-(`tests/e2e/e2e_walkthrough.mjs:431-441`) routes both `hunt_wampus` and
-`assay_plot` (lines 438-439) to that skip function, unlike `buy_mule`,
-`outfit_mule`, `place_mule`, and `gamble_pub`, which each have a real
-spatial executor. Recorded follow-up: `docs/TODO.md` ("Developer and
-testing" section, last bullet).
+Suggested approach: root-cause the seed-1/3 counter-smithore stall, then
+add speed-aware tap sizing so the tap length scales with
+`WALKER_SPEED_PX_PER_SEC` instead of being a fixed 120ms. See
+[active_plans/decisions/sweep_gate_demotion.md](active_plans/decisions/sweep_gate_demotion.md)
+and `docs/TODO.md` ("Developer and testing").
 
-Suggested approach: implement spatial executors for both plan kinds
-(walking the avatar to the wampus/plot location and firing the matching
-interaction), matching the pattern of the existing `executePlaceMule`/
-`executeOutfitMule` executors in `tests/e2e/walkthrough_town.mjs` and
-`tests/e2e/walkthrough_overworld.mjs`. This is currently a "nice to have,
-not urgent" item: the deterministic wampus/assay-plot coverage the
-walker's sweep otherwise cannot reach already lives in dedicated
-`tests/playwright/` specs, so only implement the spatial executors if
-sweep placement/coverage thins in a future run.
-
-Verify: run the sweep (`tests/e2e/e2e_walkthrough_sweep.mjs`) and confirm
-`plansAttempted`/`plansCompleted` counters (see
-`tests/e2e/e2e_walkthrough.mjs`'s `report.counters`) include completed
-`hunt_wampus`/`assay_plot` plans rather than only skip-and-end-turn
-entries; also add unit coverage in `tests/test_walkthrough_plan_exec.mjs`
-for the new executors.
+Note: the older "hunt_wampus/assay_plot have no spatial executor" gap
+shipped in M8 (WP-8B, 2026-07-10): `executeHuntWampus`/`executeAssayPlot`/
+`executeArmAssay` replaced the log-and-end fallback and
+`skipOpportunisticDevelopPlan` was removed. WP-8C's sweep-counter
+natural-occurrence proof for those executors is deferred with the sweep
+demotion (a forced-plan hook, recorded in `docs/TODO.md`).
 
 ### Characterized behaviors: not bugs
 

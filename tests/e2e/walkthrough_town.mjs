@@ -50,6 +50,7 @@
 
 import {
   TOWN_AVATAR,
+  WALK_BACK_TAP_MS,
   walkTo,
   walkTownAvatarToDoor,
   walkTownAvatarNorthUntil,
@@ -58,6 +59,8 @@ import {
   readGameState,
   parseTranslateY,
 } from "./walkthrough_helpers.mjs";
+import { TOWN_STREET_TOP_Y } from "../../src/ui/scenes/town_layout.ts";
+import { TOWN_CELL_PX } from "../../src/ui/scenes/zones.ts";
 
 //============================================
 // Door mapping (pure; unit-tested without a browser).
@@ -344,11 +347,18 @@ async function readTownAvatarY(page) {
   return parseTranslateY(await handle.getAttribute("transform"));
 }
 
-// Slack (town pixel units) applied to the recorded street y when checking
-// walkBackToStreet's arrival: floating-point frame timing can land the
-// avatar a fraction of a pixel off its exact pre-walk-in y, so an exact
-// equality would spuriously fail.
-const STREET_Y_SLACK_PX = 1;
+// The y (town pixels) the walk-back aims the avatar at: the street row's
+// vertical center, derived from the same town geometry the scene renders. This
+// is an ABSOLUTE anchor, not the avatar's pre-walk-in y: seeking back to a fresh
+// per-door recorded y let the landing drift a little further south each door
+// (each walk-back stops at the first tap past its target, so the next door's
+// recorded target sat lower again) until a tap finally overshot the row's south
+// edge and the following exit/seek stalled off the street. Aiming every
+// walk-back at the fixed row center instead keeps the avatar on a stable street
+// line across an unbounded chain of doors. The center clears the building south
+// wall (TOWN_STREET_TOP_Y + TOWN_AVATAR_RADIUS) with room to spare, so the next
+// horizontal seek is never wall-blocked.
+const STREET_ROW_CENTER_Y = TOWN_STREET_TOP_Y + TOWN_CELL_PX / 2;
 
 //============================================
 /**
@@ -364,36 +374,35 @@ const STREET_Y_SLACK_PX = 1;
  * reads `door` for the whole street-row cell height (townDoorRect spans the
  * full cell), which includes the doorway interior just north of the actual
  * walkable street line -- declaring arrival there let a caller resume a
- * horizontal seek from a y the wall geometry still treats as blocked
- * (the counter-smithore stall this replaced: walkBackToStreet used to report
- * arrival with zero ArrowDown taps). streetY is the avatar's own y
- * immediately before the north walk-in began -- self-calibrating, since the
- * horizontal door seek that got the avatar there had already succeeded on
- * the real walkable street line, so no geometry constant is hardcoded here.
+ * horizontal seek from a y the wall geometry still treats as blocked (the
+ * counter-smithore stall this replaced: walkBackToStreet used to report arrival
+ * with zero ArrowDown taps). The target is the fixed STREET_ROW_CENTER_Y, so
+ * repeated door visits never drift the avatar south off the row.
  *
  * @param page - The Playwright page.
  * @param report - The walk report; a stuck-north avatar is reported here.
  * @param door - The door whose column the avatar is returning through (used
  *   only for the failure message; arrival no longer reads data-at-door).
  * @param walkOptions - `{ budget?, tapMs? }` overrides (may be empty).
- * @param streetY - The avatar's y on the street immediately before the
- *   north walk-in, recorded by the caller.
- * @returns True once the avatar's y is back at/below streetY, false on
+ * @returns True once the avatar's y is back at/south of the row center, false on
  *   stall/budget.
  */
-async function walkBackToStreet(page, report, door, walkOptions, streetY) {
+async function walkBackToStreet(page, report, door, walkOptions) {
   return walkTo(
     page,
     TOWN_AVATAR,
     async (p) => {
       const y = await readTownAvatarY(p);
-      return y !== null && y >= streetY - STREET_Y_SLACK_PX;
+      return y !== null && y >= STREET_ROW_CENTER_Y;
     },
     "ArrowDown",
     undefined,
     {
       report,
-      tapMs: walkOptions.tapMs,
+      // Smaller than the horizontal seek's tap so one southward step lands the
+      // avatar inside the street row instead of sailing clear past it (see
+      // WALK_BACK_TAP_MS); an explicit override still wins for tests.
+      tapMs: walkOptions.tapMs ?? WALK_BACK_TAP_MS,
       failureMessage: `town avatar never returned to the street after using the ${door} door`,
     },
   );
@@ -447,10 +456,6 @@ export async function executeBuyMule(page, report, rawDeps) {
   if (!(await waitForDoorOpen(page, report, door, deps))) {
     return false;
   }
-  // Record the avatar's street y before crossing into the doorway, so the
-  // eventual walkBackToStreet call has a real clear-of-wall position to
-  // return to (see its doc comment).
-  const streetY = await readTownAvatarY(page);
   // Walk north into the corral doorway and wait for the purchase panel to
   // mount -- it always opens on walk-in, so a stall here means the walk
   // never crossed the entry line, not that a buy was rejected.
@@ -499,7 +504,7 @@ export async function executeBuyMule(page, report, rawDeps) {
     report.fail("act_did_not_advance", "corral purchase panel never closed after buying");
     return false;
   }
-  return walkBackToStreet(page, report, door, deps.walk, streetY);
+  return walkBackToStreet(page, report, door, deps.walk);
 }
 
 //============================================
@@ -532,9 +537,6 @@ export async function executeOutfitMule(page, report, rawDeps, resource) {
   if (!(await waitForDoorOpen(page, report, door, deps))) {
     return false;
   }
-  // Record the avatar's street y before crossing into the doorway (see
-  // walkBackToStreet's doc comment for why).
-  const streetY = await readTownAvatarY(page);
   // Walk north into the counter podium, then poll the projection until
   // carriedMule reflects the resource. A no-op outfit (no M.U.L.E. in tow,
   // already outfitted, or out of money) never reaches the resource -- the
@@ -553,7 +555,7 @@ export async function executeOutfitMule(page, report, rawDeps, resource) {
     );
     return false;
   }
-  return walkBackToStreet(page, report, door, deps.walk, streetY);
+  return walkBackToStreet(page, report, door, deps.walk);
 }
 
 //============================================
@@ -668,9 +670,6 @@ export async function executeArmAssay(page, report, rawDeps) {
   if (!(await waitForDoorOpen(page, report, door, deps))) {
     return false;
   }
-  // Record the avatar's street y before crossing into the doorway (see
-  // walkBackToStreet's doc comment for why).
-  const streetY = await readTownAvatarY(page);
   // Walk north into the assay doorway, then poll the notice text until it
   // reads the armed string. A no-op walk-in (already armed, or some future
   // gating this executor does not yet know about) never reaches it -- the
@@ -689,5 +688,5 @@ export async function executeArmAssay(page, report, rawDeps) {
     );
     return false;
   }
-  return walkBackToStreet(page, report, door, deps.walk, streetY);
+  return walkBackToStreet(page, report, door, deps.walk);
 }

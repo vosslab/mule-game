@@ -4,6 +4,31 @@
 
 ### Additions and New Features
 
+- Docs: new `docs/SCREEN_FLOWCHART.md` and `docs/SCREEN_DESIGNS.md` map the
+  game's screen flow and per-screen content across three references -- the 1983
+  original (Kroah disassembly writeup + `MULE-Disassembled_Memory.asm`, whose
+  `round:` driver is the authoritative state machine), the 1990 NES port
+  (studied from screenshots), and 2011 Planet M.U.L.E. (decompiled Java
+  `controller/phase/*` + `view/*Painter` classes). `SCREEN_FLOWCHART.md` gives
+  the whole-game and per-round flow (ASCII plus a Mermaid round-loop graph) and
+  a transition-trigger table; `SCREEN_DESIGNS.md` is a screen-by-screen
+  compare-and-contrast plus a "Shared visual vocabulary" section framed around the
+  information each element conveys (identity tokens, resource emblems, price axis,
+  store rails, time bar, persistent HUD, map glyphs) and a use-of-space and scale
+  analysis: no wasted screen space, the colonist token about a quarter of a land
+  tile, and scale chosen per screen (town looms, map surveys, auction abstracts).
+  The dedicated auction walkthrough matches the captured NES/Planet frames to
+  `mule_rules.md` with labeled ASCII anatomies of the status and floor screens,
+  the three auction stages (status accounting -> binary buyer/seller declaration
+  -> real-time floor), the walk mechanic (seller high walking price down, buyer
+  low walking bid up, unit-by-unit accelerating transactions, exit conditions,
+  collusion), and the store's role in price formation (guaranteed counterparty
+  bounding the band, intermediary that only resells what it bought, round-to-round
+  repricing on scarcity). Confirmed the auction is a vertical price axis in all
+  three (buyers rise, sellers fall, trade where lines meet); our repo's horizontal
+  track is the deliberate departure. Reference
+  screenshots are copyrighted, so they are linked to external sources
+  (c64-wiki, MobyGames, carpeludum) rather than committed.
 - UI (Patch 5, WP-3A): town interior now has solid building collision -- new
   `src/ui/scenes/town_layout.ts` is the single source of truth for building
   footprints and doorway gaps, consumed by both the renderer and a new
@@ -51,6 +76,27 @@
   cqw/cqh. Implementation bug caught during development: `justPurchased` had
   to be a `createSignal` set before dispatch -- a plain `let` let the outcome
   memo recompute too early and showed the wrong panel state.
+- Testing (Patch 50, WP-8B): `hunt_wampus` and `assay_plot` develop plans now
+  execute spatially instead of logging and ending the turn --
+  `executeHuntWampus`/`executeAssayPlot` (`tests/e2e/walkthrough_overworld.mjs`)
+  walk the avatar to the wampus or target plot and press the action key
+  within budget; `executeArmAssay` (`tests/e2e/walkthrough_town.mjs`) drives
+  the town-side assay-office arming leg as a walk-in-trigger door use;
+  `e2e_walkthrough.mjs` gained `executeHuntWampusFromTown`/
+  `executeAssayPlotFromTown` orchestration wrappers that own the
+  town-to-overworld transition for each plan. `skipOpportunisticDevelopPlan`
+  is removed -- no develop-plan kind is skipped anymore -- and the turn loop
+  no longer force-ends after an opportunistic plan (only `end_turn` or
+  `gamble_pub` end the turn now, matching the strategy layer's actual
+  intent). The hunt_wampus wampus-blink race (the creature can despawn
+  between plan decision and execution) is downgraded from a run failure to a
+  re-decide, since it is a legitimate timing window rather than a walker
+  bug. `walkBackToStreet`'s arrival check converted from the coarse
+  `data-at-door` cell rect to a positional street-y predicate (the coarse
+  check let the avatar stop short of the actual street row); `executeBuyMule`
+  converted to drive the corral panel's confirm gesture (WP-4A/4B) instead of
+  the retired direct-buy path. Reviewer PASS; 507/507 unit tests including
+  new y-tracking gesture fakes.
 
 ### Behavior or Interface Changes
 
@@ -189,6 +235,11 @@
 
 ### Decisions and Failures
 
+- Docs: the user rejected an agent-proposed "Visual acceptance is a
+  side-by-side against the planet_mule painter" review rule as unapproved
+  ("I did not approve that rule, remove it"); the entry is removed from
+  `docs/HUMAN_GUIDANCE.md`. The approved standing guidance is unchanged:
+  visual style follows Planet M.U.L.E.
 - UI (WP-5A / M5): discovery that changed the design -- the pre-stage layout
   never actually fit HUD+board+panel in the viewport on big-panel phases; it
   overflowed by ~56px and relied on `#screen-game` scrolling. Inside a fixed
@@ -222,6 +273,38 @@
   stalled against a wall jamb (deterministic, reproduced on 4 of 6 seed/mode
   combos). Fix in flight at the walker layer (a positional street-y
   predicate replacing the `data-at-door` check); tracked under M8.
+- Testing (USER DECISION, WP-8B/M2/M8 closure): "the deterministic walker is
+  suspect, do not keep as a gate" -- the walkthrough sweep
+  (`tests/e2e/e2e_walkthrough_sweep.mjs`) is demoted from a release gate to a
+  diagnostic. After the WP-2A speed change (80 to 320 px/s), the sweep's
+  earlier scattered non-deterministic stalls became a deterministic stall on
+  seeds 1 and 3 at the counter-smithore door ("town avatar left the street"),
+  suspected to be a walker-harness artifact -- the seek/gesture constants
+  (`WALK_TAP_MS`, overshoot correction) were tuned against the old 80 px/s
+  speed and have not been retuned for 320, which WP-2A's audit doc already
+  flagged as a follow-on. Seed 7 passes both modes. M2 and M8 close on unit
+  suite (`check_codebase.sh` 5/5, 507/507 units), Playwright suite (78 pass +
+  1 known parallel-load flake), `e2e_run_all` 4/5, and the WP-2A calibration
+  evidence table instead of the sweep; the sweep sits at 2/6 with root-cause
+  diagnosis continuing as a non-blocking follow-up (see `docs/TODO.md`
+  "Developer and testing").
+- Docs (Patch 25, WP-D1): the bug-fixes and UI-fixes plan is CLOSED. All eight
+  milestones M1-M8 are done (M2 and M8 closed under the recorded sweep-gate
+  demotion above, see
+  `docs/active_plans/decisions/sweep_gate_demotion.md`). `docs/HUMAN_GUIDANCE.md`
+  kept the verified source-of-truth-hierarchy and town-interaction entries; a
+  close-out agent's proposed "Visual acceptance is a side-by-side against the
+  planet_mule painter" entry (from the 2026-07-10 "polish a turd" escalation)
+  was not user-approved and was removed (see the 2026-07-10 Decisions and
+  Failures entry below). Final consistency
+  sweep across `docs/ROADMAP.md`, `docs/TODO.md`, and `docs/WALKTHROUGH_GUIDE.md`
+  closed the fixed known-bug entries (auction fallthrough, town gaps, walker
+  executors) and refreshed the walker executor descriptions. Three deferred,
+  user-requested addenda are filed as ROADMAP near-term entries, not part of
+  this plan's closure: goods-auction rebuild to the `AuctionPainter`
+  composition, town rework to the NES/planet_mule walk-into-buildings entry
+  model, and a species + color selection screen. The tracker moved from
+  `docs/active_plans/active/` to `docs/archive/bug_fixes_ui_fixes_plan.md`.
 
 ### Developer Tests and Notes
 
@@ -298,6 +381,16 @@
   the full-panel phase (94%/84% coverage). No dead-margin pathology and no
   threshold-chasing artifacts found; three non-blocking polish candidates
   recorded (see `docs/TODO.md`).
+- Testing (Patch 51, WP-8C disposition): executor unit coverage is complete
+  -- 20/20 `tests/e2e/walkthrough_overworld.mjs`-side tests including
+  catch/reveal verification, budget-exhaust, and the hunt_wampus blink-race
+  re-decide; 13/13 town-side tests covering `executeArmAssay`. The
+  sweep-counter/single-seed natural-occurrence proof (identifying one
+  seed/mode per plan kind that reliably produces `hunt_wampus`/`assay_plot`)
+  is deferred alongside the sweep gate demotion recorded above; a
+  forced-plan-hook follow-up (strategy-layer only, so it drives the same
+  production dispatch/executor path as a naturally generated plan) is
+  recorded in `docs/TODO.md`.
 
 ## 2026-07-09
 

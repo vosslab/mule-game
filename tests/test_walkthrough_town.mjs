@@ -78,13 +78,14 @@ function fakePage(state, onAction) {
         return fakeHandle(() => ({
           "data-at-door": state.atDoor,
           "data-carrying": state.carrying,
-          // Fixed street y: this fake never models a real north/south
-          // depth, so walkBackToStreet's positional check reads the same
-          // recorded streetY it captured moments earlier and arrives on the
-          // first check -- exercising the outcome-verification logic this
-          // fake targets, not real door geometry (movingTownPage below
-          // covers that).
-          transform: "translate(96 149.312)",
+          // Fixed street y at (or south of) the row center walkBackToStreet
+          // aims for: this fake never models a real north/south depth, so the
+          // walk-back's positional check passes on its first read and arrives
+          // with zero ArrowDown taps -- exercising the outcome-verification
+          // logic this fake targets, not real door geometry (movingTownPage
+          // below covers that). 176 mirrors a real in-row street landing, well
+          // south of the doorway line and south of STREET_ROW_CENTER_Y (160).
+          transform: "translate(96 176)",
         }));
       }
       if (selector === "[data-pub-banner]") {
@@ -486,8 +487,10 @@ test("executeOutfitMule's walk-back presses real ArrowDown taps to a positional 
   // walk, not a coarse-check false positive.
   assert.equal(state.presses.filter((p) => p === "ArrowUp").length, 3);
   assert.ok(state.presses.filter((p) => p === "ArrowDown").length >= 1);
-  // The avatar's own y ends back at (or south of) the street y it started
-  // from (0) -- the real positional criterion walkBackToStreet checks.
+  // The walk-back drives the avatar south past its northward doorway y to the
+  // fixed street-row center it now targets, so its own y ends back on the
+  // positive (street) side of the origin -- the real positional criterion
+  // walkBackToStreet checks, not a coarse cell-arrival false positive.
   assert.ok(state.y >= 0);
 });
 

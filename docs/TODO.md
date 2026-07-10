@@ -16,20 +16,17 @@ Backlog scratchpad for small tasks without timelines. See
   dead-window 0.0%, dead-land 0.1% (`docs/RULE_SOURCES.md`, "Colony land
   auction: pricing, bidding, tie-break (WS-E-land)", M10 rank-aware
   land-bid-dampening entry).
-- Add a seller-out-of-goods store fallback: when a human or AI seller runs
-  out of a good mid-auction, decide whether the store should step in as a
-  fallback counterparty rather than leaving the window to time out.
-- Root cause found by the walkthrough-harness work: `bestBid`
-  (`src/engine/auction.ts:426`) and `bestAsk` (`src/engine/auction.ts:455`)
-  each select a single best offer, and `resolveTrade`
-  (`src/engine/auction.ts:663`) does not fall through to the next-best
-  solvent participant, so an insolvent top bidder blocks solvent lower
-  bidders and the store's own bid from trading. This is the "limited trade
-  count" quirk `tests/test_auction_termination.mjs` pins around but does not
-  fix. See [docs/CHANGELOG.md](CHANGELOG.md) (2026-07-09, Decisions and
-  Failures, walkthrough-harness Patch 9 fix round) for the full detail, and
-  [ROADMAP.md](ROADMAP.md) "Known bugs and gaps" for the full writeup with
-  verified line numbers and a suggested fix approach.
+- Shipped (M1, WP-1B, 2026-07-10): the insolvent-top-bidder fallthrough fix
+  and the seller-out-of-goods store fallback. `bestBid`/`bestAsk` now return
+  ranked offer lists and `resolveTrade` walks them until a crossed solvent
+  pair executes, so an insolvent top bidder no longer blocks a lower solvent
+  bidder or the store's standing offer; the store's limited stock is the
+  natural seller-out-of-goods fallback (no separate mechanism needed). The
+  `tests/test_auction_termination.mjs` third case was re-strengthened to an
+  exact trade count and `tests/test_auction_solvent_fallthrough.mjs` pins the
+  buyer- and seller-side traversal. See
+  [docs/CHANGELOG.md](CHANGELOG.md) 2026-07-10 (WP-1A/WP-1B/WP-1C/WP-1D) and
+  [RULE_SOURCES.md](RULE_SOURCES.md) for the traversal citation.
 
 ## Economy fidelity
 
@@ -44,6 +41,25 @@ develop-phase tick budget that scales per round rather than staying fixed
 planet_mule's decompiled source showed the real per-player develop timer is
 food-scaled, not money-scaled as originally guessed here. Every economy item
 from the original future-fidelity list has shipped.
+
+### Rule fidelity backlog (from planet_mule manual excerpts, user-posted 2026-07-10)
+
+- Mule REFIT: refitting a mule (swapping its installed outfit for a
+  different one) pays or refunds the outfit-cost difference rather than
+  charging the full new-outfit price again.
+- Mule EXCHANGE: swap a carried mule with the mule already installed on an
+  occupied plot via the action press on that plot.
+- Mule SELL: sell a mule back at the corral for cash, recovering the
+  outfitting cost as well as the base mule price.
+- Outfitting kiosk order: the outfit-selection kiosk lists options in the
+  order crystite, smithore, energy, food.
+- Each item needs verification against the 1983/1990 rule documents
+  (`OTHER_REPOS/mule_rules.md`, `OTHER_REPOS/mule_document.html`) before
+  implementation, per the authority hierarchy recorded in
+  `docs/HUMAN_GUIDANCE.md` (rules follow the 1983/1990 documents; planet_mule
+  is a visual-style and implementation-idea reference, subordinate on
+  mechanics questions). Verified formulas land in
+  [docs/RULE_SOURCES.md](RULE_SOURCES.md).
 
 ## Gambling
 
@@ -121,7 +137,7 @@ timing, transfer (WS-E-auction)" for the updated figures.
   WP-3D spec coverage). The corral/store purchase screen has since shipped
   too; see the "Shipped: add a dedicated corral/store purchase interaction
   screen" bullet above (M4 closed in
-  `docs/active_plans/active/bug_fixes_ui_fixes_plan.md`).
+  `docs/archive/bug_fixes_ui_fixes_plan.md`).
 
 ## Developer and testing
 
@@ -131,8 +147,26 @@ timing, transfer (WS-E-auction)" for the updated figures.
   duplicate about 60 lines of parallel halving/stall logic. Also align
   `tests/e2e/e2e_walk_calibration.mjs`'s locally redefined `MAX_WALK_TAPS`
   with the helpers' constant instead of keeping a second copy.
-- Walker follow-up: `hunt_wampus`/`assay_plot` develop plans currently
-  log-and-end-turn (an agreed fallback, since there is no spatial executor
-  for them yet); implement executors if sweep placement coverage ever
-  thins. See [ROADMAP.md](ROADMAP.md) "Known bugs and gaps" for the full
-  writeup.
+  Shipped: `seekAvatarToTarget` shared core landed WP-8A (2026-07-10).
+- Shipped: `hunt_wampus`/`assay_plot` develop plans now execute spatially
+  (`executeHuntWampus`/`executeAssayPlot` in
+  `tests/e2e/walkthrough_overworld.mjs`, `executeArmAssay` in
+  `walkthrough_town.mjs`), replacing the earlier log-and-end-turn fallback.
+  See `docs/CHANGELOG.md` 2026-07-10 (Patch 50, WP-8B).
+- Walker-harness deterministic stall at `WALKER_SPEED_PX_PER_SEC = 320`:
+  seeds 1 and 3 of the walkthrough sweep now stall deterministically at the
+  counter-smithore door ("town avatar left the street"), suspected to be a
+  walker-harness artifact -- the seek/gesture constants (`WALK_TAP_MS`,
+  overshoot correction) were tuned against the old 80 px/s speed and were
+  never retuned for 320 (flagged as a follow-on by WP-2A's audit doc). Needs
+  root-cause diagnosis plus speed-aware tap sizing; diagnostic in flight. See
+  `docs/CHANGELOG.md` 2026-07-10, Decisions and Failures (USER DECISION,
+  sweep gate demotion) and
+  [docs/active_plans/decisions/sweep_gate_demotion.md](active_plans/decisions/sweep_gate_demotion.md).
+- WP-8C deferred evidence: once the walker-harness stall above is resolved,
+  add a forced-plan hook to the harness's develop-plan strategy layer (not
+  the executor/dispatch layer) so `hunt_wampus`/`assay_plot` executors are
+  provably exercised by the sweep counter check, rather than relying on
+  natural single-seed occurrence. The hook must drive the identical
+  production dispatch-table entry and executor code as a naturally
+  generated plan -- it may only override which plan the strategy proposes.

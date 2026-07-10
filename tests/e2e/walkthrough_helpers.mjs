@@ -18,6 +18,8 @@ import { execFileSync } from "node:child_process";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import { WALKER_SPEED_PX_PER_SEC } from "../../src/ui/scenes/walker.ts";
+import { TOWN_CELL_PX } from "../../src/ui/scenes/zones.ts";
 
 //============================================
 // Realtime-walk calibration constants.
@@ -44,11 +46,65 @@ import path from "node:path";
 export const WALKER_SPEED = 4;
 
 /**
- * Real-ms hold duration of one bounded walk tap. Each tap holds an arrow key
- * this long, releases, then re-checks the avatar's door, so a slow attribute
- * read can never let the avatar sail past a door untouched.
+ * The avatar's effective on-screen speed (town pixels per second) during a
+ * walkthrough run: the scene's base land speed scaled by the `?speed=`
+ * multiplier the harness drives at. Deriving the tap hold durations below from
+ * this keeps per-tap TRAVEL constant when WALKER_SPEED_PX_PER_SEC is retuned --
+ * raising the base speed (WP-2A raised it 80 -> 320) shortens the hold instead
+ * of quadrupling the distance each tap covers.
  */
-export const WALK_TAP_MS = 120;
+const EFFECTIVE_WALK_SPEED_PX_PER_SEC = WALKER_SPEED_PX_PER_SEC * WALKER_SPEED;
+
+/**
+ * Floor (real-ms) every derived tap hold clamps up to, so even at a high base
+ * speed a tap still holds the key long enough for a headless rAF frame to sample
+ * it and move the avatar. Below this a sub-frame tap can be pressed and released
+ * between frames and never move at all. A rare zero-move tap is still absorbed by
+ * the loop (every tap is re-checked and re-tapped up to STALL_TAPS times), so
+ * this floor only needs to make movement the common case, not guarantee it.
+ */
+const FRAME_SAFE_TAP_MS = 20;
+
+//============================================
+/**
+ * Convert a desired per-tap TRAVEL distance (town pixels) into an arrow-key hold
+ * duration (real ms) at the current effective walk speed, clamped up to the
+ * frame-safe floor. This is the single speed-aware seam the tap constants share
+ * so no raw millisecond magic number encodes an assumed walk speed.
+ *
+ * @param stepPx - The desired per-tap travel distance in town pixels.
+ * @returns The hold duration in real milliseconds.
+ */
+function tapMsForStepPx(stepPx) {
+  const ms = Math.round((stepPx / EFFECTIVE_WALK_SPEED_PX_PER_SEC) * 1000);
+  return Math.max(FRAME_SAFE_TAP_MS, ms);
+}
+
+/**
+ * Real-ms hold duration of one bounded walk tap, derived so each tap travels
+ * about half a street cell. Sub-cell travel is the safety invariant: a single
+ * tap can never leap clear across a target door's cell (arrival is the coarse
+ * per-cell data-at-door read, so a tap that jumped the whole cell would sail
+ * past the door into the edge exit beyond it before the seek could react), and
+ * a walk-back-to-street tap lands inside the street row instead of overshooting
+ * to the far south/north edge. At the fixed 120ms this constant used before
+ * WP-8A, the WP-2A speed raise had grown one tap to ~2.4 cells, which is exactly
+ * how the town avatar sailed off the street into an edge exit.
+ */
+export const WALK_TAP_MS = tapMsForStepPx(TOWN_CELL_PX / 2);
+
+/**
+ * Real-ms hold for a walk-back-to-street tap (walkBackToStreet), derived so each
+ * tap travels about a quarter of a street cell -- half the seek step. The
+ * walk-back nudges the avatar south out of a doorway back onto the street row,
+ * and stops at the first tap that clears the building wall line, so its tap must
+ * be small enough that a single step cannot carry the avatar clear past the
+ * street row's south edge (a larger step lands it in the open ground south of
+ * the row, where data-at-door no longer reads and the next horizontal seek
+ * stalls, or -- in the store's central bay column -- straight into the south
+ * edge exit).
+ */
+export const WALK_BACK_TAP_MS = tapMsForStepPx(TOWN_CELL_PX / 4);
 
 /**
  * Wall-clock budget for a single walker act (walk-to-door, enter/exit town,
@@ -511,21 +567,21 @@ export const MAX_WALK_TAPS = 60;
 
 /**
  * Consecutive taps with an unchanged avatar snapshot that classify a walk as
- * stalled. Eight taps at WALK_TAP_MS is roughly a second of zero movement --
- * long enough that a slow attribute read never trips it, short enough that a
+ * stalled. Several taps of zero movement -- long enough that a slow attribute
+ * read or a lone frame-starved short tap never trips it, short enough that a
  * genuinely stuck walk ends quickly instead of burning the whole tap budget.
  */
 const STALL_TAPS = 8;
 
 /**
- * Real-ms floor a walk tap shrinks to when correcting an overshoot (see
- * walkTownAvatarToDoor). Small enough that even the fast default speed steps
- * well under one street cell so the correction can land inside the target
- * door's cell, yet large enough that a headless rAF frame still samples the
- * held key (a sub-frame tap can be pressed and released between frames and
- * never move the avatar).
+ * Real-ms hold a walk tap halves down to when correcting an overshoot (see
+ * seekAvatarToTarget). Derived for about a quarter-cell of travel so the
+ * correction lands inside the target door's cell, and (like every derived tap)
+ * clamped up to the frame-safe floor so the halving can never shrink a
+ * correction below a tap that still moves the avatar. Sharing the speed-aware
+ * seam keeps it in step with WALK_TAP_MS if the base speed is retuned again.
  */
-const MIN_WALK_TAP_MS = 40;
+const MIN_WALK_TAP_MS = tapMsForStepPx(TOWN_CELL_PX / 4);
 
 //============================================
 /**

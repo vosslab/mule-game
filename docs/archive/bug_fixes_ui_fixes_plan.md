@@ -8,7 +8,7 @@
 | WP-1B | completed | ranked matcher landed; reviewer PASS 2026-07-10; RULE_SOURCES traversal subsection added |
 | WP-1C | completed | 6 fallthrough cases + exact-count re-strengthening; reviewer PASS 2026-07-10; suite 486/486 |
 | WP-1D | completed | dead-window 0.7%/0.8% at 100 seeds/mode, gate holds; TODO+RULE_SOURCES figures refreshed |
-| WP-2A | pending | Calibrate walker speed |
+| WP-2A | completed | `WALKER_SPEED_PX_PER_SEC` 80->320; reviewer PASS; audit doc `mule_trip_timing.md` status Applied; M2 closed on calibration evidence + unit/e2e gates, sweep demoted per USER DECISION (see `docs/active_plans/decisions/sweep_gate_demotion.md`) |
 | WP-3A | completed | collision + town_layout.ts source of truth; reviewer PASS 2026-07-10; 8/8 unit + town spec 3/3 at review time |
 | WP-3B | completed | door-opens-on-approach + walk-in trigger landed; reviewer PASS; Enter/Space door-entry removed |
 | WP-3C | completed | walker town executors converted to walk-in-trigger; reviewer PASS; 133/133 unit tests, e2e_run_all 5/5, sweep 6/6 |
@@ -27,9 +27,9 @@
 | WP-7E | completed | scoring panel merged rule, 94cqw / 84cqh; reviewer PASS; new parametrized containment test in scoring_screen.spec.mjs |
 | WP-7F | completed | Phase-panel visual acceptance ACCEPTED across all four panels x 2 viewports; report filed |
 | WP-8A | completed | Extract shared seek core and dedupe MAX_WALK_TAPS. 133/133 walkthrough unit tests green; reviewer PASS 2026-07-10; shared seekAvatarToTarget core in tests/e2e/walkthrough_helpers.mjs; MAX_WALK_TAPS single exported definition |
-| WP-8B | pending | hunt_wampus and assay_plot spatial executors |
-| WP-8C | pending | Executor unit coverage and sweep counter proof |
-| WP-D1 | in progress | Record standing guidance and own the doc close-out |
+| WP-8B | completed | hunt_wampus and assay_plot spatial executors landed (executeHuntWampus/executeAssayPlot/executeArmAssay); skipOpportunisticDevelopPlan removed; reviewer PASS; 507/507 units |
+| WP-8C | completed with deferral | Executor unit coverage complete (20/20 overworld, 13/13 town); sweep-counter/single-seed natural-occurrence proof deferred with the sweep gate demotion (USER DECISION); forced-plan-hook follow-up recorded in `docs/TODO.md` |
+| WP-D1 | completed | HUMAN_GUIDANCE entries verified (source-of-truth hierarchy, town interaction) plus new visual-acceptance-vs-painter entry; ROADMAP/TODO/WALKTHROUGH_GUIDE final consistency sweep; three deferred addenda filed as ROADMAP near-term; plan archived |
 
 ## Context
 
@@ -998,23 +998,37 @@ on tier 3. Broad suites are milestone gates, not per-iteration gates.
 ## Rollout and release checklist
 
 - [x] M1 closed: fallthrough tests green, sim re-verified, RULE_SOURCES cited.
-- [ ] M2 closed: calibrated speed applied, audit doc updated, sweep green.
+- [x] M2 closed: calibrated speed applied (320 px/s), audit doc updated to
+      Applied; sweep demoted to diagnostic per USER DECISION 2026-07-10
+      ("the deterministic walker is suspect, do not keep as a gate" -- see
+      `docs/active_plans/decisions/sweep_gate_demotion.md`); closed on
+      `check_codebase.sh` 5/5, Playwright 78+1-known-flake, `e2e_run_all`
+      4/5, and the WP-2A calibration evidence table instead.
 - [x] M3 closed: collision + door model live, walker converted, specs green, sweep green.
 - [x] M4 closed: purchase screen wired for all four outcomes, spec green.
 - [x] M5 closed: 16:10 stage container live, aspect assertions green, no spec regressions.
 - [x] M6 closed: landscape auction screen live, spec updated, visual acceptance filed.
 - [x] M7 closed: four panels full-canvas, specs green, visual acceptance filed.
-- [ ] M8 closed: seek core shared, executors live, sweep counters prove coverage.
-- [ ] Final full pass: `./check_codebase.sh`, `./run_playwright_tests.sh`,
-      `bash tests/e2e/e2e_run_all.sh`, sweep 6/6 green.
-- [ ] `docs/ROADMAP.md` and `docs/TODO.md` reflect every closed item; stale bullets removed.
-- [ ] Release cut intentionally NOT performed (out of scope; human decision).
+- [x] M8 closed: seek core shared, executors live; sweep-counter coverage
+      proof deferred with the sweep gate demotion (USER DECISION
+      2026-07-10) -- unit executor coverage (20/20 overworld, 13/13 town)
+      substitutes; forced-plan-hook follow-up recorded in `docs/TODO.md`.
+- [x] Final full pass (sweep demoted per USER DECISION 2026-07-10, see
+      `docs/active_plans/decisions/sweep_gate_demotion.md`):
+      `./check_codebase.sh` 5/5 GREEN (507/507 units); `./run_playwright_tests.sh`
+      78 pass + 1 known parallel-load flake; `bash tests/e2e/e2e_run_all.sh`
+      4/5 (`e2e_walkthrough` red, deterministic seed-1/3 stall, diagnostic
+      in flight); sweep 2/6 (not a release blocker under the demoted gate).
+- [x] `docs/ROADMAP.md` and `docs/TODO.md` reflect every closed item; stale bullets removed
+      (WP-D1 final consistency sweep, 2026-07-10).
+- [x] Release cut intentionally NOT performed (out of scope; human decision).
 
 ## Documentation close-out requirements
 
-- Active plan / progress tracker: copy this plan to
+- Active plan / progress tracker: copied to
   `docs/active_plans/active/bug_fixes_ui_fixes_plan.md` as the first execution patch (plan mode
-  forbids writing it now); track per-WP status inline; `git mv` to `docs/archive/` on closure.
+  forbids writing it now); per-WP status tracked inline; `git mv`'d to this
+  `docs/archive/bug_fixes_ui_fixes_plan.md` on closure (WP-D1, 2026-07-10).
 - docs/CHANGELOG.md entry: one bullet per patch under the day's heading, using "Patch N" labels,
   correct category sections; failures recorded under Decisions and Failures.
 - Archive / closure notes: WP-D1 owns the final consistency sweep across `docs/ROADMAP.md`
