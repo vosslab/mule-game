@@ -9,8 +9,8 @@ project decisions, not transient task notes; detailed history stays in
 
 ## Summary
 
-Visual style follow Planet M.U.L.E.
-Game rules follow 1983/1990 NES M.U.L.E. game
+modern Graphics follow Planet M.U.L.E.; but in general we want a unique modern look
+Game rules and screen layout follow 1983/1990 NES M.U.L.E. game
 User interaction is designed around mouse + arrow keys + enter key
 
 ## Rule fidelity targets game mechanics, not input devices
