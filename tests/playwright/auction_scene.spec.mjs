@@ -9,7 +9,8 @@
 //   - .auction-screen-role-button   (role choice; first is Buy)
 //   - .auction-track-svg            (the spatial arena)
 //   - .auction-avatar[data-actor]   (per-player species avatar group)
-//   - the group's data-role and per-frame data-y attributes
+//   - the group's data-role, per-frame data-x (moving price coordinate), and
+//     fixed data-y (lane) attributes
 //   - .auction-screen[data-reduced-motion]  (emulated-preference readback)
 //   - .auction-trade-layer[data-flash-count] (monotonic trade-animation counter)
 // Player 0 is always the human and always picks first in round 1
@@ -95,14 +96,27 @@ test("auction scene: held ArrowUp walks the human avatar and a trade animates", 
   const humanAvatar = page.locator('.auction-avatar[data-actor="player-0"]');
   await expect(humanAvatar).toHaveAttribute("data-role", "buyer");
 
-  // Holding ArrowUp pushes the human's price intent up; the avatar's derived y
-  // (written to data-y each frame) rises off its starting position.
-  const startY = await humanAvatar.getAttribute("data-y");
+  // A sitting-out participant parks at the sideline "line judge" spot, below
+  // both trading lanes (sidelineSpot in src/ui/solid/auction_screen.tsx hugs
+  // the bottom edge), so its fixed data-y reads higher than a trading avatar's
+  // lane data-y.
+  const outAvatar = page.locator('.auction-avatar[data-role="out"]');
+  await expect(outAvatar).toHaveCount(1);
+  const outY = Number(await outAvatar.getAttribute("data-y"));
+  const humanLaneY = Number(await humanAvatar.getAttribute("data-y"));
+  expect(outY).toBeGreaterThan(humanLaneY);
+
+  // Holding ArrowUp pushes the human's price intent up; on the landscape
+  // track price drives x, so the avatar's derived x (written to data-x each
+  // frame) rises off its starting position -- rightward, toward the
+  // store-sell end, since this human is the buyer (priceToX in
+  // src/ui/solid/auction_screen.tsx).
+  const startX = await humanAvatar.getAttribute("data-x");
   await page.keyboard.down("ArrowUp");
   await expect
-    .poll(async () => (await humanAvatar.getAttribute("data-y")) !== startY, {
+    .poll(async () => Number(await humanAvatar.getAttribute("data-x")) > Number(startX), {
       timeout: 15_000,
-      message: "human avatar data-y never changed while ArrowUp was held",
+      message: "human avatar data-x never moved rightward while ArrowUp was held",
     })
     .toBe(true);
 

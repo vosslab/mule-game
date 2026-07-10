@@ -82,18 +82,20 @@ export function LandGrantPanel(props: LandGrantPanelProps): JSX.Element {
           message="Watch the sweeping cursor -- press Enter (or click the highlighted plot) when it lands on the plot you want, or Pass."
         />
       </Show>
-      <p class="land-grant-hint">{hintText(picker())}</p>
-      <Show when={isHumanTurn()}>
-        <button
-          type="button"
-          id="land-grant-pass-button"
-          class="land-grant-button"
-          data-action="land-grant-pass"
-          onClick={passTurn}
-        >
-          Pass
-        </button>
-      </Show>
+      <div class="land-grant-status-row">
+        <p class="land-grant-hint">{hintText(picker())}</p>
+        <Show when={isHumanTurn()}>
+          <button
+            type="button"
+            id="land-grant-pass-button"
+            class="land-grant-button"
+            data-action="land-grant-pass"
+            onClick={passTurn}
+          >
+            Pass
+          </button>
+        </Show>
+      </div>
     </div>
   );
 }

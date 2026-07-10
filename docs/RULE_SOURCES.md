@@ -650,6 +650,57 @@ rate once dynamic prices (WS-E-prices) pushed live quotes past 100.
   its role mid-window. Buyers enter at the band floor walking up, sellers at the ceiling walking down,
   mirroring PM's `setBuyer` seating (`Player.java` lines 282-290: buyers below, sellers above).
 
+### Traversal and matching: ranked bids/asks, solvent fallthrough
+
+- **Chosen value (documented house rule):** each tick the matcher builds a ranked bid list (every
+  player buyer plus the store's standing buy offer, ordered by price descending then lowest playerId)
+  and a ranked ask list (every player seller plus the store's standing sell offer when `storeStock >=
+  1`, ordered by price ascending then lowest playerId), then scans bid-major/ask-minor for the first
+  pair that crosses (`bid.price >= ask.price`) and passes the solvency check (buyer can pay the ask
+  price, seller holds a unit), skipping any store-to-store pair. The executed pair maximizes bid price,
+  then minimizes ask price, then prefers the lowest playerIds, so it degenerates to the top-bid/top-ask
+  pair whenever that pair is itself solvent. A participant that fails the solvency check is removed from
+  the remainder of that tick's scan rather than blocking the market: an out-of-money buyer or
+  out-of-goods seller withdraws and the next eligible offer trades. One unit trades per tick, at the
+  seller's resting ask, as before. Implemented as `rankedBids`/`rankedAsks`/`selectTrade` in
+  `auction.ts` (replacing the earlier single-best-offer `bestBid`/`bestAsk` pair, whose one solvency
+  check let an insolvent top bidder block solvent lower bidders and the store's standing offer).
+- **No historical analogue (WP-1A evidence):** the 1983 rules (`OTHER_REPOS/mule_rules.md`, "Trading
+  Stage") describe the trading stage as a continuous spatial simulation -- figures walk toward a shared
+  price line and trade until a party removes its figure, runs out of money, or runs out of goods -- not
+  a discrete ranked-list match, so there is no queue, tie-break, or "next eligible counterparty" rule to
+  copy. The decompiled `planet_mule` confirms this mechanically: `AuctionState.setTick` clamps each
+  buyer's position by its own budget and sets `inAuction = false` when it can no longer advance (self
+  withdrawal, not a skip by the matcher), and `AuctionLimits.calcBuyAndSellTicks` derives the tradable
+  band from the max tick among live buyers and the min tick among live sellers (an aggregate
+  best-bid/best-ask convergence) with the store folded in as a price-band clamp via
+  `Shop.getBuyPrice`/`getSellPrice`, never as a queued participant. This engine's discrete matcher
+  therefore uses the house rule above; the price-descending-bids / price-ascending-asks ordering is
+  directionally supported by that best-bid/best-ask convergence, the solvency-removal (not
+  solvency-skip) rule mirrors the `inAuction = false` self-withdrawal, and the store acting as a
+  standing fallback offer rather than a ranked queue slot matches "the store participates as both buyer
+  and seller within price limits." No authority contains a tie-break, so lowest-playerId is an
+  uncontradicted house choice.
+- **Store spread and eligibility:** the store's buy/sell quotes that seed the ranked offers are the
+  live band edges; their derivation is documented under "Store pricing: buy/sell derivation and ratio
+  direction (WS-E-prices)" above and is not restated here. The auction runs while at least one player is
+  a seller OR the store holds at least 1 unit (see "Skip conditions" below); at window end the price
+  updates to the average of the units sold (recorded with the closing-price rules elsewhere in this
+  section).
+- **Sources:**
+  - `OTHER_REPOS/mule_rules.md` ("Trading Stage"): prose of figures walking toward each other and
+    trading until a party withdraws, runs out of money, or runs out of goods.
+  - `OTHER_REPOS/mule_document.html` `#Trading` (auction-runs-while and closing-price rules),
+    `#PurchaseAndSalePrice` (store buy/sell spread), `#StoreSetup` (store initial stock and prices).
+  - `OTHER_REPOS/planet_mule/data_decompiled/com/turborilla/mule/model/AuctionState.java`,
+    `.../model/AuctionLimits.java`, `.../model/Auction.java`,
+    `.../controller/AuctionController.java`, `.../model/Shop.java` (implementation evidence,
+    subordinate to the rule documents): confirm the original has no discrete matcher -- solvency is a
+    per-player budget clamp that self-withdraws an insolvent participant, and the band is the aggregate
+    best-bid/best-ask tick with the store folded in as a price clamp.
+  - `docs/active_plans/decisions/auction_traversal_evidence.md` (WP-1A): the full evidence pass behind
+    this house rule.
+
 ### Skip conditions: last round and no-trade-possible (superset of PM `goodsForSale`)
 
 - **Chosen value:** a window is skipped (created already `finished`, running no trading phase) when it is
@@ -722,6 +773,11 @@ rate once dynamic prices (WS-E-prices) pushed live quotes past 100.
   - **Runner-up (tighter): budget 4, idle 2 (same transfer curve).** 0.0% beginner, 0.5% standard over 60
     seeds/mode -- still well under the gate, but the tighter idle timeout occasionally ends a window a tick
     before a late cross, so the wider set was kept for margin.
+  - **Re-verified 2026-07-10 (post WP-1B ranked-offer solvent-fallthrough matcher):** the same winning
+    timing constants, re-measured over 100 seeds/mode after `resolveTrade` gained ranked-offer fallthrough
+    (an insolvent top bidder no longer blocks a solvent lower bidder or the store's own bid). Dead-window
+    rate 0.7% beginner (5/754 windows) and 0.8% standard (8/1044 windows) -- both still well under the 0.2
+    gate; dead-land-auction rate remains 0.0% in both modes. Timing constants unchanged.
 - **Why the rate reaches 0%:** the dead-window count is dominated by the structural fixes, not the timing
   constants. Per-good live bands remove the collapse that killed trades; critical-threshold roles guarantee
   a buyer/seller mix wherever a wanted trade exists; and the demand-side skip removes windows that can only

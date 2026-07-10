@@ -4,6 +4,27 @@
 
 ### Additions and New Features
 
+- UI (Patch 5, WP-3A): town interior now has solid building collision -- new
+  `src/ui/scenes/town_layout.ts` is the single source of truth for building
+  footprints and doorway gaps, consumed by both the renderer and a new
+  collide-and-slide movement clamp (`resolveTownWalk`). Buildings block
+  walking outside their doorway gaps (gap width specified in avatar-widths);
+  the street stays open so every shop door and edge exit remains reachable;
+  the store's central smithore bay is its walk-in doorway aligned to the
+  north/south cross-street. Covered by `tests/test_town_layout.mjs`
+  (flood-fill reachability from spawn to all 7 doors and 4 exits, wall-slide
+  monotonicity, solid-outside-gap, renderer no-drift).
+- UI (Patch 12, WP-5A): added an explicit letterboxed 16:10 game stage
+  (`#game-stage`) that every in-game surface (`#game-hud`/`#game-map`/
+  `#game-panel`) renders inside; the stage is the largest 16:10 box that fits
+  the viewport, centered with letterbox bars, and is a
+  `container-type: size` query container. The board is a flex slot
+  (`#game-map.game-map-filled`) that fills the space between HUD and panel on
+  board-showing phases, so each phase renders the largest board that fits
+  with no scroll or clip. New `tests/playwright/game_stage.spec.mjs` (3
+  tests: 16:10 aspect at wide and tall viewports, content containment,
+  board-slot fill). Makes the `HUMAN_GUIDANCE` "fill the canvas" rule
+  mechanically checkable for M6/M7.
 - Testing (WP-G2): new `tests/e2e/e2e_run_all.sh` step-runs mini_flow,
   full_game, balance_sim (`--import tsx`), balance_report, and the
   single-seed active walkthrough; calibration and sweep are excluded as
@@ -17,9 +38,53 @@
   its regenerate command, the sweep coverage table, and the
   strategy/mechanics separation and rule-change tolerance the harness relies
   on. Pointers added from `docs/USAGE.md` and `docs/E2E_TESTS.md`.
+- UI (Patch 46, WP-4A/4B): new `src/ui/solid/corral_purchase_panel.tsx`, an
+  attempt-then-confirm corral purchase panel replacing the old notice-only
+  `buyAtCorral` path. Walking in opens a modal (`[data-corral-panel]`,
+  `role="dialog"`) covering all five outcomes
+  (buyable/purchased/carrying/out_of_stock/insufficient_funds, exposed via
+  `data-corral-outcome`) with price, stock, and funds read live from engine
+  store state; `buy_mule` dispatches only on explicit confirm (Enter on the
+  auto-focused Buy button, or a mouse click), arrow keys move roving focus
+  (reusing `bindRovingFocus`), Escape dismisses, and movement is frozen while
+  the panel is open. `.corral-purchase-*` CSS is sized off `#game-stage`
+  cqw/cqh. Implementation bug caught during development: `justPurchased` had
+  to be a `createSignal` set before dispatch -- a plain `let` let the outcome
+  memo recompute too early and showed the wrong panel state.
 
 ### Behavior or Interface Changes
 
+- UI (Patch 13, WP-6A): rotated the goods-auction arena
+  (`src/ui/solid/auction_screen.tsx`) to a landscape horizontal price track --
+  buyers advance rightward from the left as bids rise, sellers leftward from
+  the right as asks fall, meeting mid-track where trades fire; store buy/sell
+  prices anchor the left/right track ends. Players now occupy stacked
+  horizontal lanes (price drives the x axis, was y); the sit-out "line judge"
+  sideline moved to the bottom edge. Presentation-only: engine intents
+  unchanged. New arena geometry (`TRACK_LENGTH` 480 x `TRACK_BREADTH` 260)
+  handed to the canvas-fill CSS work; avatars expose per-frame `data-x`
+  (moving price coord) alongside `data-y` (fixed lane). Readout-variant
+  decision recorded in `docs/active_plans/decisions/auction_readout_variant.md`.
+  Two predicted-red playwright motion polls await the WP-6C spec update.
+- UI (Patch 34, WP-3B): town doors now open on approach and close on
+  retreat, and walking through an open doorway is the complete entry action
+  -- new `computeOpenDoors`/`resolveTownWalkWithDoors` in
+  `src/ui/scenes/town_layout.ts` (hysteresis: opens within 48px of the door,
+  closes past 68px) and `refreshDoors`/`detectWalkIn` (edge-triggered at
+  `DOOR_ENTER_Y`) in `src/ui/scenes/town_scene.tsx`. Enter/Space door-entry
+  handling is removed; Enter remains only to confirm the pub gamble dialog.
+  Doors expose `data-door-state="open"|"closed"`; hint strings rewritten to
+  describe walk-in entry. The land-office counters are entered by walking
+  north into the podium; the corral's smithore bay only outfits a mule when
+  the player is carrying an unoutfitted one.
+- UI (Patch 37, WP-6B): the goods-auction screen now fills the 16:10 stage
+  -- `.auction-screen` sized to `min(94cqw, 1400px)`, `.auction-track-svg`
+  to `min(92cqw, calc(37cqh * 480 / 260))` preserving the WP-6A track's
+  aspect ratio, the price readout's width cap removed, and the players grid
+  switched to `auto-fit minmax(11rem, 1fr)` (`src/style.css`). Measured
+  honest screen-only height coverage is 76.6%/84.5%; WP-6C's visual pass
+  accepted this with a content-based rationale rather than chasing a
+  coverage threshold.
 - Testing (Patch 28, colony-failure placement waiver): the sweep gate waives
   the per-run `verifiedPlacements >= 1` invariant when the game ended via the
   engine's colony-failure rule (`ScoringPayload.colonyFailed` threaded
@@ -36,9 +101,74 @@
   trade-occurrence proof is owned by the sweep's `matrixCoverage`. Files:
   `tests/e2e/walkthrough_exec.mjs`, `tests/test_walkthrough_plan_exec.mjs`,
   the plan doc.
+- UI (Patch 42, WP-7B): `.land-grant-panel` widened to `92cqw` with
+  `box-sizing: border-box`; the hint text and Pass button are grouped into a
+  new `.land-grant-status-row`.
+- UI (Patch 43, WP-7C): `.land-auction-panel` widened to `min(92cqw, 1400px)`;
+  `land_auction_panel.tsx` regrouped into three columns
+  (`.land-auction-info`/`.land-auction-status`/`.land-auction-side`), with
+  all selectors, ids, and `data-` attributes preserved.
+- UI (Patch 44, WP-7D): `.production-panel` widened to `92cqw` with
+  `box-sizing: border-box`; `.production-list` switched to a grid
+  (`repeat(auto-fit, minmax(260px, 1fr))`). The same fix round added the
+  missing `box-sizing: border-box` to both the WP-7B and WP-7D blocks
+  (the claimed coverage had been an accidental overshoot without it).
+- UI (Patch 45, WP-7E): `.scoring-panel` merged into a single rule, widened
+  to `94cqw`, `min-height` tuned from `86cqh` to `84cqh` after measuring the
+  86 value exactly flush (0.00px margin) against `#game-stage`'s
+  `overflow: hidden` at 1200x1000 (ladder: 86 -> 0.00px, 85 -> 0.50px,
+  84 -> 8.00px); `84cqh` buys 8px of real margin. New parametrized
+  containment test in `tests/playwright/scoring_screen.spec.mjs` (a
+  `playToScoring` helper extracted; `#game-panel` inside `#game-stage` at
+  1600x900 and 1200x1000, 1px slack). The honest 84% height result versus
+  the 85% starting hypothesis is accepted per the thresholds-are-proxies
+  directive.
+- UI (Patch 49, WP-2A): `WALKER_SPEED_PX_PER_SEC` raised from 80 to 320
+  (`src/ui/scenes/walker.ts:60`) -- a gameplay timing change, not
+  presentation. The plan's `[120, 160]` hypothesis failed by 60-110% against
+  the food-starved-minimum tick budget once measured live: the corral
+  purchase panel (walk-in -> confirm -> Escape -> walk-back-to-street) and
+  the no-longer-turn-ending hunt_wampus/assay_plot develop plans both added
+  real wall-clock to the develop-turn errand after the original 80 px/s
+  mapping was chosen, and this is the mechanism behind the sweep's
+  degradation from 6/6 to 2/6 (a starved or partial-fed develop turn's
+  `ticksRemaining` now hits 0 mid-walk, tearing the scene out from under the
+  walker and surfacing as a `walk_stall` at an arbitrary door). Calibrated
+  by measuring the far-corner errand live (`?speed=1`, seed 33) at 80/120/
+  160/240/280/320/340/360/400 px/s: 320 is the lowest value clearing the
+  plan's 10% starved-budget margin rule (thin, ~10-11% across 5 runs) while
+  keeping walk-in door-reach reliable; 340+ starts failing door-reach itself
+  (`WALK_TAP_MS`'s fixed 120ms tap overshoots at that speed, a harder
+  failure than a thin margin, and out of this package's touch points).
+  Evidence table and the WP-8A tap-length follow-on recorded in
+  `docs/active_plans/audits/mule_trip_timing.md`.
 
 ### Fixes and Maintenance
 
+- Testing (Patch 40, M3 gate): M3 milestone gate green -- `check_codebase.sh`
+  5/5 checks pass after a prettier `--write` fix round on
+  `tests/e2e/walkthrough_town.mjs`; Playwright 73/74 with the one failure
+  (`town_doors.spec.mjs` "open door fires interaction", sweep-cursor timing)
+  confirmed flaky via a 9/9 `--repeat-each=3` rerun.
+- UI (Patch 41, WP-7A): the shared narrow-panel CSS rule in `src/style.css`
+  split into four per-panel blocks (land grant, land auction, production,
+  scoring), a pixel-identical seam split ahead of the WP-7B..WP-7E panel
+  edits.
+- Testing (M1/M8 gate follow-up): prettier formatting applied to
+  `tests/e2e/walkthrough_helpers.mjs` and
+  `tests/test_auction_solvent_fallthrough.mjs` (flagged by
+  `check_codebase.sh` `format:check` during the M1 milestone gate;
+  whitespace-only).
+- Engine (Patch 1, WP-1B): the goods-auction matcher (`src/engine/auction.ts`)
+  now ranks all bids (price desc, lowest playerId) and asks (price asc,
+  lowest playerId) and scans bid-major/ask-minor for the first crossed,
+  solvent pair, skipping store-to-store. An insolvent buyer or out-of-goods
+  seller withdraws from that tick's scan instead of blocking solvent lower
+  bidders and the store's standing offer (replaces the single-best
+  bestBid/bestAsk that treated a crossed-but-insolvent top pair as "nothing
+  crossed"). Behavior is unchanged whenever the top pair is solvent.
+  Documented in `docs/RULE_SOURCES.md` (new "Traversal and matching"
+  subsection).
 - Testing (Patch 29, truncation accounting fix): `activeDriveDevelop` now
   decides the plan before the tick-reserve guard runs; a turn cut at the
   reserve counts as truncated only when the cut plan commits budget
@@ -52,9 +182,26 @@
 - Testing (Patch 33, stale run-command headers): `tests/e2e/e2e_balance_sim.mjs`
   and `e2e_walkthrough.mjs` header comments corrected to `node --import tsx`
   (plain `node` fails on extensionless `.ts` sibling imports).
+- Testing (Patch 36, attribution correction): the 2 predicted-red motion
+  polls in `auction_scene.spec.mjs`/`game_flow.spec.mjs` flagged after WP-6A
+  were caused by WP-6A's own landscape rotation (price axis moved from `cy`
+  to `cx`), not by WP-6B's CSS work as earlier notes suggested.
 
 ### Decisions and Failures
 
+- UI (WP-5A / M5): discovery that changed the design -- the pre-stage layout
+  never actually fit HUD+board+panel in the viewport on big-panel phases; it
+  overflowed by ~56px and relied on `#screen-game` scrolling. Inside a fixed
+  16:10 no-scroll stage, the plan's "overworld and town scenes render
+  identically" criterion was therefore unachievable alongside "no clipped
+  content"; a first fixed-reserve attempt (360px) shrank the board ~18% at
+  common viewports and a corrected 280px reserve clipped the HUD by 56px at
+  every tested viewport. Resolution: flex-slot design -- the board fills the
+  space HUD+panel leave free, equal to the old render only where the old
+  render already fit without scrolling. M5's exit criterion is amended to
+  "largest board that fits with no scroll/clip". Follow-up filed: slim the
+  develop panel (~90px of duplicate hint + padding) after WP-3B lands to grow
+  the develop-phase board.
 - Testing: final release sweep GREEN 2026-07-10T05:03Z -- exit 0, 6/6 runs
   pass across `{1, 3, 7} x {beginner, standard}`, `matrixCoverageSatisfied`
   in both modes, seed-7 legs pass with colony-failure placement waivers;
@@ -67,6 +214,90 @@
   commit-gate stall, the documented `bestBid`/insolvent-bidder engine bug
   (see `docs/TODO.md` follow-up), sit-out incoherence, and the corral
   hint-string trap.
+- Testing (WP-4B fix round): WP-4B's contract change -- the corral walk-in no
+  longer buys directly -- broke the E2E walker's `executeBuyMule`. Fixing it
+  unmasked a latent WP-3C bug: `walkBackToStreet`'s arrival check used
+  `data-at-door`, whose coarse cell rect includes interior positions, so the
+  avatar never actually returned to the street row and the next door seek
+  stalled against a wall jamb (deterministic, reproduced on 4 of 6 seed/mode
+  combos). Fix in flight at the walker layer (a positional street-y
+  predicate replacing the `data-at-door` check); tracked under M8.
+
+### Developer Tests and Notes
+
+- Testing (M1 milestone gate): M1 closed GREEN -- `npx tsc --noEmit` clean;
+  `check_codebase.sh` typecheck/lint pass; `e2e_run_all` 5/5 (mini_flow,
+  full_game, balance_sim with all M9/M10/M11 bands satisfied,
+  balance_report, walkthrough); walkthrough sweep 6/6 seeds/modes, empty
+  failure taxonomy, `matrixCoverageSatisfied` in both modes.
+- Testing (Patch 2, WP-1C): added `tests/test_auction_solvent_fallthrough.mjs`
+  pinning `selectTrade`'s crossed+solvent fallthrough invariant on both buyer
+  and seller sides (player-pair and store-fallback variants), plus an
+  equivalence case and a bid-id tie-break case; strengthened
+  `tests/test_auction_termination.mjs`'s sold-out-seller case to assert an
+  exact derived trade count (2) instead of `>= 1`, removing the stale
+  bestBid-matching-quirk comment.
+- Testing (Patch 3, WP-1D): re-verified the goods-auction dead-window rate at
+  100 seeds/mode post ranked-offer matcher -- 0.7% beginner, 0.8% standard,
+  both well under the 0.2 gate, dead-land-auction rate still 0.0% in both
+  modes; timing constants unchanged. Updated the stale figures in
+  `docs/TODO.md` and `docs/RULE_SOURCES.md`.
+- Testing (Patch 22, WP-8A): extracted the shared overshoot-correcting seek
+  core `seekAvatarToTarget` in `tests/e2e/walkthrough_helpers.mjs`
+  (`walkTownAvatarToDoor` and `walkOverworldAvatarToCell` are now thin
+  spec-object wrappers, external signatures unchanged); `MAX_WALK_TAPS` is a
+  single exported constant imported by `tests/e2e/e2e_walk_calibration.mjs`
+  instead of a redefined copy. 133/133 walkthrough unit tests green.
+- Testing (Patch 35, WP-3D): new `tests/playwright/town_doors.spec.mjs`
+  covers wall-stop collision (held against a building via SVG transform
+  polling), a far door staying closed, and open-door entry firing with no
+  keypress; converted 6 existing door-entry cases in `town_scene.spec.mjs`
+  and `pub_gamble.spec.mjs` from a Space-press-at-door step to a held-
+  ArrowUp walk-in, matching the WP-3B interaction model.
+- Testing (Patch 38, WP-6C): `auction_scene.spec.mjs` and
+  `game_flow.spec.mjs` motion polls converted from predicted-red pixel
+  guesses to `data-x` reads with strict directional assertions, plus a new
+  sideline `data-y` assertion; visual acceptance filed at
+  `docs/active_plans/reports/auction_landscape_visual_acceptance.md` --
+  zero clipping pixel-verified at 1200x1000, top-anchored coverage
+  83.7%/93.1% including the HUD, no threshold-chasing artifacts; a ~16%
+  trailing gap below the intent buttons at 1600x900 flagged as
+  non-blocking polish.
+- Testing (Patch 39, WP-3C): the walker's town commerce executors
+  (`buy_mule`, `outfit_mule`, `gamble_pub`) converted from action-key
+  presses to the WP-3B walk-in gesture -- x-seek to the door's street
+  column, wait for `data-door-state="open"`, then a new
+  `walkTownAvatarNorthUntil` helper (built on the WP-8A
+  `seekAvatarToTarget` core) presses north until the door's interaction
+  fires; a new `walkBackToStreet` returns the avatar to the street row
+  after a successful buy/outfit, fixing a live-found stall where a
+  neighboring building's jamb blocked the horizontal x-seek while the
+  avatar was still north of the street. The pub keeps Enter/Space only for
+  the turn-ending gamble CONFIRM dialog. Files:
+  `tests/e2e/walkthrough_town.mjs`, `walkthrough_helpers.mjs`,
+  `tests/test_walkthrough_town.mjs` (fake-page gesture model updated), plus
+  `tests/e2e/e2e_walk_calibration.mjs` (now imports the exported
+  `MAX_WALK_TAPS` instead of a local copy). Evidence: 133/133 unit tests
+  pass, `e2e_run_all` 5/5, sweep 6/6 with `matrixCoverageSatisfied`.
+- Testing (Patch 47, WP-4C): new `tests/playwright/corral_purchase.spec.mjs`
+  (5 tests: panel figures render with the exact per-outcome message; before/
+  after stock and funds deltas on a confirmed purchase; input coverage for
+  mouse-click confirm, Enter-on-prefocused confirm, and arrow-moves-focus-
+  then-Enter-declines with a `toBeFocused` proof); the existing corral test
+  in `town_scene.spec.mjs` converted from a notice check to the confirm
+  gesture. `out_of_stock` and `insufficient_funds` are documented as
+  impractical to reach through play (`MULE_STOCK_CAP` 14, `MULE_BASE_PRICE`
+  100 vs `STARTING_MONEY` 1000 needs roughly 10-14 buy cycles, and there is
+  no test-only state hook) -- accepted as an honest documented gap since the
+  untested branches share the same tested render path as the covered ones.
+- Testing (Patch 48, WP-7F): phase-panel visual acceptance ACCEPTED across
+  the four WP-7B..WP-7E panels at two viewports each; report filed at
+  `docs/active_plans/reports/phase_panels_visual_acceptance.md`. Land grant,
+  land auction, and production are judged as board phases (the map is the
+  fill surface, so slim panel strips are by design); scoring is judged as
+  the full-panel phase (94%/84% coverage). No dead-margin pathology and no
+  threshold-chasing artifacts found; three non-blocking polish candidates
+  recorded (see `docs/TODO.md`).
 
 ## 2026-07-09
 

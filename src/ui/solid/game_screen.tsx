@@ -158,14 +158,21 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
     <ErrorBoundary
       fallback={(err: unknown, reset) => <GameErrorFallback error={err} reset={reset} />}
     >
-      <div id="game-hud">
-        <Hud state={state()} />
-      </div>
-      <div id="game-map">
-        <Show when={phaseShowsMap(state().phase.kind)}>
-          <MapLayer state={state()} cursor={boardCursor()} onPlotClick={handlePlotClick} />
-        </Show>
-        {/* Spatial develop layer: on the human's develop turn the avatar walks
+      {/* The letterboxed 16:10 stage every in-game surface renders inside. The
+          HUD, board, and active phase panel lay out in a column here; #game-stage
+          is sized and centered by src/style.css to the largest 16:10 box that
+          fits the viewport, with the screen background showing as letterbox bars
+          outside it. Downstream auction and phase-panel layouts fill this box
+          (assert against #game-stage's bounding box, not the raw viewport). */}
+      <div id="game-stage">
+        <div id="game-hud">
+          <Hud state={state()} />
+        </div>
+        <div id="game-map" classList={{ "game-map-filled": phaseShowsMap(state().phase.kind) }}>
+          <Show when={phaseShowsMap(state().phase.kind)}>
+            <MapLayer state={state()} cursor={boardCursor()} onPlotClick={handlePlotClick} />
+          </Show>
+          {/* Spatial develop layer: on the human's develop turn the avatar walks
             the overworld and the walkable town. The unkeyed Show closes during
             AI turns and reopens next human turn, so the layer remounts fresh
             each turn and its town/assay sub-state resets.
@@ -181,24 +188,24 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
             throwing "Stale read from <Show>". Reading the store directly makes
             the scenes subscribe to store fields and be disposed cleanly on the
             phase flip, matching the AI develop layer below. */}
-        <Show when={humanDevelopPayload(state()) !== undefined}>
-          {/* A second boundary just for this layer: the develop-phase spatial
+          <Show when={humanDevelopPayload(state()) !== undefined}>
+            {/* A second boundary just for this layer: the develop-phase spatial
               scenes (town/overworld) are the layer this workstream's
               stale-read crash actually came from, so an error here should not
               also take down the HUD and #game-panel below -- only this one
               turn's spatial view degrades to the fallback panel. */}
-          <ErrorBoundary
-            fallback={(err: unknown, reset) => <GameErrorFallback error={err} reset={reset} />}
-          >
-            <ForcedCrashProbe />
-            <HumanDevelopLayer
-              store={props.store}
-              payload={humanDevelopPayloadLive}
-              onInTownChange={setHumanInTown}
-            />
-          </ErrorBoundary>
-        </Show>
-        {/* AI develop-turn avatar, in place of the old
+            <ErrorBoundary
+              fallback={(err: unknown, reset) => <GameErrorFallback error={err} reset={reset} />}
+            >
+              <ForcedCrashProbe />
+              <HumanDevelopLayer
+                store={props.store}
+                payload={humanDevelopPayloadLive}
+                onInTownChange={setHumanInTown}
+              />
+            </ErrorBoundary>
+          </Show>
+          {/* AI develop-turn avatar, in place of the old
             text-only WaitingPanel. Keyed on a per-turn string (not the raw
             payload) so consecutive AI players' turns each get a fresh
             AiActorLayer mount -- reconcile can reuse the same underlying
@@ -207,31 +214,31 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
             remount when only activePlayer/queueIndex changed; the turn-key
             string always does. AiActorLayer captures its species/tint/spawn
             once at mount, so this remount is required, not just cosmetic. */}
-        <Show when={aiDevelopTurnKey(state())} keyed>
-          {(_turnKey) => (
-            <AiActorLayer store={props.store} payload={() => currentAiDevelopPayload(state())} />
-          )}
-        </Show>
-      </div>
-      <div
-        id="game-panel"
-        tabIndex={-1}
-        aria-label={phasePanelLabel(state().phase.kind)}
-        ref={(el) => {
-          panelRef = el;
-        }}
-      >
-        <Switch>
-          <Match when={landGrantPayload(state())}>
-            {(payload) => <LandGrantPanel store={props.store} payload={payload} />}
-          </Match>
-          <Match when={landAuctionPayload(state())}>
-            {(payload) => <LandAuctionPanel store={props.store} payload={payload} />}
-          </Match>
-          <Match when={developPayload(state())}>
-            {(payload) => (
-              <>
-                {/* Personal events fire for every player, human and AI alike, at
+          <Show when={aiDevelopTurnKey(state())} keyed>
+            {(_turnKey) => (
+              <AiActorLayer store={props.store} payload={() => currentAiDevelopPayload(state())} />
+            )}
+          </Show>
+        </div>
+        <div
+          id="game-panel"
+          tabIndex={-1}
+          aria-label={phasePanelLabel(state().phase.kind)}
+          ref={(el) => {
+            panelRef = el;
+          }}
+        >
+          <Switch>
+            <Match when={landGrantPayload(state())}>
+              {(payload) => <LandGrantPanel store={props.store} payload={payload} />}
+            </Match>
+            <Match when={landAuctionPayload(state())}>
+              {(payload) => <LandAuctionPanel store={props.store} payload={payload} />}
+            </Match>
+            <Match when={developPayload(state())}>
+              {(payload) => (
+                <>
+                  {/* Personal events fire for every player, human and AI alike, at
                     the start of their develop turn (turn.ts's beginDevelopTurn),
                     matching the original showing everyone's events. Keyed so a
                     new turn's event (a new PersonalEventResult object) restarts
@@ -239,48 +246,49 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
                     the human's own turn holds the engine tick clock (see
                     scene_manager.ts); an AI turn's banner is a non-blocking
                     overlay, so it uses the shorter passive hold. */}
-                <Show when={payload().event} keyed>
-                  {(event) => (
-                    <EventBanner
-                      source={{
-                        kind: "personal",
-                        event,
-                        playerColor: playerColor(payload().activePlayer),
-                      }}
-                      holdMs={
-                        payload().activePlayer === HUMAN_ID
-                          ? PERSONAL_EVENT_BANNER_HOLD_MS
-                          : PASSIVE_EVENT_BANNER_HOLD_MS
-                      }
-                    />
-                  )}
-                </Show>
-                {/* AI turns show their status/Skip control inside #game-map via
+                  <Show when={payload().event} keyed>
+                    {(event) => (
+                      <EventBanner
+                        source={{
+                          kind: "personal",
+                          event,
+                          playerColor: playerColor(payload().activePlayer),
+                        }}
+                        holdMs={
+                          payload().activePlayer === HUMAN_ID
+                            ? PERSONAL_EVENT_BANNER_HOLD_MS
+                            : PASSIVE_EVENT_BANNER_HOLD_MS
+                        }
+                      />
+                    )}
+                  </Show>
+                  {/* AI turns show their status/Skip control inside #game-map via
                     AiActorLayer now (see above), so #game-panel renders
                     nothing for them -- the old text-only WaitingPanel is
                     retired. */}
-                <Show when={payload().activePlayer === HUMAN_ID}>
-                  {/* The town scene renders its own notice-plus-End-Turn footer
+                  <Show when={payload().activePlayer === HUMAN_ID}>
+                    {/* The town scene renders its own notice-plus-End-Turn footer
                       inside #game-map while the human is in town, so this
                       panel's identical hint-plus-End-Turn footer must not also
                       render then -- exactly one footer at a time. */}
-                  <Show when={!humanInTown()}>
-                    <DevelopPanel store={props.store} payload={payload} />
+                    <Show when={!humanInTown()}>
+                      <DevelopPanel store={props.store} payload={payload} />
+                    </Show>
                   </Show>
-                </Show>
-              </>
-            )}
-          </Match>
-          <Match when={productionPayload(state())}>
-            {(payload) => <ProductionPanel payload={payload} />}
-          </Match>
-          <Match when={auctionPayload(state())}>
-            {(payload) => <AuctionScreen store={props.store} payload={payload} />}
-          </Match>
-          <Match when={scoringPayload(state())}>
-            {(payload) => <ScoringPanel payload={payload} />}
-          </Match>
-        </Switch>
+                </>
+              )}
+            </Match>
+            <Match when={productionPayload(state())}>
+              {(payload) => <ProductionPanel payload={payload} />}
+            </Match>
+            <Match when={auctionPayload(state())}>
+              {(payload) => <AuctionScreen store={props.store} payload={payload} />}
+            </Match>
+            <Match when={scoringPayload(state())}>
+              {(payload) => <ScoringPanel payload={payload} />}
+            </Match>
+          </Switch>
+        </div>
       </div>
     </ErrorBoundary>
   );

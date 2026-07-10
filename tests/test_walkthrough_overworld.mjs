@@ -14,6 +14,8 @@ import assert from "node:assert/strict";
 
 import {
   executePlaceMule,
+  executeHuntWampus,
+  executeAssayPlot,
   maybeTruncateTurn,
   planCommitsBudget,
   shouldTruncate,
@@ -68,6 +70,25 @@ function developProjection(plots, ticksRemaining) {
 // A single empty owned plot grid: one row, one column, owner 0, no M.U.L.E.
 function emptyOwnedPlots() {
   return [[{ terrain: "plain", owner: 0, muleOutfit: null }]];
+}
+
+// Build a develop projection carrying a live `wampus` state (src/engine/
+// wampus.ts WampusState shape, trimmed to the fields executeHuntWampus reads)
+// alongside a one-cell plot grid, for executeHuntWampus/executeAssayPlot tests.
+function wampusProjection(wampus, plots = emptyOwnedPlots()) {
+  return {
+    state: {
+      phase: { kind: "develop", payload: { activePlayer: 0, ticksRemaining: 40, wampus } },
+      plots,
+      players: [{}, {}, {}, {}],
+      round: 1,
+    },
+    phaseKind: "develop",
+    activePlayerId: 0,
+    humanMoney: 100,
+    sweepRow: null,
+    sweepCol: null,
+  };
 }
 
 //============================================
@@ -247,6 +268,126 @@ test("executePlaceMule: a stalled walk never presses the action key", async () =
   assert.equal(ok, false);
   assert.deepEqual(page.keypresses, []);
   assert.equal(report.counters.verifiedPlacements, 0);
+});
+
+//============================================
+test("executeHuntWampus: walks to the live wampus site and verifies the catch", async () => {
+  const page = fakePage();
+  let caught = false;
+  const liveWampus = () =>
+    caught
+      ? { row: 2, col: 2, visible: true, dead: true, caught: true, moneyReward: 250 }
+      : { row: 2, col: 2, visible: true, dead: false, caught: false, moneyReward: 250 };
+  const readProjection = async () => wampusProjection(liveWampus());
+  const walkToCell = async (p, r, target) => {
+    assert.deepEqual(target, { row: 2, col: 2 });
+    return true;
+  };
+  page.keyboard.press = async (key) => {
+    page.keypresses.push(key);
+    caught = true;
+  };
+
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const ok = await executeHuntWampus(page, report, { readProjection, walkToCell });
+
+  assert.equal(ok, true);
+  assert.deepEqual(page.keypresses, ["Enter"]);
+  assert.equal(report.hasFailed(), false);
+});
+
+//============================================
+test("executeHuntWampus: an uncatchable wampus at call time is a graceful skip, not a failure", async () => {
+  const page = fakePage();
+  // Blinked away before this executor's own projection read: no row/col,
+  // not visible -- matches decideDevelopAction's own catchability check
+  // (src/ai/develop_ai.ts) having gone stale between decision and execution.
+  const readProjection = async () =>
+    wampusProjection({ row: null, col: null, visible: false, dead: false, caught: false });
+
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const ok = await executeHuntWampus(page, report, { readProjection });
+
+  assert.equal(ok, false);
+  // Graceful: the develop loop must be free to re-decide, not halt the run.
+  assert.equal(report.hasFailed(), false);
+  assert.deepEqual(page.keypresses, []);
+});
+
+//============================================
+test("executeHuntWampus: a catch that never verifies within budget reports act_did_not_advance", async () => {
+  const page = fakePage();
+  const readProjection = async () =>
+    wampusProjection({
+      row: 2,
+      col: 2,
+      visible: true,
+      dead: false,
+      caught: false,
+      moneyReward: 250,
+    });
+  const walkToCell = async () => true;
+
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const ok = await executeHuntWampus(page, report, {
+    readProjection,
+    walkToCell,
+    huntVerifyBudgetMs: 0,
+  });
+
+  assert.equal(ok, false);
+  assert.equal(report.hasFailed(), true);
+});
+
+//============================================
+test("executeAssayPlot: walks to the target plot and verifies the crystite reveal", async () => {
+  const page = fakePage();
+  let revealed = false;
+  const plotsFor = () => [
+    [{ terrain: "plain", owner: 0, muleOutfit: null, crystiteRevealed: revealed }],
+  ];
+  const readProjection = async () => wampusProjection({ visible: false }, plotsFor());
+  const walkToCell = async (p, r, target) => {
+    assert.deepEqual(target, { row: 0, col: 0 });
+    return true;
+  };
+  page.keyboard.press = async (key) => {
+    page.keypresses.push(key);
+    revealed = true;
+  };
+
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const ok = await executeAssayPlot(
+    page,
+    report,
+    { readProjection, walkToCell },
+    { row: 0, col: 0 },
+  );
+
+  assert.equal(ok, true);
+  assert.deepEqual(page.keypresses, ["Enter"]);
+  assert.equal(report.hasFailed(), false);
+});
+
+//============================================
+test("executeAssayPlot: a reveal that never verifies within budget reports act_did_not_advance", async () => {
+  const page = fakePage();
+  const readProjection = async () =>
+    wampusProjection({ visible: false }, [
+      [{ terrain: "plain", owner: 0, muleOutfit: null, crystiteRevealed: false }],
+    ]);
+  const walkToCell = async () => true;
+
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const ok = await executeAssayPlot(
+    page,
+    report,
+    { readProjection, walkToCell, assayVerifyBudgetMs: 0 },
+    { row: 0, col: 0 },
+  );
+
+  assert.equal(ok, false);
+  assert.equal(report.hasFailed(), true);
 });
 
 //============================================

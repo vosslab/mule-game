@@ -10,11 +10,19 @@ already shipped and [TODO.md](TODO.md) for the smaller task backlog.
   out of a good mid-auction, decide whether the store should step in as a
   fallback counterparty rather than leaving the window to time out. See
   [TODO.md](TODO.md).
-- Walk-speed tuning: raise `WALKER_SPEED_PX_PER_SEC` from 80 toward 120-160
-  px/s so a food-starved develop turn can reach a far-corner plot within the
-  starved-minimum tick budget. Recorded as a live-timing recommendation, not
-  yet applied. See
-  [active_plans/audits/mule_trip_timing.md](active_plans/audits/mule_trip_timing.md).
+- Walk-speed tuning (WP-2A, applied 2026-07-10): `WALKER_SPEED_PX_PER_SEC`
+  raised from 80 to 320 px/s (well outside the originally hypothesized
+  120-160 range -- the corral purchase panel and the no-longer-turn-ending
+  hunt_wampus/assay_plot develop plans both added real wall-clock to the
+  develop-turn errand after that range was first estimated). The starved-min
+  margin at 320 is thin (~10-11%, noise-bound around the pass line); 340+
+  px/s starts failing the walk-in door-reach reliability check itself
+  (`WALK_TAP_MS` in `tests/e2e/walkthrough_helpers.mjs` is a fixed 120ms tap
+  length, out of this package's touch points) rather than the timing margin,
+  so 320 is the practical ceiling until that tap length is retuned. See
+  [active_plans/audits/mule_trip_timing.md](active_plans/audits/mule_trip_timing.md)
+  for the full evidence table, and the WP-8A follow-on note there for
+  widening the margin further via the tap-length constant.
 - Release cut: bump `VERSION` (CalVer) and cut the first tagged release now
   that the M1-M11 fidelity plan's gates are green. Human decision, not yet
   made. See [archive/mule_fidelity_plan.md](archive/mule_fidelity_plan.md).
@@ -87,45 +95,17 @@ exact expected trade count, since the weakening was a direct symptom of
 this bug (see the comment at lines 160-162 and `docs/CHANGELOG.md`
 2026-07-09 Patch 9 fix-round entry).
 
-### Town interaction model diverges from the NES M.U.L.E. target
+### Town interaction model diverges from the NES M.U.L.E. target -- shipped
 
 User decision (2026-07-09, recorded in `docs/TODO.md` "UI and layout"
-section) sets the target model: buildings are solid (walls block
-walking), each shop has a door that opens when the player walks up to it
-and stays closed otherwise, and walking through the open door triggers
-the shop interaction directly -- no separate action-key press. Three gaps
-remain:
-
-- (a) No collision: the town has no wall/building collision at all, so
-  the player walks through buildings.
-- (b) Shop interaction requires an explicit Enter/Space press at the door
-  instead of door-opens-on-approach plus walk-in-triggers-shop. The
-  current hint strings (in `src/ui/scenes/town_scene.tsx`) that name the
-  Enter/Space key are a documented stopgap, not the target model.
-- (c) No corral/store purchase screen: feedback on a corral purchase
-  attempt is a single notice line via `setNotice` inside `buyAtCorral`
-  (`src/ui/scenes/town_scene.tsx:383-399`), not a dedicated screen or
-  dialog showing price, stock, and funds together. The 1983 original
-  shows standing price/stock labels ambiently at the counter; see
-  `OTHER_REPOS/mule_rules.md`, town section.
-
-Suggested approach: build the wall/door collision and open-on-approach
-trigger first (this is a gesture-layer change only; the develop-plan
-strategy/mechanics separation stays untouched), then add the dedicated
-corral/store purchase screen on top of the existing `setNotice`
-crash/feedback floor. Changing the interaction trigger changes
-`tests/e2e/walkthrough_town.mjs`'s door-walk executors, which currently
-walk to a `[data-door-for]` marker and press the action key
-(`tests/e2e/walkthrough_town.mjs:1-85` documents the door-id/action-key
-scheme); update those executors to walk-in-triggers rather than
-press-to-trigger once the door model lands.
-
-Verify: a Playwright spec that walks the avatar toward a closed shop door,
-asserts the walk stops at the wall (no wall-through movement), then walks
-toward an open door and asserts the shop interaction fires without a
-separate key press; a second spec exercising the corral purchase screen
-for both the success and each failure case (no mules in tow already, out
-of stock, insufficient funds).
+section) set the target model: buildings are solid (walls block walking),
+each shop has a door that opens when the player walks up to it and stays
+closed otherwise, walking through the open door triggers the shop
+interaction directly (no separate action-key press), and a corral
+purchase attempt always shows an explicit screen with price, stock, and
+funds. All of it has shipped: collision, the walk-in trigger, and the
+corral purchase modal (`src/ui/solid/corral_purchase_panel.tsx`). See
+`docs/CHANGELOG.md` 2026-07-10 (WP-3A/WP-3B/WP-3C/WP-3D, WP-4A/WP-4B/WP-4C).
 
 ### Walker gaps: hunt_wampus/assay_plot develop plans have no spatial executor
 

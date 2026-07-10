@@ -56,6 +56,7 @@ import {
   isVisible,
   waitForMuleGameState,
   readGameState,
+  MAX_WALK_TAPS,
 } from "./walkthrough_helpers.mjs";
 
 //============================================
@@ -83,9 +84,6 @@ const ERRAND_COUNTER_DOOR = "counter-food";
 
 /** Door-reach attempts per config for the metric-1 success rate. */
 const DOOR_REACH_ATTEMPTS = 20;
-
-/** Upper bound on bounded taps before a walk is declared stuck. */
-const MAX_WALK_TAPS = 60;
 
 /**
  * The `speed x WALK_TAP_MS` matrix (at most 5 rows). Speeds span the fast end

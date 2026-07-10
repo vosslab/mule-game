@@ -83,8 +83,18 @@ import {
   runActivePhaseDriver,
   assertActiveInvariants,
 } from "./walkthrough_exec.mjs";
-import { executeBuyMule, executeOutfitMule, executeGamblePub } from "./walkthrough_town.mjs";
-import { executePlaceMule, maybeTruncateTurn } from "./walkthrough_overworld.mjs";
+import {
+  executeBuyMule,
+  executeOutfitMule,
+  executeGamblePub,
+  executeArmAssay,
+} from "./walkthrough_town.mjs";
+import {
+  executePlaceMule,
+  executeHuntWampus,
+  executeAssayPlot,
+  maybeTruncateTurn,
+} from "./walkthrough_overworld.mjs";
 import { findTownCell } from "../../src/ui/scenes/zones.ts";
 import { ROUND_COUNT_BY_MODE } from "../../src/engine/constants.ts";
 
@@ -370,27 +380,6 @@ function townCellFromState(state) {
 
 //============================================
 /**
- * Resolve an opportunistic develop plan (hunt_wampus, assay_plot) that has no
- * dedicated spatial executor yet -- that lane is a separate M6 follow-on, not
- * this integration -- by logging the skip and ending the turn gracefully,
- * rather than re-deciding the same opportunistic move forever.
- *
- * @param page - The Playwright page.
- * @param report - The walk report.
- * @param plan - The opportunistic plan being skipped.
- * @returns endDevelopTurn's own result.
- */
-async function skipOpportunisticDevelopPlan(page, report, plan) {
-  report.log(
-    "info",
-    `develop plan "${plan.kind}" is opportunistic with no spatial executor yet; ending the turn`,
-    { plan },
-  );
-  return endDevelopTurn(page, report);
-}
-
-//============================================
-/**
  * Place a M.U.L.E. on the overworld, first leaving the town interior if the
  * previous plan (buy_mule/outfit_mule) left the avatar there --
  * walkthrough_overworld.mjs's executePlaceMule assumes the avatar is already
@@ -416,6 +405,59 @@ async function executePlaceMuleFromTown(page, report, deps, plan) {
 
 //============================================
 /**
+ * Hunt this round's wampus on the overworld, first leaving the town interior
+ * if the previous plan left the avatar there. Mirrors
+ * executePlaceMuleFromTown's shape: walkthrough_overworld.mjs's
+ * executeHuntWampus assumes the avatar is already on the overworld and has
+ * no town-exit step of its own.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report (see walkthrough_report.mjs).
+ * @param deps - Passed through to exitTown/executeHuntWampus.
+ * @returns True once the catch is verified, false on a town-exit stall or a
+ *   failed hunt (both already reported by their own helper).
+ */
+async function executeHuntWampusFromTown(page, report, deps) {
+  if (await isVisible(page, "#town-scene")) {
+    const exited = await exitTown(page, report, deps.exitTownOptions);
+    if (!exited) {
+      return false;
+    }
+  }
+  return executeHuntWampus(page, report, deps);
+}
+
+//============================================
+/**
+ * Assay a develop plan's target plot: arm the assay at the town's assay
+ * office (walkthrough_town.mjs's executeArmAssay, a walk-in-trigger door use
+ * per the M3 town interaction model), exit town, then path the overworld
+ * avatar to the plot and fire the assay (walkthrough_overworld.mjs's
+ * executeAssayPlot). This orchestrator owns the town-to-overworld
+ * transition between the two spatial executors, matching
+ * executePlaceMuleFromTown's split.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report (see walkthrough_report.mjs).
+ * @param deps - Passed through to executeArmAssay/exitTown/executeAssayPlot.
+ * @param plan - The `assay_plot` plan (`{ row, col }`).
+ * @returns True once the reveal is verified, false on a failed arm, a
+ *   town-exit stall, or a failed assay (all already reported by their own
+ *   helper).
+ */
+async function executeAssayPlotFromTown(page, report, deps, plan) {
+  if (!(await executeArmAssay(page, report, deps))) {
+    return false;
+  }
+  const exited = await exitTown(page, report, deps.exitTownOptions);
+  if (!exited) {
+    return false;
+  }
+  return executeAssayPlot(page, report, deps, { row: plan.row, col: plan.col });
+}
+
+//============================================
+/**
  * Route one develop gesture plan through executePlan to the matching
  * town/overworld executor (walkthrough_town.mjs, walkthrough_overworld.mjs),
  * or to endDevelopTurn for "end_turn". An out-of-vocabulary plan kind is
@@ -435,8 +477,8 @@ async function executeDevelopPlan(page, report, plan, deps) {
     place_mule: () => executePlaceMuleFromTown(page, report, deps, plan),
     gamble_pub: () => executeGamblePub(page, report, deps),
     end_turn: () => endDevelopTurn(page, report),
-    hunt_wampus: () => skipOpportunisticDevelopPlan(page, report, plan),
-    assay_plot: () => skipOpportunisticDevelopPlan(page, report, plan),
+    hunt_wampus: () => executeHuntWampusFromTown(page, report, deps),
+    assay_plot: () => executeAssayPlotFromTown(page, report, deps, plan),
   });
 }
 
@@ -447,9 +489,11 @@ async function executeDevelopPlan(page, report, plan, deps) {
  * walkthrough_overworld.mjs), then re-decide one gesture plan at a time via
  * decideDevelopPlan (a develop turn is reactive, not a fixed script -- see
  * walkthrough_strategy.mjs's note) and execute it, looping until the turn
- * ends (end_turn, gamble_pub, an opportunistic skip, or truncation) or an
- * act fails. Matches the call-once-per-phase-entry contract the other active
- * drivers use.
+ * ends (end_turn, gamble_pub, or truncation) or an act fails. hunt_wampus
+ * and assay_plot execute spatially (walkthrough_town.mjs/
+ * walkthrough_overworld.mjs) and loop back for the next decision rather
+ * than ending the turn. Matches the call-once-per-phase-entry contract the
+ * other active drivers use.
  *
  * @param page - The Playwright page.
  * @param report - The walk report (see walkthrough_report.mjs).
@@ -476,11 +520,12 @@ async function activeDriveDevelop(page, report, deps) {
     // the turn at the reserve either way (identical gameplay), but only COUNTS a
     // truncation when the cut plan commits the budget to a buy/outfit/place
     // gesture (see maybeTruncateTurn/planCommitsBudget). A turn-ending
-    // gamble_pub/end_turn or a free hunt_wampus/assay_plot skip is the develop
-    // turn's natural end, so ending it at the reserve is not a truncation -- the
-    // develop AI emits gamble (which ends the turn), never a bare end_turn, when
-    // it is out of productive moves (src/ai/develop_ai.ts), so a plan-blind
-    // counter reclassified every out-of-work turn as truncated.
+    // gamble_pub/end_turn, or a free hunt_wampus/assay_plot cut off before it
+    // runs, is the develop turn's natural end either way, so ending it at the
+    // reserve is not a truncation -- the develop AI emits gamble (which ends
+    // the turn), never a bare end_turn, when it is out of productive moves
+    // (src/ai/develop_ai.ts), so a plan-blind counter reclassified every
+    // out-of-work turn as truncated.
     const plan = decideDevelopPlan(state);
     if (await maybeTruncateTurn(page, report, deps, plan, state)) {
       return;
@@ -494,16 +539,16 @@ async function activeDriveDevelop(page, report, deps) {
     if (completed) {
       report.counters.plansCompleted += 1;
     }
-    if (
-      plan.kind === "end_turn" ||
-      plan.kind === "gamble_pub" ||
-      plan.kind === "hunt_wampus" ||
-      plan.kind === "assay_plot"
-    ) {
-      // Each of these always ends the develop turn: end_turn directly,
-      // gamble_pub via town_scene.tsx's confirm-and-end-turn gesture, and
-      // the two opportunistic kinds via skipOpportunisticDevelopPlan's own
-      // endDevelopTurn call.
+    // end_turn and gamble_pub always end the develop turn (end_turn
+    // directly, gamble_pub via town_scene.tsx's confirm-and-end-turn
+    // gesture); every other plan kind, including hunt_wampus and
+    // assay_plot, loops back for the next decideDevelopPlan call.
+    // decideDevelopAction (src/ai/develop_ai.ts) checks the wampus
+    // unconditionally before its carriedMule branches and returns
+    // assay_plot from the carriedMule === "none" branch, so once a
+    // catch/reveal lands the next iteration naturally continues into the
+    // turn's real economic gesture (buy_mule, etc) rather than ending here.
+    if (plan.kind === "end_turn" || plan.kind === "gamble_pub") {
       return;
     }
   }

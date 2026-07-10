@@ -1,36 +1,41 @@
 // Spatial auction scene as a SolidJS component.
 //
 // This replaces the abstract SVG price track with the original M.U.L.E. spatial
-// auction: each player's species AVATAR stands in its own lane on a vertical
-// price axis, and its y position is DERIVED from the engine's authoritative
-// participant price (avatars are presentation only). Buyers walk up as they
-// raise their bid, sellers walk down as they lower their ask; when a buyer and
-// seller cross, the engine records a trade and a goods glyph animates between
-// the pair (or the store edge, for store trades).
+// auction, rotated to a LANDSCAPE horizontal price axis: each player's species
+// AVATAR stands in its own horizontal lane, and its x position is DERIVED from
+// the engine's authoritative participant price (avatars are presentation only).
+// Buyers advance rightward from the left as they raise their bid, sellers
+// advance leftward from the right as they lower their ask; when a buyer and
+// seller cross (meet at the same price x), the engine records a trade and a
+// goods glyph animates between the pair (or the store edge, for store trades).
+// The store buy price anchors the left track end and the store sell price the
+// right end.
 //
 // State vs motion split (the plan's architecture): reactivity owns STATE and
 // imperative transforms own 60fps MOTION.
-//   - Reactive (Solid signals -> DOM): the price-marker token dots (`cy` snaps
-//     per tick), store band lines, per-avatar `data-role`, the crisp price
-//     readout, and the trade log.
+//   - Reactive (Solid signals -> DOM): the price-marker token dots (`cx` snaps
+//     per tick, `cy` is the fixed lane), store band lines, per-avatar
+//     `data-role`, the crisp price readout, and the trade log.
 //   - Imperative (scene-manager rAF, refs, transform writes): each avatar
-//     group's `translate(...)` is eased toward its price-derived target every
+//     group's `translate(...)` is eased toward its price-derived target x every
 //     animation frame; the walk-cycle frame swaps while an avatar is moving;
 //     trade goods/flash glyphs are created and moved in the trade layer.
 // Under emulated `prefers-reduced-motion: reduce` the avatars SNAP to their
-// price-derived y with no interpolation and hold the frame-1 idle pose, and a
+// price-derived x with no interpolation and hold the frame-1 idle pose, and a
 // trade shows an instant flash with no travel. No CSS transitions are used for
 // avatar motion, so a reduced-motion render carries no tween artifacts.
 //
-// Selector contract preserved for tests/playwright/game_flow.spec.mjs (must
-// pass unmodified): `.auction-track-svg`, one `.auction-track-token` circle per
-// participant in playerId order with a reactive `cy`, exactly one
+// Selector contract for the auction playwright specs: `.auction-track-svg`, one
+// `.auction-track-token` circle per participant in playerId order carrying a
+// reactive price `cx` and a fixed lane `cy`, exactly one
 // `.auction-track-store-buy-line` and one `.auction-track-store-sell-line`, the
 // `.auction-screen-role-button` role choices, and the `.auction-screen-trade-log`
-// panel. New hooks for tests/playwright/auction_scene.spec.mjs: `.auction-avatar`
-// groups carry `data-actor="player-N"`, `data-role`, and a per-frame `data-y`;
-// the arena root carries `data-reduced-motion`; the trade layer carries a
-// monotonic `data-flash-count`.
+// panel. `.auction-avatar` groups carry `data-actor="player-N"`, `data-role`, a
+// per-frame price `data-x`, and a fixed lane `data-y`; the arena root carries
+// `data-reduced-motion`; the trade layer carries a monotonic `data-flash-count`.
+// The landscape rotation moved the price-driven coordinate from `cy`/`data-y`
+// (the old vertical track) to `cx`/`data-x`; tests/playwright/game_flow.spec.mjs
+// and tests/playwright/auction_scene.spec.mjs are updated to poll the new axis.
 //
 // Slot -> species mapping (fixed until species selection lands): player slots
 // 0..3 map to SPECIES_BY_SLOT below (humanoid, gollumer, mechtron, packer), the
@@ -60,11 +65,11 @@ import {
 import { arenaSymbolId, buildArenaSpriteDefsMarkup } from "../sprites/sprites_arena";
 import { TutorialHint } from "./tutorial_hint";
 
-/** Height (in SVG units) of the price track, top to bottom. */
-const TRACK_HEIGHT = 400;
-/** Width (in SVG units) of the spatial arena. */
-const TRACK_WIDTH = 280;
-/** Number of player lanes across the arena width (one per player). */
+/** Length (SVG units) of the horizontal price axis, left (store buy) to right (store sell). */
+const TRACK_LENGTH = 480;
+/** Breadth (SVG units) across the stacked player lanes, top to bottom. */
+const TRACK_BREADTH = 260;
+/** Number of player lanes down the arena breadth (one horizontal lane per player). */
 const PLAYER_LANES = 4;
 /** Rendered size of a species avatar in SVG units. */
 const AVATAR_SIZE = 44;
@@ -125,14 +130,15 @@ export interface AuctionScreenProps {
 
 //============================================
 /**
- * Center x of a player's lane. Lanes divide the arena width evenly, one per
- * player, so each avatar keeps a stable horizontal column across the window.
+ * Center y of a player's lane. Lanes divide the arena breadth evenly, one per
+ * player, so each avatar keeps a stable horizontal row and walks left-to-right
+ * along it as its price changes.
  *
  * @param slot - Player slot (playerId, 0..3).
- * @returns The lane center x in arena units.
+ * @returns The lane center y in arena units.
  */
-function laneCenterX(slot: number): number {
-  return (TRACK_WIDTH * (slot + 0.5)) / PLAYER_LANES;
+function laneCenterY(slot: number): number {
+  return (TRACK_BREADTH * (slot + 0.5)) / PLAYER_LANES;
 }
 
 //============================================
@@ -143,21 +149,21 @@ function laneCenterX(slot: number): number {
  * planet_mule, where a non-participating player is drawn off the price track and
  * shows no price figure (view/AuctionPainter.java:188-215).
  *
- * This helper is the single seam the planned landscape-rotation task edits.
- * Because it returns a full arena point derived from the arena dimensions and
- * the player's slot, rotating the track (price advancing left-to-right instead
- * of top-to-bottom) only rewrites this one function, not every avatar-placement
- * call site. For the current vertical track the sideline runs down the right
- * edge, with judges staggered by slot so they line up without overlapping.
+ * This helper is the single seam the landscape-rotation task edits. Because it
+ * returns a full arena point derived from the arena dimensions and the player's
+ * slot, rotating the track (price now advancing left-to-right instead of the
+ * old top-to-bottom) only rewrote this one function, not every avatar-placement
+ * call site. For the landscape track the sideline runs along the bottom edge,
+ * with judges staggered across by slot so they line up without overlapping.
  *
  * @param slot - Player slot (playerId, 0..3).
  * @returns The judge spot center in arena units.
  */
 function sidelineSpot(slot: number): Point {
-  // Hug the right edge so the avatar sits fully inside the arena, beside the track.
-  const x = TRACK_WIDTH - AVATAR_SIZE / 2;
-  // Stagger judges down the sideline, one reserved band per slot.
-  const y = (TRACK_HEIGHT * (slot + 0.5)) / PLAYER_LANES;
+  // Hug the bottom edge so the avatar sits fully inside the arena, below the track.
+  const y = TRACK_BREADTH - AVATAR_SIZE / 2;
+  // Stagger judges across the sideline, one reserved band per slot.
+  const x = (TRACK_LENGTH * (slot + 0.5)) / PLAYER_LANES;
   return { x, y };
 }
 
@@ -434,8 +440,8 @@ function PriceReadout(props: { readonly payload: () => AuctionPayload }): JSX.El
 //============================================
 /**
  * The spatial price arena SVG: arena chrome backdrop, the store buy/sell band
- * lines and bracket, the central price axis, one price-marker token dot per
- * participant (reactive `cy`), one species avatar per participant (imperatively
+ * lines and bracket, the central horizontal price axis, one price-marker token
+ * dot per participant (reactive `cx`), one species avatar per participant (imperatively
  * tweened), and the trade-animation layer on top. The avatar tween loop and the
  * trade animations run off the scene manager's rAF via `onSceneFrame`.
  *
@@ -446,22 +452,27 @@ function PriceArena(props: {
   readonly payload: () => AuctionPayload;
   readonly reducedMotion: () => boolean;
 }): JSX.Element {
-  const axisX = TRACK_WIDTH / 2;
-  const bandY = (price: number): number =>
-    priceToTrackY(price, props.payload().priceFloor, props.payload().priceCeiling, TRACK_HEIGHT);
+  const axisY = TRACK_BREADTH / 2;
+  // Map a price to an x on the horizontal track: the store buy quote (floor)
+  // anchors the left end (x = 0) and the store sell quote (ceiling) the right
+  // end (x = TRACK_LENGTH). Reuses the tested vertical mapping (floor -> length,
+  // ceiling -> 0) and flips it, so a rising price walks an avatar rightward.
+  const priceToX = (price: number): number =>
+    TRACK_LENGTH -
+    priceToTrackY(price, props.payload().priceFloor, props.payload().priceCeiling, TRACK_LENGTH);
 
   // An avatar's target position: an out participant parks at its sideline judge
-  // spot (beside the track); a buyer or seller stands in its lane at its price.
+  // spot (below the track); a buyer or seller stands in its lane at its price.
   const avatarTarget = (participant: AuctionParticipant): Point =>
     participant.role === "out"
       ? sidelineSpot(participant.playerId)
-      : { x: laneCenterX(participant.playerId), y: bandY(participant.price) };
+      : { x: priceToX(participant.price), y: laneCenterY(participant.playerId) };
 
   // Imperative avatar state, indexed by player slot (playerId 0..3). The token
   // dots stay reactive; only the avatar groups tween.
   const avatarGroups: (SVGGElement | undefined)[] = [];
   const avatarSprites: (SVGUseElement | undefined)[] = [];
-  const avatarY: number[] = [];
+  const avatarX: number[] = [];
 
   // Trade-animation layer state.
   let tradeLayer: SVGGElement | undefined;
@@ -487,17 +498,18 @@ function PriceArena(props: {
       return;
     }
     const target = avatarTarget(participant);
-    avatarY[slot] = target.y;
+    avatarX[slot] = target.x;
     writeAvatarTransform(group, target.x, target.y);
   };
 
   //------------------------------------------
   // The store's edge position for a store-side trade: the store sells at the
-  // ceiling and buys at the floor, both on the central axis.
+  // ceiling (right end) and buys at the floor (left end), both on the central
+  // horizontal axis.
   const storePosition = (side: "buy" | "sell"): Point => {
     const payload = props.payload();
     const price = side === "sell" ? payload.storeSellPrice : payload.storeBuyPrice;
-    return { x: axisX, y: bandY(price) };
+    return { x: priceToX(price), y: axisY };
   };
 
   //------------------------------------------
@@ -509,9 +521,9 @@ function PriceArena(props: {
     }
     const payload = props.payload();
     const participant = payload.participants[id];
-    const y =
-      avatarY[id] ?? (participant !== undefined ? bandY(participant.price) : TRACK_HEIGHT / 2);
-    return { x: laneCenterX(id), y };
+    const x =
+      avatarX[id] ?? (participant !== undefined ? priceToX(participant.price) : TRACK_LENGTH / 2);
+    return { x, y: laneCenterY(id) };
   };
 
   //------------------------------------------
@@ -618,7 +630,7 @@ function PriceArena(props: {
       // An out participant is a static spectator: snap to its sideline judge
       // spot and stand still (frame 1, no walk cycle).
       if (participant.role === "out") {
-        avatarY[slot] = target.y;
+        avatarX[slot] = target.x;
         if (group !== undefined) {
           writeAvatarTransform(group, target.x, target.y);
         }
@@ -631,16 +643,16 @@ function PriceArena(props: {
         continue;
       }
 
-      // A buyer or seller keeps its lane x and eases vertically toward its price.
-      const current = avatarY[slot] ?? target.y;
+      // A buyer or seller keeps its lane y and eases horizontally toward its price.
+      const current = avatarX[slot] ?? target.x;
       const next = reduced
-        ? target.y
-        : easeToward(current, target.y, deltaSeconds, TWEEN_RATE, ARRIVAL_EPSILON);
-      avatarY[slot] = next;
-      const moving = !reduced && next !== target.y;
+        ? target.x
+        : easeToward(current, target.x, deltaSeconds, TWEEN_RATE, ARRIVAL_EPSILON);
+      avatarX[slot] = next;
+      const moving = !reduced && next !== target.x;
 
       if (group !== undefined) {
-        writeAvatarTransform(group, target.x, next);
+        writeAvatarTransform(group, next, target.y);
       }
       if (sprite !== undefined) {
         const desiredFrame: 1 | 2 = moving ? walkFrame : 1;
@@ -692,7 +704,7 @@ function PriceArena(props: {
   return (
     <svg
       class="auction-track-svg"
-      viewBox={`0 0 ${TRACK_WIDTH} ${TRACK_HEIGHT}`}
+      viewBox={`0 0 ${TRACK_LENGTH} ${TRACK_BREADTH}`}
       role="img"
       aria-label="Auction price arena"
     >
@@ -705,26 +717,26 @@ function PriceArena(props: {
         href={`#${arenaSymbolId("backdrop")}`}
         x={0}
         y={0}
-        width={TRACK_WIDTH}
-        height={TRACK_HEIGHT}
+        width={TRACK_LENGTH}
+        height={TRACK_BREADTH}
       />
       <StoreBandBracket
-        buyY={bandY(props.payload().storeSellPrice)}
-        sellY={bandY(props.payload().storeBuyPrice)}
+        buyX={priceToX(props.payload().storeBuyPrice)}
+        sellX={priceToX(props.payload().storeSellPrice)}
       />
-      <line x1={axisX} y1={0} x2={axisX} y2={TRACK_HEIGHT} class="auction-track-axis" />
+      <line x1={0} y1={axisY} x2={TRACK_LENGTH} y2={axisY} class="auction-track-axis" />
       <line
-        x1={0}
-        y1={bandY(props.payload().storeBuyPrice)}
-        x2={TRACK_WIDTH}
-        y2={bandY(props.payload().storeBuyPrice)}
+        x1={priceToX(props.payload().storeBuyPrice)}
+        y1={0}
+        x2={priceToX(props.payload().storeBuyPrice)}
+        y2={TRACK_BREADTH}
         class="auction-track-store-buy-line"
       />
       <line
-        x1={0}
-        y1={bandY(props.payload().storeSellPrice)}
-        x2={TRACK_WIDTH}
-        y2={bandY(props.payload().storeSellPrice)}
+        x1={priceToX(props.payload().storeSellPrice)}
+        y1={0}
+        x2={priceToX(props.payload().storeSellPrice)}
+        y2={TRACK_BREADTH}
         class="auction-track-store-sell-line"
       />
       <For each={props.payload().participants}>
@@ -732,8 +744,8 @@ function PriceArena(props: {
           <Show when={participant.role !== "out"}>
             <circle
               class="auction-track-token"
-              cx={laneCenterX(participant.playerId)}
-              cy={bandY(participant.price)}
+              cx={priceToX(participant.price)}
+              cy={laneCenterY(participant.playerId)}
               r={5}
               fill={playerColor(participant.playerId)}
             />
@@ -764,25 +776,25 @@ function PriceArena(props: {
 //============================================
 /**
  * The store's buy/sell band bracket: the arena-chrome band symbol stretched to
- * span the two store-quote y coordinates, layered behind the dashed band lines
- * as a shaded price zone. Buyers above the top edge and sellers below the bottom
- * edge are outside the store's spread.
+ * span the two store-quote x coordinates, layered behind the dashed band lines
+ * as a shaded price zone. Buyers left of the store buy end and sellers right of
+ * the store sell end are outside the store's spread.
  *
- * @param props - Carries the top (`buyY`, the higher-priced ceiling) and bottom
- *   (`sellY`, the lower-priced floor) band y coordinates.
- * @returns The band bracket `<use>` element, or nothing for a zero-height band.
+ * @param props - Carries the left (`buyX`, the store buy end) and right (`sellX`,
+ *   the store sell end) band x coordinates.
+ * @returns The band bracket `<use>` element, or nothing for a zero-width band.
  */
-function StoreBandBracket(props: { readonly buyY: number; readonly sellY: number }): JSX.Element {
-  const top = (): number => Math.min(props.buyY, props.sellY);
-  const height = (): number => Math.abs(props.sellY - props.buyY);
+function StoreBandBracket(props: { readonly buyX: number; readonly sellX: number }): JSX.Element {
+  const left = (): number => Math.min(props.buyX, props.sellX);
+  const width = (): number => Math.abs(props.sellX - props.buyX);
   return (
-    <Show when={height() > 0}>
+    <Show when={width() > 0}>
       <use
         href={`#${arenaSymbolId("store-band")}`}
-        x={0}
-        y={top()}
-        width={TRACK_WIDTH}
-        height={height()}
+        x={left()}
+        y={0}
+        width={width()}
+        height={TRACK_BREADTH}
       />
     </Show>
   );
@@ -803,10 +815,11 @@ interface AvatarProps {
 //============================================
 /**
  * One player's species avatar: a `<g>` carrying the test hooks (`data-actor`,
- * reactive `data-role`, and the per-frame `data-y` the tween loop writes) around
- * a tintable `<use>` of the species walk symbol. The group's `transform` and the
- * sprite's `href` are written imperatively by the tween loop; the initial pose
- * is set on mount via `register`, so nothing here binds them reactively.
+ * reactive `data-role`, and the per-frame `data-x`/`data-y` the tween loop
+ * writes) around a tintable `<use>` of the species walk symbol. The group's
+ * `transform` and the sprite's `href` are written imperatively by the tween
+ * loop; the initial pose is set on mount via `register`, so nothing here binds
+ * them reactively.
  *
  * @param props - Carries the slot, participant, species, and register callback.
  * @returns The avatar `<g>` group.
@@ -846,9 +859,11 @@ function Avatar(props: AvatarProps): JSX.Element {
 //============================================
 /**
  * Write an avatar group's transform so its center sits at (`centerX`, `centerY`),
- * and mirror the center y onto `data-y` for browser tests to poll. Taking an
- * explicit center x (rather than deriving it from the lane) lets an out
- * participant park on the sideline, off its trading lane.
+ * and mirror both center coordinates onto `data-x` and `data-y` for browser
+ * tests to poll. On the landscape track price drives `centerX`, so `data-x` is
+ * the moving coordinate and `data-y` is the fixed lane; taking an explicit
+ * center y (rather than deriving it from the lane) lets an out participant park
+ * on the sideline, off its trading lane.
  *
  * @param group - The avatar group element.
  * @param centerX - The avatar's center x in arena units.
@@ -858,6 +873,7 @@ function writeAvatarTransform(group: SVGGElement, centerX: number, centerY: numb
   const x = centerX - AVATAR_SIZE / 2;
   const y = centerY - AVATAR_SIZE / 2;
   group.setAttribute("transform", `translate(${x.toFixed(2)}, ${y.toFixed(2)})`);
+  group.setAttribute("data-x", centerX.toFixed(1));
   group.setAttribute("data-y", centerY.toFixed(1));
 }
 

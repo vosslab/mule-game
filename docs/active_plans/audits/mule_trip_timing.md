@@ -1,5 +1,15 @@
 # Human develop-turn errand timing (live measurement)
 
+## Status: applied (WP-2A, 2026-07-10)
+
+The recommendation below was superseded by a full re-measurement after the
+corral purchase panel (WP-4A/4B: walk-in -> confirm -> Escape ->
+walk-back-to-street) and the no-longer-turn-ending hunt_wampus/assay_plot
+develop plans landed, both adding real wall-clock to the develop-turn
+errand. See "Applied calibration (2026-07-10)" below for the full evidence
+table and the value actually shipped
+(`WALKER_SPEED_PX_PER_SEC = 320`, `src/ui/scenes/walker.ts:60`).
+
 Live wall-clock timing of the human develop-turn errand -- get a mule, get
 equipped, and walk to a plot -- against the engine's real tick budget, per the
 question "we will probably need to time how long it takes to get a mule, get
@@ -172,3 +182,100 @@ inside (far) the achievable plot distances on this board.
   with reaction time, but the ~1ms spread between the two adjacent-to-town
   runs suggests the walker/engine timing itself is deterministic and not a
   source of the variance a real playtest would see.
+
+## Applied calibration (2026-07-10, WP-2A)
+
+### Diagnostic: confirming the mechanism before tuning
+
+Before changing the constant, an instrumented `seed=3 --mode beginner`
+walkthrough run (`node --import tsx tests/e2e/e2e_walkthrough.mjs --seed 3
+--mode beginner`) reproduced a `walk_stall` at the counter-smithore door,
+4.01s into the develop phase (`test-results/walker/playthrough_report.json`:
+`phase begin: develop` at `17:36:24.190Z`, failure at `17:36:28.203Z`).
+Direct browser instrumentation of `window.muleGameState()` confirmed this
+seed's round-1 develop turn starts FULLY FED (`ticksRemaining = 50`, not
+starved -- players start with `STARTING_GOODS.food = 4` against round 1's
+requirement of 3, `src/engine/constants.ts:71-76,466-468`), so the mechanism
+is not literally "this specific turn's timer expired" but the broader
+design risk the plan targets: even food fraction and worse rounds
+progressively shrink `ticksRemaining` toward `DEVELOP_TICKS_MIN`
+(`turn.ts`'s `computeFoodUsage`), and the corral-panel/no-longer-truncating
+develop-plan overhead added since the original 80 px/s mapping was chosen
+makes the develop-turn errand itself take long enough in real time that a
+starved or partial-fed turn's `ticksRemaining` can now hit 0
+(`applyTick`'s `endDevelopTurn`) mid-walk, tearing the town/overworld scene
+out from under the walker's spatial executor and surfacing as a `walk_stall`
+at an arbitrary door -- exactly the non-deterministic, seed/door-scattered
+failure pattern observed across the sweep. This is a design-level timing
+risk, not a single-seed bug, which is why the fix is a GAMEPLAY TIMING
+constant, not a walker/harness patch.
+
+### Method
+
+A new scratch harness (`_temp_wp2a_calibrate.mjs`, not committed, deleted
+after this report was written) reused the production, up-to-date
+walk-in-trigger executors from `tests/e2e/walkthrough_town.mjs`
+(`executeBuyMule`, `executeOutfitMule`) and `tests/e2e/walkthrough_overworld.mjs`
+(`executePlaceMule`), plus `enterTown`/`exitTown` from
+`walkthrough_helpers.mjs` -- the same code path the real walkthrough drives,
+unlike `tests/e2e/e2e_walk_calibration.mjs`'s own metric-2 errand, which
+still presses the retired Enter/Space door-trigger key and fails outright
+under the current walk-in model (see "Note on e2e_walk_calibration.mjs"
+below). Each run: bootstrap a fresh `seed=33` game at `?speed=1` (live
+pacing), claim the far-corner plot `(4, 8)` in the land grant, pass the rest,
+run the full develop-turn errand (enter town, buy at the corral, outfit at
+`counter-smithore`, exit west, walk to the far-corner plot on the
+overworld, place the M.U.L.E.), and compare the total wall-clock time
+against the FIXED starved-minimum budget (`DEVELOP_TICKS_MIN(5) *
+DEVELOP_TICK_MS(950) = 4750ms`) -- the same reference anchor the original
+report used, independent of the actual round's `ticksRemaining` (round 1 on
+this seed is fully fed, per the diagnostic above; the budget comparison
+uses the plan's literal "budget DEVELOP_TICKS_MIN" wording as a fixed
+target, not a forced in-engine starve).
+
+### Evidence table
+
+| `WALKER_SPEED_PX_PER_SEC` | Errand total | Margin vs 4750ms budget | Door-reach | Verdict |
+| --- | --- | --- | --- | --- |
+| 80 (prior) | 14,304ms | -199% | reliable | FAIL (timing) |
+| 120 | 9,967ms | -110% | reliable | FAIL (timing) |
+| 160 | 7,604ms | -60% | reliable | FAIL (timing) |
+| 240 | 5,389ms | -13% | reliable | FAIL (timing) |
+| 280 | 4,839ms | -1.9% | reliable | FAIL (timing) |
+| 320 | 4,204 / 4,276 / 4,298 / 4,089 / 4,276ms (5 runs) | +11.5% / +10.0% / +9.5% / +13.9% / +10.0% | reliable (5/5) | PASS (thin, noise-bound around 10%) |
+| 340 | 1 stall (exitTown), 1 pass at 4,064ms (+14.4%) | n/a | unreliable (1/2) | FAIL (door-reach) |
+| 360 | stall (counter-smithore) both runs | n/a | unreliable (0/2) | FAIL (door-reach) |
+| 400 | stall (counter-smithore) | n/a | unreliable | FAIL (door-reach) |
+
+The originally hypothesized `[120, 160]` range fails badly (60-110% over
+budget) -- the corral panel and untruncated hunt_wampus/assay_plot plans
+added materially more real-time overhead than the range assumed. **320 is
+the lowest tested value that clears the 10% margin rule** while keeping
+walk-in door-reach reliable; values above it (340+) start failing door-reach
+outright (`walk_stall`, a harder failure than a thin timing margin) because
+`WALK_TAP_MS` (`tests/e2e/walkthrough_helpers.mjs`, fixed at 120ms) starts
+overshooting doors at higher per-tap travel distance -- that constant is
+outside this package's touch points (owned by WP-8A's seek-core lane).
+
+**Applied:** `WALKER_SPEED_PX_PER_SEC = 320` (`src/ui/scenes/walker.ts:60`).
+
+**Obvious follow-on (not done here, flagged for WP-8A):** the 320 margin is
+thin and noise-bound right around the 10% line (one of five runs measured
+9.5%). Retuning `WALK_TAP_MS`/`MIN_WALK_TAP_MS` in
+`tests/e2e/walkthrough_helpers.mjs` (shorter taps, so overshoot correction
+kicks in at a higher walker speed) would let a future package raise the
+speed further and widen this margin without trading away door-reach
+reliability -- WP-2A's touch points are limited to the walker-speed
+constant, so this stays a recorded follow-on rather than an in-package fix.
+
+### Note on e2e_walk_calibration.mjs
+
+`tests/e2e/e2e_walk_calibration.mjs`'s metric-2 develop-turn errand
+(`measureErrand`) still presses `"Space"` at the corral/counter door
+(pre-WP-3B interaction model) and fails outright under the current
+walk-in-trigger door model; its metric-1 door-reach sweep (pure walk
+physics, no door-trigger dependency) is unaffected and still passes
+20/20 at every tested `speed x WALK_TAP_MS` config. Updating metric-2 to
+the walk-in model is WP-8A/WP-3C-adjacent housekeeping, not part of this
+package's touch points (`src/ui/scenes/walker.ts` and this audit doc only);
+flagged here rather than fixed silently.

@@ -422,14 +422,54 @@ interface Offer {
 }
 
 /**
- * Best (highest) bid among player buyers plus the store's standing buy offer.
- * Ties break to the lowest id, so a player at the store's price wins over the
- * store. The store always bids, since it buys unlimited units.
+ * A crossed, executable buyer/seller pair chosen by the matcher for one tick.
+ */
+interface MatchedPair {
+  readonly bid: Offer;
+  readonly ask: Offer;
+}
+
+/**
+ * Order two bids best-first: higher price wins, then the lower playerId. A
+ * player resting at the store's price therefore ranks above the store, since
+ * `AUCTION_STORE_ID` sits above every real player id.
+ *
+ * @param a - First bid.
+ * @param b - Second bid.
+ * @returns Negative when `a` should rank before `b`.
+ */
+function compareBids(a: Offer, b: Offer): number {
+  if (a.price !== b.price) {
+    // Higher price is the better bid, so it sorts first (descending price).
+    return b.price - a.price;
+  }
+  return a.playerId - b.playerId;
+}
+
+/**
+ * Order two asks best-first: lower price wins, then the lower playerId.
+ *
+ * @param a - First ask.
+ * @param b - Second ask.
+ * @returns Negative when `a` should rank before `b`.
+ */
+function compareAsks(a: Offer, b: Offer): number {
+  if (a.price !== b.price) {
+    // Lower price is the better ask, so it sorts first (ascending price).
+    return a.price - b.price;
+  }
+  return a.playerId - b.playerId;
+}
+
+/**
+ * Every bid (player buyers plus the store's standing buy offer) ranked
+ * best-first by price descending, then lowest playerId. The store always bids,
+ * since it buys unlimited units, so the list is never empty.
  *
  * @param payload - Current auction payload.
- * @returns The highest bid offer.
+ * @returns Bids ordered best-first.
  */
-function bestBid(payload: AuctionPayload): Offer {
+function rankedBids(payload: AuctionPayload): Offer[] {
   const offers: Offer[] = [
     { playerId: AUCTION_STORE_ID, price: payload.storeBuyPrice, isStore: true },
   ];
@@ -438,27 +478,20 @@ function bestBid(payload: AuctionPayload): Offer {
       offers.push({ playerId: participant.playerId, price: participant.price, isStore: false });
     }
   }
-  let best = offers[0] as Offer;
-  for (const offer of offers) {
-    if (
-      offer.price > best.price ||
-      (offer.price === best.price && offer.playerId < best.playerId)
-    ) {
-      best = offer;
-    }
-  }
-  return best;
+  offers.sort(compareBids);
+  return offers;
 }
 
 /**
- * Best (lowest) ask among player sellers plus the store's standing sell offer.
- * Ties break to the lowest id. The store only offers to sell when it still has
- * stock of the good (so it never sells crystite, which it holds zero of).
+ * Every ask (player sellers plus the store's standing sell offer) ranked
+ * best-first by price ascending, then lowest playerId. The store only offers to
+ * sell when it still holds stock of the good (so it never sells crystite, which
+ * it holds zero of). The list is empty when no one is selling.
  *
  * @param payload - Current auction payload.
- * @returns The lowest ask offer, or null when no one is selling.
+ * @returns Asks ordered best-first (possibly empty).
  */
-function bestAsk(payload: AuctionPayload): Offer | null {
+function rankedAsks(payload: AuctionPayload): Offer[] {
   const offers: Offer[] = [];
   if (payload.storeStock >= 1) {
     offers.push({ playerId: AUCTION_STORE_ID, price: payload.storeSellPrice, isStore: true });
@@ -468,19 +501,60 @@ function bestAsk(payload: AuctionPayload): Offer | null {
       offers.push({ playerId: participant.playerId, price: participant.price, isStore: false });
     }
   }
-  if (offers.length === 0) {
-    return null;
-  }
-  let best = offers[0] as Offer;
-  for (const offer of offers) {
-    if (
-      offer.price < best.price ||
-      (offer.price === best.price && offer.playerId < best.playerId)
-    ) {
-      best = offer;
+  offers.sort(compareAsks);
+  return offers;
+}
+
+/**
+ * Select the one unit trade to execute this tick, or `null` when no crossed,
+ * solvent pair exists. Scans bid-major (best bid first) and ask-minor (best ask
+ * first), so the executed pair maximizes bid price, then minimizes ask price,
+ * then prefers the lowest playerIds -- degenerating to the top bid/top ask pair
+ * whenever that pair is itself solvent.
+ *
+ * An insolvent or out-of-goods participant does not block the market: it is
+ * skipped and the scan continues to the next eligible offer, matching the
+ * original's self-withdrawal (an out-of-money buyer or out-of-goods seller
+ * leaves the live set rather than stalling every trade behind it). A
+ * store-to-store crossing is never a real trade, so it is skipped.
+ *
+ * @param payload - Current auction payload (participants already stepped).
+ * @param players - Current players tuple.
+ * @param good - Good being traded.
+ * @returns The chosen crossed, executable pair, or `null` when none exists.
+ */
+function selectTrade(
+  payload: AuctionPayload,
+  players: readonly Player[],
+  good: Resource,
+): MatchedPair | null {
+  const bids = rankedBids(payload);
+  const asks = rankedAsks(payload);
+  for (const bid of bids) {
+    for (const ask of asks) {
+      // Asks are ranked cheapest-first, so once this bid fails to cross the
+      // current ask it cannot cross any later (pricier) ask either.
+      if (bid.price < ask.price) {
+        break;
+      }
+      // A store-to-store crossing is never a real trade; try the next ask.
+      if (bid.isStore && ask.isStore) {
+        continue;
+      }
+      if (canExecute(bid, ask, ask.price, players, good)) {
+        return { bid, ask };
+      }
+      // canExecute failed. Buyer solvency is the only price-dependent check,
+      // and remaining asks only get pricier, so a buyer that cannot afford this
+      // ask cannot afford any later one: withdraw it and move to the next bid.
+      // Otherwise the seller is out of goods -- skip that ask and keep scanning
+      // cheaper-first for this bid.
+      if (!bid.isStore && playerAt(players, bid.playerId).money < ask.price) {
+        break;
+      }
     }
   }
-  return best;
+  return null;
 }
 
 /**
@@ -684,11 +758,10 @@ function resolveTrade(
     };
   }
 
-  const bid = bestBid(payload);
-  const ask = bestAsk(payload);
-  const storeToStore = ask !== null && bid.isStore && ask.isStore;
-  const crossed = ask !== null && !storeToStore && bid.price >= ask.price;
-  if (crossed && ask !== null && canExecute(bid, ask, ask.price, players, payload.good)) {
+  const match = selectTrade(payload, players, payload.good);
+  if (match !== null) {
+    const bid = match.bid;
+    const ask = match.ask;
     const price = ask.price;
     const nextPlayers = applyTradeToPlayers(players, bid, ask, price, payload.good);
     const nextStore = applyTradeToStore(store, bid, ask, payload.good);

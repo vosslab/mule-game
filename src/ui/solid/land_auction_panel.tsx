@@ -18,6 +18,14 @@
 // [data-land-auction] (panel root), #land-bid-button (human bid button),
 // [data-high-bidder] (current high bidder's player id, or "none").
 //
+// WP-7C canvas fill: this is a board phase, so the panel claims stage width
+// (see .land-auction-panel in src/style.css) and only the height its content
+// needs. The plot/price, high-bidder/going-status, and remaining/controls
+// groups sit in three side-by-side columns (.land-auction-body's
+// .land-auction-info / .land-auction-status / .land-auction-side) instead of
+// one narrow centered stack, preserving the original top-to-bottom reading
+// order left-to-right.
+//
 // Solid discipline: run-once component, props read through the props object,
 // keyboard listener bound in onMount and released in onCleanup.
 
@@ -92,44 +100,52 @@ export function LandAuctionPanel(props: LandAuctionPanelProps): JSX.Element {
           message="Bid to raise the price -- not bidding on a plot already passes it. The high bidder when the going-twice countdown ends wins."
         />
       </Show>
-      <p class="land-auction-hint">{`Plot (${props.payload().row}, ${props.payload().col}) is up for auction.`}</p>
-      <p class="land-auction-price">{`Current ask: $${askPriceFor(props.payload(), HUMAN_ID)}`}</p>
-      <p class="land-auction-high-bidder" data-high-bidder={leader()?.playerId ?? "none"}>
-        <Show when={leader()}>
-          {(entry) => (
-            <span
-              class="land-auction-swatch"
-              style={{ "background-color": playerColor(entry().playerId) }}
-            />
-          )}
-        </Show>
-        {highBidderText(state(), leader())}
-      </p>
-      <p class="land-auction-going">{goingStageText(stage(), state(), props.payload())}</p>
-      <p class="land-auction-remaining">
-        {`Colony auctions remaining after this one: ${props.payload().auctionsRemaining}`}
-      </p>
-      <Show when={!props.payload().finished}>
-        <div class="land-auction-controls">
-          <button
-            type="button"
-            id="land-bid-button"
-            class="land-auction-button"
-            data-action="land-bid"
-            disabled={!canBid(state(), props.payload())}
-            onClick={bid}
-          >
-            {`Bid $${askPriceFor(props.payload(), HUMAN_ID)}`}
-          </button>
-          <button
-            type="button"
-            class="land-auction-button land-auction-pass-button"
-            onClick={blurFocus}
-          >
-            Pass
-          </button>
+      <div class="land-auction-body">
+        <div class="land-auction-info">
+          <p class="land-auction-hint">{`Plot (${props.payload().row}, ${props.payload().col}) is up for auction.`}</p>
+          <p class="land-auction-price">{`Current ask: $${askPriceFor(props.payload(), HUMAN_ID)}`}</p>
         </div>
-      </Show>
+        <div class="land-auction-status">
+          <p class="land-auction-high-bidder" data-high-bidder={leader()?.playerId ?? "none"}>
+            <Show when={leader()}>
+              {(entry) => (
+                <span
+                  class="land-auction-swatch"
+                  style={{ "background-color": playerColor(entry().playerId) }}
+                />
+              )}
+            </Show>
+            {highBidderText(state(), leader())}
+          </p>
+          <p class="land-auction-going">{goingStageText(stage(), state(), props.payload())}</p>
+        </div>
+        <div class="land-auction-side">
+          <p class="land-auction-remaining">
+            {`Colony auctions remaining after this one: ${props.payload().auctionsRemaining}`}
+          </p>
+          <Show when={!props.payload().finished}>
+            <div class="land-auction-controls">
+              <button
+                type="button"
+                id="land-bid-button"
+                class="land-auction-button"
+                data-action="land-bid"
+                disabled={!canBid(state(), props.payload())}
+                onClick={bid}
+              >
+                {`Bid $${askPriceFor(props.payload(), HUMAN_ID)}`}
+              </button>
+              <button
+                type="button"
+                class="land-auction-button land-auction-pass-button"
+                onClick={blurFocus}
+              >
+                Pass
+              </button>
+            </div>
+          </Show>
+        </div>
+      </div>
     </div>
   );
 }

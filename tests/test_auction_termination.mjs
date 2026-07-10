@@ -157,8 +157,16 @@ test("a sold-out seller with no store stock terminates instead of spinning", () 
   const { state, steps } = tickToFinish(start, AUCTION_MAX_TICKS + 10);
   assert.equal(state.phase.payload.finished, true);
   assert.ok(steps < AUCTION_MAX_TICKS, `must finish before the ${AUCTION_MAX_TICKS} ceiling`);
-  // At least one unit cleared, then trading dried up and the window ended. (How
-  // MANY units clear is limited by a separate bestBid matching quirk -- see the
-  // handoff note -- so this pins termination, not the exact clear count.)
-  assert.ok(state.phase.payload.trades.length >= 1, "some trade happened before drying up");
+  // Exactly 2 units clear, derived from the engine rules, not observed and
+  // pinned blindly: seat 0 holds 2 energy and all four participants hold at
+  // price 20, so on tick 1 selectTrade's bid-major scan picks buyer id 1
+  // (lowest id among the tied price-20 buyers) against seat 0's ask, trading
+  // immediately (transferCooldown(1) = AUCTION_TRANSFER_START_TICKS = 1). One
+  // quiet cooldown tick later, seat 0 still holds 1 unit, so the next resolve
+  // trades buyer id 2 against it (transferCooldown(2) = 2, floored at
+  // AUCTION_TRANSFER_MIN_TICKS). After that cooldown, seat 0 holds 0 units:
+  // its ask remains ranked but canExecute always fails the goods check, and
+  // the bid-major scan has no other ask to fall through to (no store stock),
+  // so selectTrade returns null forever after and the window goes quiet.
+  assert.equal(state.phase.payload.trades.length, 2, "exactly 2 units clear before drying up");
 });

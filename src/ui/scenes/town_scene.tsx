@@ -37,12 +37,12 @@ import { createSignal, createMemo, onMount, onCleanup, untrack, Show } from "sol
 import type { JSX } from "solid-js";
 import type { DevelopPayload } from "../../engine/game_state";
 import type { Resource } from "../../engine/player";
-import { canBuyMule } from "../../engine/turn";
 import { computeOutfitCost } from "../../engine/store";
 import type { GameStore } from "../game_store";
 import { HUMAN_ID } from "../game_driver";
 import { createKeyState } from "../input";
 import { playerColor } from "../sprites";
+import { CorralPurchasePanel } from "../solid/corral_purchase_panel";
 import { pickSpeciesFrameId, buildSpeciesSpriteDefsMarkup } from "../sprites/sprites_species";
 import {
   MULE_TOWED_ID,
@@ -50,12 +50,10 @@ import {
   buildMuleSpriteDefsMarkup,
 } from "../sprites/sprites_mule";
 import {
-  TOWN_BUILDING_HEIGHT,
   TOWN_DOOR_SYMBOL_ID,
   TOWN_GROUND_SYMBOL_ID,
   buildTownSpriteDefsMarkup,
   townBuildingSymbolId,
-  townBuildingWidth,
   townExitSymbolId,
   townStoreCounterSymbolId,
 } from "../sprites/sprites_town";
@@ -80,9 +78,15 @@ import {
   townExitCenter,
 } from "./zones";
 import type { TownDoorId, TownExit } from "./zones";
+import {
+  TOWN_AVATAR_SIZE as AVATAR_SIZE,
+  computeOpenDoors,
+  resolveTownWalkWithDoors,
+  townBuildingFootprint,
+  townCounterFootprint,
+  townDoorAtEntry,
+} from "./town_layout";
 
-/** Rendered avatar size in town pixel units (a bit under one cell). */
-const AVATAR_SIZE = 44;
 /** Rendered towed-M.U.L.E. size in town pixel units. */
 const MULE_SIZE = 34;
 /** Outfit-badge size drawn on the towed M.U.L.E. */
@@ -95,8 +99,6 @@ const MAX_FRAME_MS = 100;
 const DOOR_MARKER_SIZE = 28;
 /** Rendered size of an edge-exit marker in town pixel units. */
 const EXIT_MARKER_SIZE = 34;
-/** Rendered size of a standalone outfit-counter station in town pixel units. */
-const COUNTER_SIZE = 44;
 /**
  * How long the pub payout banner stays up, in ms, matching the overworld
  * scene's wampus-catch-banner hold (WAMPUS_CATCH_BANNER_MS).
@@ -108,7 +110,11 @@ const UP_KEYS = ["ArrowUp", "w", "W"] as const;
 const DOWN_KEYS = ["ArrowDown", "s", "S"] as const;
 const LEFT_KEYS = ["ArrowLeft", "a", "A"] as const;
 const RIGHT_KEYS = ["ArrowRight", "d", "D"] as const;
-/** Keys that use the building door the avatar is standing at, or confirm a pending gamble. */
+/**
+ * Keys that confirm a pending gamble dialog. Door entry is walk-in (no keypress)
+ * per the town interaction model, so these keys now only drive the pub's
+ * gamble-and-end-turn confirmation, never a door.
+ */
 const ACTION_KEYS = new Set(["Enter", " "]);
 /** Key that declines a pending gamble confirmation. */
 const CANCEL_KEY = "Escape";
@@ -120,6 +126,30 @@ const COUNTER_RESOURCE: Readonly<Record<string, Resource>> = {
   "counter-smithore": "smithore",
   "counter-crystite": "crystite",
 };
+
+/** Reactive accessor a door marker uses to render its open/closed state. */
+type DoorOpenAccessor = (door: TownDoorId) => boolean;
+
+//============================================
+/**
+ * Whether two door-id sets hold the same doors, so the per-frame door refresh
+ * only pushes a new reactive value when membership actually changes.
+ *
+ * @param a - First door set.
+ * @param b - Second door set.
+ * @returns True when both sets contain exactly the same doors.
+ */
+function doorSetsEqual(a: ReadonlySet<TownDoorId>, b: ReadonlySet<TownDoorId>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+  for (const door of a) {
+    if (!b.has(door)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /** Props for the town scene. */
 export interface TownSceneProps {
@@ -200,8 +230,28 @@ export function TownScene(props: TownSceneProps): JSX.Element {
   // accidental action-key press at the pub door must not trigger it -- this
   // gates a second explicit keypress and freezes movement in the meantime.
   const [confirmingGamble, setConfirmingGamble] = createSignal(false);
+  // Whether the corral purchase panel is showing. Walking into the corral
+  // opens the panel with attempt-then-confirm buying (WP-4A/4B); movement
+  // freezes while it is up, matching the gamble-confirm freeze above, and
+  // dismissing it returns the player to the town scene at the door with no
+  // avatar movement in between.
+  const [corralPanelOpen, setCorralPanelOpen] = createSignal(false);
   const carrying = createMemo(() => props.payload().carriedMule);
   const frameId = createMemo(() => pickSpeciesFrameId(species, walkFrame(), reducedMotion));
+
+  // Door open/closed state, driven by avatar proximity (town_layout's
+  // computeOpenDoors, with hysteresis). Two views of one set: `openDoors` is the
+  // mutable per-frame value the rAF loop reads for collision and the walk-in
+  // trigger; `openDoorsSignal` mirrors it reactively so each door marker renders
+  // its own open/closed state. refreshDoors updates them together, so the drawn
+  // door and the solid door can never disagree.
+  let openDoors: ReadonlySet<TownDoorId> = computeOpenDoors(spawn, new Set());
+  const [openDoorsSignal, setOpenDoorsSignal] = createSignal<ReadonlySet<TownDoorId>>(openDoors);
+  const isDoorOpen: DoorOpenAccessor = (door) => openDoorsSignal().has(door);
+  // Walk-in edge-trigger latch: the door whose entry zone the avatar currently
+  // occupies. A single walk-in fires its interaction once and does not re-fire
+  // while the avatar lingers inside; walking out and back in re-arms it.
+  let enteredDoor: TownDoorId | null = null;
 
   let avatarRef: SVGGElement | undefined;
   let towRef: SVGGElement | undefined;
@@ -216,9 +266,13 @@ export function TownScene(props: TownSceneProps): JSX.Element {
     // Freeze movement while the gamble confirm affordance is up, so the
     // player cannot wander off mid-decision -- Enter/Space or Escape are the
     // only way forward, matching a modal's expected keyboard behavior.
-    if (confirmingGamble()) {
+    if (confirmingGamble() || corralPanelOpen()) {
       return;
     }
+    // Open/close doors for the avatar's current position before moving, so this
+    // frame's collision and walk-in trigger read a door state consistent with
+    // where the avatar already stands (a door opens as it is approached).
+    refreshDoors();
     const direction = directionFromKeys({
       up: keys.anyDown(UP_KEYS),
       down: keys.anyDown(DOWN_KEYS),
@@ -226,8 +280,12 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       right: keys.anyDown(RIGHT_KEYS),
     });
     const moving = direction.x !== 0 || direction.y !== 0;
-    // Town has no obstacle terrain, so every cell moves at full speed.
-    avatarPos = stepPosition(
+    // Integrate the open-ground move (full speed, clamped to the town bounds),
+    // then slide it clear of the solid buildings and any closed door. Splitting
+    // the two keeps walker.ts free of town-specific geometry: stepPosition owns
+    // speed and bounds, resolveTownWalkWithDoors owns the walls, doorway gaps,
+    // and the closed-door panels.
+    const stepped = stepPosition(
       avatarPos,
       direction,
       speed,
@@ -236,6 +294,7 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       TOWN_BOUNDS,
       AVATAR_SIZE / 2,
     );
+    avatarPos = resolveTownWalkWithDoors(avatarPos, stepped, AVATAR_SIZE / 2, openDoors);
     towPos = stepTowFollower(towPos, avatarPos, dtSeconds, TOW_FOLLOW_DISTANCE, speed);
     writeTransforms();
     updateFacing(direction.x);
@@ -246,7 +305,48 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       return;
     }
     updateDoor();
+    detectWalkIn();
     updateWalkFrame(moving, dtSeconds);
+  }
+
+  //------------------------------------------
+  // Recompute which doors are open for the avatar's current position (with
+  // hysteresis) and, when membership changed, publish the new set reactively so
+  // the door markers re-render. The mutable `openDoors` is the source the rAF
+  // loop reads; the signal is only for rendering.
+  function refreshDoors(): void {
+    const next = computeOpenDoors(avatarPos, openDoors);
+    if (!doorSetsEqual(next, openDoors)) {
+      openDoors = next;
+      setOpenDoorsSignal(next);
+    }
+  }
+
+  //------------------------------------------
+  // Fire a door's interaction when the avatar walks into its entry zone, once
+  // per occupancy. Walking through an open doorway (or pressing up into a solid
+  // counter) IS the entry gesture -- no keypress. A closed (solid) door cannot
+  // be entered, so its interaction never fires. The store's smithore bay doubles
+  // as the north/south cross-street, so its outfit only fires when the avatar is
+  // actually carrying a mule to outfit; otherwise walking the bay to an edge
+  // exit stays pure navigation.
+  function detectWalkIn(): void {
+    const door = townDoorAtEntry(avatarPos);
+    if (door === null) {
+      enteredDoor = null;
+      return;
+    }
+    if (door === enteredDoor) {
+      return;
+    }
+    enteredDoor = door;
+    if (!openDoors.has(door)) {
+      return;
+    }
+    if (door === "counter-smithore" && props.payload().carriedMule !== "unoutfitted") {
+      return;
+    }
+    useDoor(door);
   }
 
   //------------------------------------------
@@ -295,45 +395,38 @@ export function TownScene(props: TownSceneProps): JSX.Element {
   }
 
   //------------------------------------------
-  // Capture-phase action-key handler: while a gamble confirm is pending,
-  // Enter/Space confirms it and Escape declines it; otherwise, use the door
-  // the avatar stands at.
+  // Capture-phase action-key handler. Doors are now entered by walking through
+  // them (no keypress), so this handler only serves the pub's gamble dialog:
+  // while a confirm is pending, Enter/Space confirms it and Escape declines it.
+  // With no dialog up, these keys do nothing here.
   function handleActionKey(event: KeyboardEvent): void {
     if (event.repeat) {
       return;
     }
-    if (confirmingGamble()) {
-      if (event.key === CANCEL_KEY) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        declineGamble();
-      } else if (ACTION_KEYS.has(event.key)) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        confirmGamble();
-      }
+    if (!confirmingGamble()) {
       return;
     }
-    if (!ACTION_KEYS.has(event.key)) {
-      return;
+    if (event.key === CANCEL_KEY) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      declineGamble();
+    } else if (ACTION_KEYS.has(event.key)) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      confirmGamble();
     }
-    const door = atDoor();
-    if (door === null) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-    useDoor(door);
   }
 
   //------------------------------------------
   // Route a door use to its action, surfacing a notice either way.
   function useDoor(door: TownDoorId): void {
     if (door === "corral") {
-      buyAtCorral();
+      // Attempt-then-confirm: walking in always opens the purchase panel
+      // (success and every failure case); the panel itself is the SINGLE
+      // corral-entry feedback path -- see CorralPurchasePanel.
+      setCorralPanelOpen(true);
       return;
     }
     if (door === "pub") {
@@ -355,7 +448,7 @@ export function TownScene(props: TownSceneProps): JSX.Element {
   // Ask the player to confirm gambling, since it always ends the turn.
   function askGambleConfirm(): void {
     setConfirmingGamble(true);
-    setNotice("Gamble and end turn? Press action to confirm, Esc to back out.");
+    setNotice("Gamble and end turn? Press Enter to confirm, Esc to back out.");
   }
 
   //------------------------------------------
@@ -376,26 +469,6 @@ export function TownScene(props: TownSceneProps): JSX.Element {
     props.store.dispatch({ type: "gamble", playerId: HUMAN_ID });
     const after = props.store.state.players[HUMAN_ID]?.money ?? 0;
     showPubBanner(after - before, reducedMotion);
-  }
-
-  //------------------------------------------
-  // Buy a M.U.L.E. at the corral, or surface why it is not possible.
-  function buyAtCorral(): void {
-    const state = props.store.state;
-    if (canBuyMule(state, HUMAN_ID)) {
-      props.store.dispatch({ type: "buy_mule", playerId: HUMAN_ID });
-      setNotice("Bought a M.U.L.E. -- outfit it at a counter.");
-      return;
-    }
-    if (props.payload().carriedMule !== "none") {
-      setNotice("You already have a M.U.L.E. in tow.");
-      return;
-    }
-    if (state.store.muleStock <= 0) {
-      setNotice("The corral is out of M.U.L.E.s.");
-      return;
-    }
-    setNotice(`Not enough money for a M.U.L.E. ($${state.store.mulePrice}).`);
   }
 
   //------------------------------------------
@@ -462,7 +535,7 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       >
         <g innerHTML={defsMarkup} />
         <g class="town-ground" innerHTML={groundMarkup} />
-        <BuildingsLayer />
+        <BuildingsLayer isDoorOpen={isDoorOpen} />
         <ExitsLayer />
         <Show when={carrying() !== "none"}>
           <g
@@ -512,7 +585,7 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       </svg>
       <div class="town-hud">
         <p class="town-notice" data-town-notice aria-live="polite">
-          {notice() ?? "Walk to the corral and press Enter (or Space) to buy a M.U.L.E."}
+          {notice() ?? "Walk into the corral to buy a M.U.L.E. Doors open as you approach."}
         </p>
         <button
           type="button"
@@ -523,6 +596,13 @@ export function TownScene(props: TownSceneProps): JSX.Element {
           End turn
         </button>
       </div>
+      <Show when={corralPanelOpen()}>
+        <CorralPurchasePanel
+          store={props.store}
+          payload={props.payload}
+          onDismiss={() => setCorralPanelOpen(false)}
+        />
+      </Show>
     </div>
   );
 }
@@ -593,20 +673,21 @@ function buildGroundMarkup(): string {
  * the assay. Each interactive door carries a `[data-door-for]` marker and a
  * building group carries `[data-building]`, matching the town selector contract.
  *
+ * @param props - Carries the door-open accessor threaded down to each marker.
  * @returns The buildings layer group.
  */
-function BuildingsLayer(): JSX.Element {
+function BuildingsLayer(props: { readonly isDoorOpen: DoorOpenAccessor }): JSX.Element {
   return (
     <g class="town-buildings">
-      <BuildingGroup building="corral" door="corral" />
+      <BuildingGroup building="corral" door="corral" isDoorOpen={props.isDoorOpen} />
       <g data-building="store" class="town-building">
-        <CounterStation door="counter-food" />
-        <CounterStation door="counter-energy" />
-        <CounterStation door="counter-smithore" />
-        <CounterStation door="counter-crystite" />
+        <CounterStation door="counter-food" isDoorOpen={props.isDoorOpen} />
+        <CounterStation door="counter-energy" isDoorOpen={props.isDoorOpen} />
+        <CounterStation door="counter-smithore" isDoorOpen={props.isDoorOpen} />
+        <CounterStation door="counter-crystite" isDoorOpen={props.isDoorOpen} />
       </g>
-      <BuildingGroup building="pub" door="pub" />
-      <BuildingGroup building="assay" door="assay" />
+      <BuildingGroup building="pub" door="pub" isDoorOpen={props.isDoorOpen} />
+      <BuildingGroup building="assay" door="assay" isDoorOpen={props.isDoorOpen} />
     </g>
   );
 }
@@ -617,6 +698,8 @@ interface BuildingGroupProps {
   readonly building: "corral" | "pub" | "assay";
   /** The door id whose cell the building sits above and whose marker it carries. */
   readonly door: TownDoorId;
+  /** Accessor for the door's open/closed state, passed to its marker. */
+  readonly isDoorOpen: DoorOpenAccessor;
 }
 
 //============================================
@@ -628,20 +711,20 @@ interface BuildingGroupProps {
  * @returns The building `<g data-building>` group.
  */
 function BuildingGroup(props: BuildingGroupProps): JSX.Element {
-  const width = townBuildingWidth(props.building);
-  const center = townDoorCenter(props.door);
-  const buildingX = center.x - width / 2;
-  const buildingY = center.y - TOWN_CELL_PX / 2 - TOWN_BUILDING_HEIGHT;
+  // The footprint (position and size) comes from town_layout, the same source
+  // the movement clamp reads its solid walls from, so the drawn building and
+  // its collision box can never drift apart.
+  const footprint = townBuildingFootprint(props.building);
   return (
     <g data-building={props.building} class="town-building">
       <use
         href={`#${townBuildingSymbolId(props.building)}`}
-        x={buildingX}
-        y={buildingY}
-        width={width}
-        height={TOWN_BUILDING_HEIGHT}
+        x={footprint.x}
+        y={footprint.y}
+        width={footprint.width}
+        height={footprint.height}
       />
-      <DoorMarker door={props.door} />
+      <DoorMarker door={props.door} isDoorOpen={props.isDoorOpen} />
     </g>
   );
 }
@@ -650,6 +733,8 @@ function BuildingGroup(props: BuildingGroupProps): JSX.Element {
 interface CounterStationProps {
   /** The counter door id (`counter-<resource>`). */
   readonly door: TownDoorId;
+  /** Accessor for the counter door's open/closed state, passed to its marker. */
+  readonly isDoorOpen: DoorOpenAccessor;
 }
 
 //============================================
@@ -661,19 +746,19 @@ interface CounterStationProps {
  */
 function CounterStation(props: CounterStationProps): JSX.Element {
   const resource = COUNTER_RESOURCE[props.door]!;
-  const center = townDoorCenter(props.door);
-  const stationX = center.x - COUNTER_SIZE / 2;
-  const stationY = center.y - TOWN_CELL_PX / 2 - COUNTER_SIZE;
+  // Footprint from town_layout, so the podium the player sees matches the solid
+  // podium the movement clamp collides against (see BuildingGroup).
+  const footprint = townCounterFootprint(props.door);
   return (
     <g class="town-counter">
       <use
         href={`#${townStoreCounterSymbolId(resource)}`}
-        x={stationX}
-        y={stationY}
-        width={COUNTER_SIZE}
-        height={COUNTER_SIZE}
+        x={footprint.x}
+        y={footprint.y}
+        width={footprint.width}
+        height={footprint.height}
       />
-      <DoorMarker door={props.door} />
+      <DoorMarker door={props.door} isDoorOpen={props.isDoorOpen} />
     </g>
   );
 }
@@ -682,26 +767,33 @@ function CounterStation(props: CounterStationProps): JSX.Element {
 interface DoorMarkerProps {
   /** The door id this marker belongs to. */
   readonly door: TownDoorId;
+  /** Accessor for this door's open/closed state (drives the visible state). */
+  readonly isDoorOpen: DoorOpenAccessor;
 }
 
 //============================================
 /**
  * Draw the shared door-highlight marker centered on a door cell, carrying the
- * `[data-door-for]` hook.
+ * `[data-door-for]` hook and a reactive `[data-door-state]` of `open`/`closed`
+ * (read by tests and the walker). When open, the arch slides up and fades to
+ * read as a cleared threshold; when closed it sits solid in the doorway.
  *
- * @param props - Carries the door id.
+ * @param props - Carries the door id and its open-state accessor.
  * @returns The door marker `<g data-door-for>` group.
  */
 function DoorMarker(props: DoorMarkerProps): JSX.Element {
   const center = townDoorCenter(props.door);
+  const open = (): boolean => props.isDoorOpen(props.door);
   return (
-    <g data-door-for={props.door} class="town-door">
+    <g data-door-for={props.door} data-door-state={open() ? "open" : "closed"} class="town-door">
       <use
         href={`#${TOWN_DOOR_SYMBOL_ID}`}
         x={center.x - DOOR_MARKER_SIZE / 2}
         y={center.y - DOOR_MARKER_SIZE / 2}
         width={DOOR_MARKER_SIZE}
         height={DOOR_MARKER_SIZE}
+        opacity={open() ? 0.3 : 0.9}
+        transform={open() ? "translate(0 -6)" : undefined}
       />
     </g>
   );

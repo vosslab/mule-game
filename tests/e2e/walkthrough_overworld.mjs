@@ -1,8 +1,9 @@
-// Overworld placement driver for the browser walkthrough harness. Owns the
-// human-seat spatial gesture that turns an adapter-decided
-// `place_mule{row,col}` plan into real motion + an action-key press on the
-// develop-phase overworld, plus the tick-budget guard that gracefully ends a
-// develop turn before its budget expires.
+// Overworld spatial drivers for the browser walkthrough harness. Owns every
+// human-seat gesture that turns an adapter-decided develop plan into real
+// motion + an action-key press on the develop-phase overworld
+// (`place_mule{row,col}`, `hunt_wampus`, `assay_plot{row,col}`), plus the
+// tick-budget guard that gracefully ends a develop turn before its budget
+// expires.
 //
 // - executePlaceMule paths the overworld avatar to the decided plot cell via
 //   walkOverworldAvatarToCell (the adaptive 2D walk in walkthrough_helpers.mjs:
@@ -20,6 +21,16 @@
 //   plot, nothing carried) surfaces as a reported failure instead of a silent
 //   miscount. A verified placement increments report.counters.verifiedPlacements.
 //
+// - executeHuntWampus and executeAssayPlot follow the identical walk-then-press-
+//   then-verify shape: hunt reads the wampus's live site off the projection
+//   (the plan itself carries no row/col), paths onto it, and verifies
+//   wampus.caught; assay paths to the plan's plot and verifies
+//   plot.crystiteRevealed. Neither ends the develop turn on its own -- see
+//   activeDriveDevelop (e2e_walkthrough.mjs) for why the AI naturally
+//   continues the turn after either lands. assay_plot's town-side arming leg
+//   (walkthrough_town.mjs's executeArmAssay) is a separate executor the
+//   orchestrator calls first.
+//
 // - shouldTruncate is a pure guard over the marshalled develop payload's
 //   ticksRemaining vs a conservative reserve. maybeTruncateTurn ends the turn
 //   whenever the reserve is breached (clicking [data-action="develop-end-turn"]),
@@ -29,13 +40,13 @@
 //   plan actually commits the budget to a buy/outfit/place gesture
 //   (planCommitsBudget) -- real work lost to the clock. A plan that would have
 //   ended the turn anyway (gamble_pub, end_turn, or a free hunt_wampus/assay_plot
-//   skip) is the develop turn's NATURAL end; ending it a moment early at the
-//   reserve is logged at info and NOT counted. The develop AI emits gamble, not a
-//   bare end_turn, once out of productive moves (src/ai/develop_ai.ts), so a
-//   plan-blind counter miscounted every out-of-work turn as truncated.
-//   Truncation is a graceful path, NOT a failure: it never calls report.fail,
-//   and "develop_plan_truncated" is deliberately absent from the closed
-//   FAILURE_KINDS taxonomy.
+//   cut off before it ran) is the develop turn's NATURAL end; ending it a moment
+//   early at the reserve is logged at info and NOT counted. The develop AI emits
+//   gamble, not a bare end_turn, once out of productive moves
+//   (src/ai/develop_ai.ts), so a plan-blind counter miscounted every
+//   out-of-work turn as truncated. Truncation is a graceful path, NOT a
+//   failure: it never calls report.fail, and "develop_plan_truncated" is
+//   deliberately absent from the closed FAILURE_KINDS taxonomy.
 //
 // `deps = { readProjection(page), ...overrides }` lets the orchestrator inject
 // the real projection reader (walkthrough_helpers.mjs's readGameState) and the
@@ -72,6 +83,18 @@ const DEFAULT_PLACE_VERIFY_BUDGET_MS = 5_000;
 
 /** Default poll delay for the placement verification poll. */
 const DEFAULT_PLACE_VERIFY_POLL_MS = 100;
+
+/** Default wall-clock budget for the post-keypress wampus-catch verification poll. */
+const DEFAULT_HUNT_VERIFY_BUDGET_MS = 5_000;
+
+/** Default poll delay for the wampus-catch verification poll. */
+const DEFAULT_HUNT_VERIFY_POLL_MS = 100;
+
+/** Default wall-clock budget for the post-keypress assay-reveal verification poll. */
+const DEFAULT_ASSAY_VERIFY_BUDGET_MS = 5_000;
+
+/** Default poll delay for the assay-reveal verification poll. */
+const DEFAULT_ASSAY_VERIFY_POLL_MS = 100;
 
 //============================================
 /**
@@ -385,6 +408,235 @@ export async function executePlaceMule(page, report, deps, target) {
 
 //============================================
 /**
+ * Read the develop payload's live wampus state off a projection, or null when
+ * the game is not in the develop phase. Mirrors walkthrough_town.mjs's
+ * carriedMuleFromProjection shape for the same reason: a caller polling
+ * mid-turn should never misread a torn-down phase as a stale wampus value.
+ *
+ * @param projection - A walker projection (see src/ui/walker_debug.ts).
+ * @returns The develop payload's `wampus` (src/engine/wampus.ts WampusState), or null.
+ */
+function wampusFromProjection(projection) {
+  const phase = projection.state.phase;
+  if (phase.kind !== "develop") {
+    return null;
+  }
+  return phase.payload.wampus;
+}
+
+//============================================
+/**
+ * Press the action key and verify the wampus was caught through the read-only
+ * projection: `wampus.caught` must become true. The develop AI only emits
+ * `hunt_wampus` while the wampus is visible/not-dead/not-caught
+ * (src/ai/develop_ai.ts), and overworld_scene.tsx's tryHuntWampus re-checks
+ * the same three fields plus walk-adjacency before dispatching, so a no-op
+ * key (wampus blinked away mid-walk, or the avatar landed one cell short)
+ * correctly stalls this verification instead of reporting a silent miscount.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report.
+ * @param readProjection - `deps.readProjection`.
+ * @param actionKey - Key that hunts the wampus (default "Enter").
+ * @param budgetMs - Wall-clock budget for the verification poll.
+ * @param pollIntervalMs - Delay between verification polls.
+ * @returns True once a catch was verified, false on budget exhaustion.
+ */
+async function verifyHunt(page, report, readProjection, actionKey, budgetMs, pollIntervalMs) {
+  await page.keyboard.press(actionKey);
+  const deadline = Date.now() + budgetMs;
+  while (Date.now() < deadline) {
+    const wampus = wampusFromProjection(await readProjection(page));
+    if (wampus !== null && wampus.caught) {
+      report.log("info", "verified hunt_wampus catch", { moneyReward: wampus.moneyReward });
+      return true;
+    }
+    await page.waitForTimeout(pollIntervalMs);
+  }
+  report.fail(
+    "act_did_not_advance",
+    "hunt_wampus action key did not catch the wampus within budget",
+  );
+  return false;
+}
+
+//============================================
+/**
+ * Drive the human seat's `hunt_wampus` plan on the overworld: read the
+ * wampus's live site off the projection (the plan itself carries no
+ * row/col -- see walkthrough_strategy.mjs's decision-to-gesture mapping),
+ * path the avatar onto that cell (WAMPUS_HUNT_ADJACENCY in
+ * overworld_scene.tsx allows standing on it or one step away, so the exact
+ * cell is always in range), then press the action key and verify the catch
+ * through the projection. Returns early (without throwing) if the wampus is
+ * not currently catchable, the walk stalls, or the catch never verifies.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report.
+ * @param deps - `{ readProjection, walkToCell, actionKey, walkBudget,
+ *   walkTapMs, huntVerifyBudgetMs, huntVerifyPollIntervalMs }`. Only
+ *   `readProjection` is required; the rest default to the real DOM-driven
+ *   implementations and this module's constants.
+ * @returns True once a catch was verified, false on stall, non-verify, or an
+ *   already-uncatchable wampus.
+ */
+export async function executeHuntWampus(page, report, deps) {
+  const {
+    readProjection,
+    walkToCell = walkOverworldAvatarToCell,
+    actionKey = ACTION_KEY,
+    walkBudget,
+    walkTapMs,
+    huntVerifyBudgetMs = DEFAULT_HUNT_VERIFY_BUDGET_MS,
+    huntVerifyPollIntervalMs = DEFAULT_HUNT_VERIFY_POLL_MS,
+  } = deps;
+  const projection = await readProjection(page);
+  const wampus = wampusFromProjection(projection);
+  if (
+    wampus === null ||
+    wampus.row === null ||
+    wampus.col === null ||
+    !wampus.visible ||
+    wampus.dead ||
+    wampus.caught
+  ) {
+    // Not a walker bug: unlike a static plot target (place_mule/assay_plot),
+    // the live wampus blinks on its own real-time cycle (tickWampus,
+    // src/engine/wampus.ts) independent of this executor's own async reads
+    // (projection round trips, isVisible checks in the FromTown wrapper), so
+    // the window between decideDevelopPlan's decision and this pre-check can
+    // straddle a blink boundary with no walk ever attempted. hunt_wampus is
+    // documented as a free, opportunistic gesture (walkthrough_strategy.mjs),
+    // so a closed window here is graceful, not fatal -- log and let the
+    // develop loop re-decide (activeDriveDevelop only ends the turn on
+    // end_turn/gamble_pub) rather than failing the whole run over a benign
+    // race with a live creature.
+    report.log(
+      "info",
+      "hunt_wampus plan decided but the wampus was no longer catchable by execution time; skipping",
+      { wampus },
+    );
+    return false;
+  }
+  const target = { row: wampus.row, col: wampus.col };
+  const { bounds, blocked } = overworldObstacles(projection.state);
+  const reached = await walkToCell(page, report, target, {
+    budget: walkBudget,
+    tapMs: walkTapMs,
+    failureMessage: `overworld avatar never reached the wampus at (${target.row}, ${target.col})`,
+    nextStep: (current) => firstStepAvoiding(current, target, blocked, bounds),
+  });
+  if (!reached) {
+    // walkToCell already recorded the walk_stall failure; nothing further to press.
+    return false;
+  }
+  return verifyHunt(
+    page,
+    report,
+    readProjection,
+    actionKey,
+    huntVerifyBudgetMs,
+    huntVerifyPollIntervalMs,
+  );
+}
+
+//============================================
+/**
+ * Press the action key and verify the target plot's crystite was revealed
+ * through the read-only projection (`plot.crystiteRevealed` becomes true --
+ * src/engine/turn.ts's applyAssayPlot sets it via assayPlotOnBoard). A no-op
+ * key (assay not armed, insufficient ticks, or an already-revealed plot --
+ * see overworld_scene.tsx's tryAssay) correctly stalls this verification.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report.
+ * @param readProjection - `deps.readProjection`.
+ * @param target - `{ row, col }` plot cell to assay.
+ * @param actionKey - Key that fires the armed assay (default "Enter").
+ * @param budgetMs - Wall-clock budget for the verification poll.
+ * @param pollIntervalMs - Delay between verification polls.
+ * @returns True once a reveal was verified, false on budget exhaustion.
+ */
+async function verifyAssay(
+  page,
+  report,
+  readProjection,
+  target,
+  actionKey,
+  budgetMs,
+  pollIntervalMs,
+) {
+  await page.keyboard.press(actionKey);
+  const deadline = Date.now() + budgetMs;
+  while (Date.now() < deadline) {
+    const plot = plotAt((await readProjection(page)).state, target);
+    if (plot !== null && plot.crystiteRevealed) {
+      report.log("info", `verified assay_plot at (${target.row}, ${target.col})`);
+      return true;
+    }
+    await page.waitForTimeout(pollIntervalMs);
+  }
+  report.fail(
+    "act_did_not_advance",
+    `assay_plot at (${target.row}, ${target.col}) action key did not reveal crystite within budget`,
+  );
+  return false;
+}
+
+//============================================
+/**
+ * Drive the human seat's `assay_plot{row,col}` plan on the overworld: path
+ * the avatar to the plot cell, then press the action key and verify the
+ * reveal through the projection. The town-side arming leg (walking into the
+ * assay office) is a separate concern owned by walkthrough_town.mjs's
+ * executeArmAssay; the orchestrator (e2e_walkthrough.mjs) calls that, then
+ * exits town, before calling this executor -- matching the existing
+ * executePlaceMuleFromTown split between the town and overworld legs of a
+ * develop plan.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report.
+ * @param deps - `{ readProjection, walkToCell, actionKey, walkBudget,
+ *   walkTapMs, assayVerifyBudgetMs, assayVerifyPollIntervalMs }`. Only
+ *   `readProjection` is required; the rest default to the real DOM-driven
+ *   implementations and this module's constants.
+ * @param target - The `assay_plot` plan's `{ row, col }` plot cell.
+ * @returns True once a reveal was verified, false on stall or non-verify.
+ */
+export async function executeAssayPlot(page, report, deps, target) {
+  const {
+    readProjection,
+    walkToCell = walkOverworldAvatarToCell,
+    actionKey = ACTION_KEY,
+    walkBudget,
+    walkTapMs,
+    assayVerifyBudgetMs = DEFAULT_ASSAY_VERIFY_BUDGET_MS,
+    assayVerifyPollIntervalMs = DEFAULT_ASSAY_VERIFY_POLL_MS,
+  } = deps;
+  const { bounds, blocked } = overworldObstacles((await readProjection(page)).state);
+  const reached = await walkToCell(page, report, target, {
+    budget: walkBudget,
+    tapMs: walkTapMs,
+    failureMessage: `overworld avatar never reached plot (${target.row}, ${target.col}) to assay it`,
+    nextStep: (current) => firstStepAvoiding(current, target, blocked, bounds),
+  });
+  if (!reached) {
+    // walkToCell already recorded the walk_stall failure; nothing further to press.
+    return false;
+  }
+  return verifyAssay(
+    page,
+    report,
+    readProjection,
+    target,
+    actionKey,
+    assayVerifyBudgetMs,
+    assayVerifyPollIntervalMs,
+  );
+}
+
+//============================================
+/**
  * Whether the develop turn is close enough to tick-budget exhaustion that a
  * fresh plan should not be started. Pure: reads only the develop payload's
  * ticksRemaining against `reserve`, and reports false for any non-develop phase
@@ -410,10 +662,12 @@ export function shouldTruncate(state, reserve = DEVELOP_TRUNCATE_RESERVE_TICKS) 
  * guards, because each drains several real-time ticks and abandoning one
  * mid-cycle loses a carried M.U.L.E. (game_state.ts CarriedMule doc).
  *
- * The plans that are NOT committing are the develop turn's natural ends:
- * gamble_pub and end_turn end the turn outright, and the walker resolves the
- * opportunistic hunt_wampus/assay_plot skips by ending the turn too. The
- * develop AI emits `gamble`, never `end_turn`, when it has nothing productive
+ * The plans that are NOT committing are the develop turn's natural ends
+ * (gamble_pub and end_turn end the turn outright) plus the free scouting
+ * moves that never abandon a carried M.U.L.E. mid-cycle (hunt_wampus,
+ * assay_plot -- neither ends the turn either; see activeDriveDevelop's doc
+ * comment in e2e_walkthrough.mjs). The develop AI emits `gamble`, never
+ * `end_turn`, when it has nothing productive
  * left (src/ai/develop_ai.ts), so gamble_pub -- not end_turn -- is the common
  * natural end; treating it as committing would miscount every out-of-work turn
  * as a truncation. Kept exported so the classification is unit-testable.
@@ -439,12 +693,12 @@ export function planCommitsBudget(plan) {
  * (and a "develop_plan_truncated" warning logged) only when the plan the guard
  * cut off actually commits the budget to a buy/outfit/place gesture
  * (planCommitsBudget) -- real economic work abandoned for lack of ticks. A plan
- * that would have ended the turn anyway (gamble_pub, end_turn, or a free
- * hunt_wampus/assay_plot skip) is the turn's natural end; ending it a moment
- * early at the reserve is not a truncation, so it is logged at info and not
- * counted. The develop AI emits `gamble`, never a bare end_turn, once it is out
- * of productive moves (src/ai/develop_ai.ts), so without this split every
- * out-of-work turn was miscounted as truncated.
+ * that would have ended the turn anyway (gamble_pub, end_turn), or a free
+ * hunt_wampus/assay_plot cut off before it could run, is the turn's natural
+ * end; ending it a moment early at the reserve is not a truncation, so it is
+ * logged at info and not counted. The develop AI emits `gamble`, never a bare
+ * end_turn, once it is out of productive moves (src/ai/develop_ai.ts), so
+ * without this split every out-of-work turn was miscounted as truncated.
  *
  * Truncation is never a failure -- this deliberately calls report.log, not
  * report.fail.

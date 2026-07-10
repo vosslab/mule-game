@@ -52,12 +52,31 @@ export const WALKER_CELL_PX = 64;
 /**
  * Avatar ground speed in pixels per second on open (non-obstacle) terrain, the
  * land-movement analog. planet_mule drives avatar motion off its Properties
- * movement-speed fields; this is the land-speed analog mapped onto the walker's
- * 64px-tile pixel space (a little under one tile per second at 1x).
+ * movement-speed fields; the original 80 px/s mapping (a little under one
+ * tile per second at 1x) is this engine's land-speed analog of that source.
  * Source: planet_mule Properties movement speed (land analog); mapped by
  * mule_fidelity_plan.md's task ("Speed: 80 px/s land analog (PM Properties)").
+ *
+ * Recalibrated (WP-2A, 2026-07-10) from 80 to 320: a food-starved develop
+ * turn's tick budget (`DEVELOP_TICKS_MIN` = 5 ticks) is a GAMEPLAY TIMING
+ * constraint the walk speed must fit inside, and the corral purchase panel
+ * (walk-in -> confirm -> dismiss -> walk-back-to-street) and the
+ * no-longer-turn-ending hunt_wampus/assay_plot develop plans both added
+ * real wall-clock to the develop-turn errand since the original 80 px/s
+ * mapping was chosen. Measured against the real browser at `?speed=1`, seed
+ * 33, far-corner target plot (docs/active_plans/audits/mule_trip_timing.md):
+ * 80/120/160/240/280 all measured well under the required 10% margin against
+ * the 4.75s starved-min budget (240 and 280 already crossed into failure);
+ * 320 is the lowest tested value that cleared the 10% margin, averaging
+ * ~11% margin over 5 runs (one run at 9.5%, noise-bound around the 10%
+ * line); 340+ started failing the walk-in door-reach reliability check
+ * itself (a `walk_stall`, worse than a thin timing margin) because
+ * `WALK_TAP_MS` (`tests/e2e/walkthrough_helpers.mjs`) is a fixed 120ms tap
+ * length outside this package's touch points -- widening the timing margin
+ * further needs that constant retuned too (see the WP-8A follow-on note in
+ * the audit doc), not another walker-speed increase.
  */
-export const WALKER_SPEED_PX_PER_SEC = 80;
+export const WALKER_SPEED_PX_PER_SEC = 320;
 
 /**
  * Multiplier applied to the avatar's speed while it stands on a mountain cell,

@@ -5,11 +5,15 @@
 // #land-grant-pass-button phase control, the map's data-outfit placed-M.U.L.E.
 // group and data-crystite assayed-plot badge (src/ui/solid/map_layer.tsx), the
 // overworld avatar (.overworld-svg g[data-actor="player-0"] with
-// data-cell-row/col/carrying, src/ui/scenes/overworld_scene.tsx), and the town
+// data-cell-row/col/carrying, src/ui/scenes/overworld_scene.tsx), the town
 // scene (src/ui/scenes/town_scene.tsx): the #town-scene container, its avatar
 // g[data-actor="player-0"] with data-carrying and data-at-door, and the
-// [data-town-notice] banner. Player 0 is always the human and always picks
-// first in round 1 (src/engine/land_grant.ts).
+// [data-town-notice] banner; and the corral purchase panel
+// (src/ui/solid/corral_purchase_panel.tsx) its [data-corral-panel] root's
+// reactive data-corral-outcome and its [data-corral-action="buy"|"leave"]
+// buttons -- see tests/playwright/corral_purchase.spec.mjs for that panel's
+// full outcome and input-method contract. Player 0 is always the human and
+// always picks first in round 1 (src/engine/land_grant.ts).
 //
 // Fixed seed 33 has an all-plains town row (row 2) with the town cell at the row
 // center (col 4), so the human's owned plots and the town-adjacent return cells
@@ -116,13 +120,29 @@ async function enterTown(page) {
 }
 
 /**
- * Walk the town avatar in `walkDir` toward `door`, then use the door with the
- * action key. Skips the walk when already at the door.
+ * Real-ms duration of one directional hold used to walk through a door's
+ * walk-in entry line (town_layout.ts's DOOR_ENTER_Y sits only ~8px north of
+ * the street-row spawn line), and to walk back south afterward so a
+ * subsequent call's sideways taps still align against the street row. At this
+ * spec's speed (WALKER_SPEED_PX_PER_SEC * speed=2 = 160px/s) this hold covers
+ * roughly 32px: comfortably past the crossing distance, short enough not to
+ * drift into a neighboring door's column.
+ */
+const DOOR_HOLD_MS = 200;
+
+/**
+ * Walk the town avatar in `walkDir` toward `door`, then walk it north through
+ * the door to fire the walk-in interaction -- no keypress; the town
+ * interaction model (docs/HUMAN_GUIDANCE.md "Town interaction model") treats
+ * walking through an open doorway as the entry action itself
+ * (detectWalkIn, src/ui/scenes/town_scene.tsx:327). Walks back south
+ * afterward so the avatar returns to the street row for any following call.
+ * Skips the sideways walk when already at the door's column.
  *
- * Advances in bounded taps (hold `walkDir` for WALK_TAP_MS, release, then
- * check data-at-door) rather than holding the key down for the whole walk
- * while polling for the exact target door. A continuous hold races the
- * attribute check: town's doors sit one street cell apart and the avatar
+ * Advances the sideways walk in bounded taps (hold `walkDir` for WALK_TAP_MS,
+ * release, then check data-at-door) rather than holding the key down for the
+ * whole walk while polling for the exact target door. A continuous hold races
+ * the attribute check: town's doors sit one street cell apart and the avatar
  * crosses one every ~400ms at this spec's speed, so once a single
  * `getAttribute` round trip runs slow (a loaded machine, several Playwright
  * suites at once), the poll can miss the target door's entire window and the
@@ -134,10 +154,15 @@ async function enterTown(page) {
  * checks, a distance well under one door cell, so a slow check merely delays
  * noticing arrival -- it can never let the avatar sail past the door.
  */
-async function useDoor(page, townAvatar, door, walkDir) {
+async function walkIntoDoor(page, townAvatar, door, walkDir) {
   for (let tap = 0; tap < MAX_WALK_TAPS; tap++) {
     if ((await townAvatar.getAttribute("data-at-door")) === door) {
-      await page.keyboard.press("Space");
+      await page.keyboard.down("ArrowUp");
+      await page.waitForTimeout(DOOR_HOLD_MS);
+      await page.keyboard.up("ArrowUp");
+      await page.keyboard.down("ArrowDown");
+      await page.waitForTimeout(DOOR_HOLD_MS);
+      await page.keyboard.up("ArrowDown");
       return;
     }
     await page.keyboard.down(walkDir);
@@ -171,13 +196,36 @@ test("town: buy at the corral, outfit at a counter, exit, and place on an owned 
 
   const townAvatar = await enterTown(page);
 
-  // Buy at the corral (the spawn door): the avatar starts carrying an
-  // unoutfitted M.U.L.E.
-  await useDoor(page, townAvatar, "corral", "ArrowRight");
+  // Buy at the corral (the spawn door): walking in opens the attempt-then-
+  // confirm purchase panel (WP-4A/4B) rather than buying immediately. Buy is
+  // pre-focused on open (corral_purchase.spec.mjs owns the full auto-focus
+  // contract), but this test re-focuses it explicitly first -- walkIntoDoor's
+  // shared north-then-south return tap also feeds an ArrowDown keydown to the
+  // now-mounted panel's roving-focus binding (src/ui/input.ts
+  // bindRovingFocus), which would otherwise move focus off Buy before this
+  // Enter fires. Enter then confirms the purchase, flipping data-carrying,
+  // and clicking Continue dismisses the panel back to the town scene.
+  await walkIntoDoor(page, townAvatar, "corral", "ArrowRight");
+  const corralPanel = page.locator("[data-corral-panel]");
+  await expect(corralPanel).toHaveAttribute("data-corral-outcome", "buyable");
+  await corralPanel.locator('[data-corral-action="buy"]').focus();
+  await page.keyboard.press("Enter");
+  await expect(corralPanel).toHaveAttribute("data-corral-outcome", "purchased");
   await expect(townAvatar).toHaveAttribute("data-carrying", "unoutfitted");
+  await corralPanel.locator('[data-corral-action="leave"]').click();
+  await expect(corralPanel).toHaveCount(0);
+
+  // walkIntoDoor's own south return tap fired while movement was still frozen
+  // (corralPanelOpen() gates town_scene.tsx's updateFrame for the panel's
+  // whole open duration), so it never actually walked the avatar back south.
+  // Do that walk now that the panel is closed, so the avatar sits back on the
+  // street row before the sideways taps below look for the food counter.
+  await page.keyboard.down("ArrowDown");
+  await page.waitForTimeout(DOOR_HOLD_MS);
+  await page.keyboard.up("ArrowDown");
 
   // Outfit at the food counter (one cell right): the tow now carries food.
-  await useDoor(page, townAvatar, "counter-food", "ArrowRight");
+  await walkIntoDoor(page, townAvatar, "counter-food", "ArrowRight");
   await expect(townAvatar).toHaveAttribute("data-carrying", "food");
 
   // Leave through the west exit; the avatar returns to its owned plot.
@@ -209,7 +257,7 @@ test("town: the pub door opens a confirm affordance, and Escape declines it", as
   // affordance. pub_gamble.spec.mjs owns the full confirm/decline/payout
   // contract (money, notice wording, turn end); this spec checks only that
   // the door itself reacts and that Escape backs out of it.
-  await useDoor(page, townAvatar, "pub", "ArrowRight");
+  await walkIntoDoor(page, townAvatar, "pub", "ArrowRight");
   await expect(page.locator("#town-scene")).toHaveAttribute("data-gamble-confirming", "true");
 
   await page.keyboard.press("Escape");
@@ -224,7 +272,7 @@ test("town: the assay office arms an assay that reveals a plot's crystite", asyn
 
   // Arm the assay at the assay office, then leave through the east exit so the
   // avatar returns to the town's east neighbor (an assayable plains plot).
-  await useDoor(page, townAvatar, "assay", "ArrowRight");
+  await walkIntoDoor(page, townAvatar, "assay", "ArrowRight");
   await expect(page.locator("[data-town-notice]")).toContainText("Assay ready", {
     timeout: 10_000,
   });

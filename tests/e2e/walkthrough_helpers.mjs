@@ -507,7 +507,7 @@ export const OVERWORLD_AVATAR = ".overworld-svg [data-actor='player-0']";
 export const TOWN_AVATAR = "#town-scene [data-actor='player-0']";
 
 /** Upper bound on bounded taps before a walk gives up (matches the specs). */
-const MAX_WALK_TAPS = 60;
+export const MAX_WALK_TAPS = 60;
 
 /**
  * Consecutive taps with an unchanged avatar snapshot that classify a walk as
@@ -575,6 +575,31 @@ export function parseTranslateX(transform) {
   }
   const x = Number(match[1]);
   return Number.isNaN(x) ? null : x;
+}
+
+//============================================
+/**
+ * Parse the y translate out of an SVG `transform="translate(x y)"` attribute,
+ * the 2D twin of parseTranslateX. Used to derive a positional (not per-cell)
+ * arrival check for a north-then-south door round trip: the coarse
+ * data-at-door attribute reads true for the whole street-row cell height,
+ * which includes the doorway interior just north of the actual walkable
+ * street line, so it cannot tell "back on the street" from "still in the
+ * doorway" the way this raw pixel y can.
+ *
+ * @param transform - The raw `transform` attribute value, or null.
+ * @returns The numeric y translate, or null when it cannot be parsed.
+ */
+export function parseTranslateY(transform) {
+  if (transform === null) {
+    return null;
+  }
+  const match = transform.match(/translate\(\s*-?[0-9.]+[ ,]+(-?[0-9.]+)/);
+  if (match === null) {
+    return null;
+  }
+  const y = Number(match[1]);
+  return Number.isNaN(y) ? null : y;
 }
 
 //============================================
@@ -796,6 +821,111 @@ async function readTownDoorCenterX(page, door) {
 
 //============================================
 /**
+ * Shared overshoot-correcting seek core behind walkTownAvatarToDoor (1D) and
+ * walkOverworldAvatarToCell (2D). Each tap re-samples the avatar (arrival flag
+ * plus a position, via `spec.sample`), turns that position into a candidate
+ * step (arrow key, seek axis, sign toward target, via `spec.computeStep`), and
+ * taps: a step that crosses the target on its axis since the last committed
+ * step means the previous tap overshot, so the tap is halved (down to
+ * `minTapMs`) so the correction lands inside the target cell/door; switching
+ * axis restarts the tap at full length, since the new axis gets its own
+ * overshoot budget. A null step (nothing left to steer toward an unreachable
+ * or already-aligned-but-unarrived target) counts as a stalled tap rather than
+ * spinning forever.
+ *
+ * Stall detection: `stallTaps` consecutive taps with no change in the avatar
+ * snapshot (a wall, a frozen scene, a dropped keypress) classify the walk as
+ * stalled via `report.fail("walk_stall", ...)`. A vanished avatar node (walked
+ * out an edge, or a scene remount) is a reported failure the moment `sample`
+ * reports it, not a silent spin against a torn-down scene.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report, for walk_stall classification (optional).
+ * @param spec - `{ avatarSelector, budget, tapMs, stallTaps, minTapMs, sample,
+ *   computeStep, vanishDetail, stallDetail }`.
+ *   `sample()` is `async () => { arrived: true } | { vanished: true } |
+ *   { position }`, called once per tap (and once more after the budget is
+ *   spent) so 1D callers can combine an independent arrival read with the
+ *   position read exactly as before.
+ *   `computeStep(position)` returns `{ key, axis, side } | null`; `axis`
+ *   distinguishes the overshoot-halving state across seek dimensions (1D
+ *   callers use one constant axis; 2D callers use "row"/"col").
+ * @returns True once `sample` reports arrived, false on stall/budget/vanish.
+ */
+async function seekAvatarToTarget(page, report, spec) {
+  const {
+    avatarSelector,
+    budget = MAX_WALK_TAPS,
+    tapMs = WALK_TAP_MS,
+    stallTaps = STALL_TAPS,
+    minTapMs = MIN_WALK_TAP_MS,
+    sample,
+    computeStep,
+    vanishDetail,
+    stallDetail,
+  } = spec;
+  const failStall = (detail) => {
+    if (report !== undefined) {
+      report.fail("walk_stall", detail);
+    }
+  };
+  let currentTap = tapMs;
+  // The axis sought on the previous committed step, and the sign of
+  // (target - position) along it; both reset when the seek switches axes.
+  let priorAxis = null;
+  let priorSide = 0;
+  let stall = 0;
+  for (let tap = 0; tap < budget; tap++) {
+    const state = await sample();
+    if (state.arrived) {
+      return true;
+    }
+    if (state.vanished) {
+      failStall(vanishDetail);
+      return false;
+    }
+    const step = computeStep(state.position);
+    if (step === null) {
+      // Nothing left to steer toward (aligned but unarrived, or unreachable):
+      // count a stalled tap so the walk ends rather than spins. Clearing
+      // priorAxis makes the next real step reset its own overshoot state.
+      priorAxis = null;
+      stall += 1;
+    } else {
+      const { key, axis, side } = step;
+      if (axis !== priorAxis) {
+        // Switched axis (the prior axis is now aligned, or a detour turned a
+        // corner): the new axis gets a full-length first step, and taking this
+        // branch skips the overshoot-halving below for its first step.
+        currentTap = tapMs;
+      } else if (priorSide !== 0 && side !== priorSide) {
+        // Crossed the target on this axis since the last step means the
+        // previous tap overshot the target; halve the tap so the correction
+        // lands inside it.
+        currentTap = Math.max(minTapMs, Math.floor(currentTap / 2));
+      }
+      priorAxis = axis;
+      priorSide = side;
+      const before = await snapshotAvatar(page, avatarSelector);
+      await tapWalk(page, key, currentTap);
+      const after = await snapshotAvatar(page, avatarSelector);
+      stall = after === before ? stall + 1 : 0;
+    }
+    if (stall >= stallTaps) {
+      failStall(stallDetail);
+      return false;
+    }
+  }
+  const finalState = await sample();
+  if (finalState.arrived) {
+    return true;
+  }
+  failStall(stallDetail);
+  return false;
+}
+
+//============================================
+/**
  * Walk the town avatar along the single street row to `door`, seeking by live
  * position so an overshoot self-corrects. Each tap recomputes the heading from
  * the avatar's transform x versus the target door's center x
@@ -804,18 +934,12 @@ async function readTownDoorCenterX(page, door) {
  * default speed steps more than one cell per tap and sails clean past a
  * mid-street door and out the far edge (the counter-smithore walk stall).
  *
- * Overshoot convergence: when the avatar crosses the target's x since the last
- * committed step, the tap is halved (down to MIN_WALK_TAP_MS) so the correction
- * step is shorter than one street cell and lands inside the target door's cell,
- * where data-at-door finally reads the door. Arrival is that coarse attribute,
- * never an exact-pixel match, so the seek only accepts the requested door and
- * not a neighbor it happens to pass.
- *
- * Stall detection mirrors walkTo: `stallTaps` consecutive taps with no change in
- * the avatar snapshot (a wall, a frozen scene, a dropped keypress) classify the
- * walk as stalled via `report.fail("walk_stall", ...)`. A vanished avatar node
- * (walked out an edge before arriving) is likewise a reported failure, not a
- * silent spin against a torn-down scene.
+ * Overshoot convergence, stall detection, and arrival semantics are owned by
+ * the shared `seekAvatarToTarget` core; this wrapper supplies the 1D sampling
+ * (an independent data-at-door read plus the avatar's live x) and stepping
+ * (`horizontalSeekKey` on a single constant axis). Arrival is the coarse
+ * data-at-door attribute, never an exact-pixel match, so the seek only accepts
+ * the requested door and not a neighbor it happens to pass.
  *
  * @param page - The Playwright page.
  * @param report - The walk report, for walk_stall classification (optional).
@@ -824,18 +948,7 @@ async function readTownDoorCenterX(page, door) {
  * @returns True once data-at-door reads the door, false on stall/budget/exit.
  */
 export async function walkTownAvatarToDoor(page, report, door, options = {}) {
-  const {
-    budget = MAX_WALK_TAPS,
-    tapMs = WALK_TAP_MS,
-    stallTaps = STALL_TAPS,
-    minTapMs = MIN_WALK_TAP_MS,
-  } = options;
   const arrived = async () => (await readTownAtDoor(page)) === door;
-  const failStall = (detail) => {
-    if (report !== undefined) {
-      report.fail("walk_stall", detail);
-    }
-  };
   // Already at the door: no walk (and no door geometry) needed. Checked before
   // resolving the marker so an already-arrived caller never depends on it.
   if (await arrived()) {
@@ -844,51 +957,92 @@ export async function walkTownAvatarToDoor(page, report, door, options = {}) {
   // The street layout is static for the turn, so resolve the target once.
   const targetX = await readTownDoorCenterX(page, door);
   if (targetX === null) {
-    failStall(`town door ${door} marker was not mounted to walk toward`);
+    if (report !== undefined) {
+      report.fail("walk_stall", `town door ${door} marker was not mounted to walk toward`);
+    }
     return false;
   }
-  let currentTap = tapMs;
-  // Sign of (targetX - avatarX) before the last committed step; 0 until the
-  // first move, so an overshoot is only detected once a heading is established.
-  let priorSide = 0;
-  let stall = 0;
-  for (let tap = 0; tap < budget; tap++) {
+  const sample = async () => {
     if (await arrived()) {
-      return true;
+      return { arrived: true };
     }
     const avatarX = await readTownAvatarX(page);
     if (avatarX === null) {
-      failStall(`town avatar left the street before reaching the ${door} door`);
-      return false;
+      return { vanished: true };
     }
+    return { position: avatarX };
+  };
+  const computeStep = (avatarX) => {
     const side = Math.sign(targetX - avatarX);
     if (side === 0) {
       // Aligned in x yet not registered at the door: nothing left to steer, so
       // let the stall counter end the walk rather than spin in place.
-      stall += 1;
-    } else {
-      // Crossing the target since the last step means the previous tap overshot
-      // the door cell; halve the tap so the correction lands inside it.
-      if (priorSide !== 0 && side !== priorSide) {
-        currentTap = Math.max(minTapMs, Math.floor(currentTap / 2));
-      }
-      priorSide = side;
-      const key = horizontalSeekKey(avatarX, targetX);
-      const before = await snapshotAvatar(page, TOWN_AVATAR);
-      await tapWalk(page, key, currentTap);
-      const after = await snapshotAvatar(page, TOWN_AVATAR);
-      stall = after === before ? stall + 1 : 0;
+      return null;
     }
-    if (stall >= stallTaps) {
-      failStall(`town avatar never reached the ${door} door`);
-      return false;
+    return { key: horizontalSeekKey(avatarX, targetX), axis: "x", side };
+  };
+  return await seekAvatarToTarget(page, report, {
+    ...options,
+    avatarSelector: TOWN_AVATAR,
+    sample,
+    computeStep,
+    vanishDetail: `town avatar left the street before reaching the ${door} door`,
+    stallDetail: `town avatar never reached the ${door} door`,
+  });
+}
+
+//============================================
+/**
+ * Tap the town avatar north (into the buildings) until `arrived` reports that
+ * a door's walk-in interaction fired, or the walk stalls/exhausts its budget.
+ * town_scene.tsx's door model (docs/HUMAN_GUIDANCE.md "Town interaction
+ * model") fires a door's action the instant the avatar's center crosses the
+ * door-enter line north of the street -- walking through an open doorway or
+ * pushing flush against a solid counter podium both reach it, so this is a
+ * plain northward press toward that line, not a seek toward a known pixel
+ * target (the entry line's y is private to town_layout.ts and this harness
+ * does not duplicate town geometry). Reuses the shared `seekAvatarToTarget`
+ * core (WP-8A) purely for its bounded-tap, stall, and vanish handling: north
+ * is always the correct heading here, so `computeStep` never needs the
+ * overshoot-halving branch (there is nothing to overshoot toward).
+ *
+ * A caller wanting `walk_stall` reported for a genuine no-op interaction
+ * should pass its own report-derived failure via the returned boolean rather
+ * than `report` here, since a no-op still counts as a stall (the avatar's
+ * attributes stop changing once it is flush against a wall or podium) but the
+ * caller usually wants a more specific failureKind (see town executors).
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report, for walk_stall classification (optional;
+ *   pass undefined to let the caller report its own failureKind instead).
+ * @param arrived - `() => Promise<boolean>` the caller's door-specific
+ *   interaction-fired check (a data-carrying flip, a projection field, or the
+ *   pub confirm affordance appearing).
+ * @param options - `{ budget, tapMs, stallTaps, minTapMs }`, all optional.
+ * @returns True once `arrived` reports the interaction fired, false on
+ *   stall/budget/vanish.
+ */
+export async function walkTownAvatarNorthUntil(page, report, arrived, options = {}) {
+  const sample = async () => {
+    if (await arrived()) {
+      return { arrived: true };
     }
-  }
-  if (await arrived()) {
-    return true;
-  }
-  failStall(`town avatar never reached the ${door} door`);
-  return false;
+    if ((await page.$(TOWN_AVATAR)) === null) {
+      return { vanished: true };
+    }
+    // No real target coordinate is tracked (see doc comment): the position
+    // is a placeholder computeStep never inspects.
+    return { position: 0 };
+  };
+  const computeStep = () => ({ key: "ArrowUp", axis: "y", side: -1 });
+  return await seekAvatarToTarget(page, report, {
+    ...options,
+    avatarSelector: TOWN_AVATAR,
+    sample,
+    computeStep,
+    vanishDetail: "town avatar vanished while pressing north into the door",
+    stallDetail: "town avatar's north press into the door never triggered its interaction",
+  });
 }
 
 //============================================
@@ -902,26 +1056,18 @@ export async function walkTownAvatarToDoor(page, report, door, options = {}) {
  * steps more than one cell per tap and oscillates around the target cell without
  * ever landing on it (the place_mule walk stall).
  *
- * Overshoot convergence: when the avatar crosses the target on the axis it is
- * currently seeking, the tap is halved (down to minTapMs) so the correction step
- * is shorter than one cell and lands inside the target cell. Switching axes
- * (the sought axis is aligned, now seeking the other) restarts the tap at full
- * length, since the new axis gets its own overshoot budget. Movement is
+ * Overshoot convergence, stall detection, and arrival semantics are owned by
+ * the shared `seekAvatarToTarget` core; this wrapper supplies the 2D sampling
+ * (the avatar's live data-cell-row/col) and stepping (heading each tap comes
+ * from `options.nextStep(current)`, which defaults to a straight
+ * `directionToward` step but lets a caller route around obstacles -- the place
+ * walk injects firstStepAvoiding so it never steps onto the town cell, which
+ * would re-enter the town scene and unmount the avatar). Movement is
  * axis-locked (walker.ts directionFromKeys with a single held key), so seeking
  * one axis never disturbs the already-aligned one.
  *
- * Heading each tap comes from `options.nextStep(current)`, which defaults to a
- * straight `directionToward` step but lets a caller route around obstacles (the
- * place walk injects firstStepAvoiding so it never steps onto the town cell,
- * which would re-enter the town scene and unmount the avatar). A null step with
- * the target not yet reached counts as a stalled tap, so an unreachable target
- * ends the walk instead of spinning.
- *
  * Arrival is the coarse data-cell-row/col equalling `target`, never a pixel
- * match. Stall detection mirrors walkTo/walkTownAvatarToDoor: `stallTaps`
- * consecutive taps with no change in the avatar snapshot classify the walk as
- * stalled via report.fail("walk_stall", ...). A vanished avatar node (scene
- * remount before arrival) is likewise a reported failure, not a silent spin.
+ * match.
  *
  * @param page - The Playwright page.
  * @param report - The walk report, for walk_stall classification (optional).
@@ -934,74 +1080,40 @@ export async function walkTownAvatarToDoor(page, report, door, options = {}) {
  */
 export async function walkOverworldAvatarToCell(page, report, target, options = {}) {
   const {
-    budget = MAX_WALK_TAPS,
-    tapMs = WALK_TAP_MS,
-    stallTaps = STALL_TAPS,
-    minTapMs = MIN_WALK_TAP_MS,
     failureMessage,
     nextStep = (current) => directionToward(current, target),
+    ...rest
   } = options;
   const stallDetail =
     failureMessage ?? `overworld avatar never reached plot (${target.row}, ${target.col})`;
-  const failStall = (detail) => {
-    if (report !== undefined) {
-      report.fail("walk_stall", detail);
-    }
-  };
-  let currentTap = tapMs;
-  // The axis ("col"|"row") sought on the previous committed step, and the sign
-  // of (target - current) along it; both reset when the seek switches axes.
-  let priorAxis = null;
-  let priorSide = 0;
-  let stall = 0;
-  for (let tap = 0; tap < budget; tap++) {
+  const sample = async () => {
     const current = await readAvatarCell(page, OVERWORLD_AVATAR);
     if (current === null) {
-      failStall(`overworld avatar vanished before reaching plot (${target.row}, ${target.col})`);
-      return false;
+      return { vanished: true };
     }
     if (current.row === target.row && current.col === target.col) {
-      return true;
+      return { arrived: true };
     }
+    return { position: current };
+  };
+  const computeStep = (current) => {
     const key = nextStep(current);
     if (key === null) {
-      // No step toward the target though not yet arrived (target unreachable, or
-      // fully walled off): count a stalled tap so the walk ends rather than spins.
-      // Clearing priorAxis makes the next real step reset its own overshoot state.
-      priorAxis = null;
-      stall += 1;
-    } else {
-      const axis = key === "ArrowLeft" || key === "ArrowRight" ? "col" : "row";
-      const side =
-        axis === "col" ? Math.sign(target.col - current.col) : Math.sign(target.row - current.row);
-      if (axis !== priorAxis) {
-        // Switched axis (the prior axis is now aligned, or a detour turned a
-        // corner): the new axis gets a full-length first step, and taking this
-        // branch skips the overshoot-halving below for its first step.
-        currentTap = tapMs;
-      } else if (priorSide !== 0 && side !== priorSide) {
-        // Crossed the target on this axis since the last step means the previous
-        // tap overshot the target cell; halve the tap so the correction lands in it.
-        currentTap = Math.max(minTapMs, Math.floor(currentTap / 2));
-      }
-      priorAxis = axis;
-      priorSide = side;
-      const before = await snapshotAvatar(page, OVERWORLD_AVATAR);
-      await tapWalk(page, key, currentTap);
-      const after = await snapshotAvatar(page, OVERWORLD_AVATAR);
-      stall = after === before ? stall + 1 : 0;
+      return null;
     }
-    if (stall >= stallTaps) {
-      failStall(stallDetail);
-      return false;
-    }
-  }
-  const finalCell = await readAvatarCell(page, OVERWORLD_AVATAR);
-  if (finalCell !== null && finalCell.row === target.row && finalCell.col === target.col) {
-    return true;
-  }
-  failStall(stallDetail);
-  return false;
+    const axis = key === "ArrowLeft" || key === "ArrowRight" ? "col" : "row";
+    const side =
+      axis === "col" ? Math.sign(target.col - current.col) : Math.sign(target.row - current.row);
+    return { key, axis, side };
+  };
+  return await seekAvatarToTarget(page, report, {
+    ...rest,
+    avatarSelector: OVERWORLD_AVATAR,
+    sample,
+    computeStep,
+    vanishDetail: `overworld avatar vanished before reaching plot (${target.row}, ${target.col})`,
+    stallDetail,
+  });
 }
 
 //============================================

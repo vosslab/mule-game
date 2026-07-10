@@ -268,17 +268,240 @@ body {
   padding-bottom: 5rem; /* clear any future fixed-position dock on mobile */
 }
 
-.land-grant-panel,
-.land-auction-panel,
-.production-panel,
-.scoring-panel {
+/* The game screen hosts the letterboxed 16:10 stage (#game-stage): center it in
+   the viewport and clip so the surrounding letterbox bars never spawn a
+   scrollbar. Overrides the shared scroll-era flex-start + bottom padding above,
+   which suited the old top-aligned scrolling column, not a single centered
+   stage. Placed after that shared rule so it wins on source order (same
+   specificity). Only #screen-game is retargeted; #screen-map / #screen-town keep
+   the scrolling column. */
+#screen-game {
+  justify-content: center;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+/* Letterboxed 16:10 game stage: the largest 16 / 10 box that fits the viewport,
+   centered by #screen-game, with the screen background showing as bars in the
+   leftover space. The width formula caps the box on whichever axis binds first
+   -- 100vh * 16 / 10 in a wide (landscape) window so height fills and side bars
+   appear, 100vw in a tall (portrait) window so width fills and top/bottom bars
+   appear -- and `aspect-ratio` derives the other dimension, so the box is always
+   exactly 16:10 without a max-height clamp that could shave the ratio. HUD,
+   board, and phase panel stack in a centered column inside; downstream auction
+   and phase-panel work fills this box rather than the raw viewport. */
+#game-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100vw, calc(100vh * 16 / 10));
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  /* Size query container: the scene SVGs below size themselves to the stage box
+     (cqh/cqw) instead of the raw viewport, so the HUD + board + panel column
+     always fits inside the 16:10 box with no clip or scroll. Size containment
+     also pins the stage's height to the aspect-ratio value, unaffected by the
+     content it clips. */
+  container-type: size;
+}
+
+/* Scene sizing scoped to the stage: instead of subtracting a fixed reserve from
+   the stage height (which wastes space on small-panel phases and clips on
+   big-panel phases -- both defects under docs/HUMAN_GUIDANCE.md "Fill the full
+   16:10 canvas"), the board takes the space the flex column actually leaves after
+   the real HUD and phase panel. #game-map is the flex slot: it grows to fill the
+   gap between the HUD row and the panel (only on the phases that show a board --
+   the .game-map-filled class from game_screen.tsx, so the boardless auction and
+   scoring panels keep their natural top-aligned layout). The board SVG then fills
+   the slot's height and derives its width from its own viewBox ratio (no
+   hardcoded aspect here), centered, capped at 1200px and 92cqw so it never
+   overflows the stage width. Because the board is height: 100% of the slot, it is
+   both slot-tall and top-aligned, so the absolutely-positioned overworld/AI
+   avatar overlays (also height: 100%, top: 0, centered) stay box-identical to it
+   and avatar alignment is preserved. Result: on a small-panel phase (develop
+   overworld/town) the slot is tall and the board renders at essentially its
+   raw-viewport size; on a big-panel phase (land grant/auction/production) the
+   board shrinks only as much as that phase's panel requires, with no clip and no
+   dead margin. The demo screens (#screen-map / #screen-town) are outside any
+   stage and keep the viewport-based rules untouched. */
+#game-stage #game-map.game-map-filled {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#game-stage .map-svg,
+#game-stage .overworld-svg,
+#game-stage .ai-actor-svg {
+  width: auto;
+  height: 100%;
+  max-width: min(92cqw, 1200px);
+}
+
+/* The town scene is a self-contained full-cover column (its own SVG, HUD, and
+   End-turn footer), not an overlay that must track the board, so its SVG takes
+   the space left inside the town scene after that footer rather than the whole
+   slot height. */
+#game-stage .town-scene .town-svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: auto;
+  height: auto;
+  max-width: min(92cqw, 1200px);
+  max-height: 100%;
+}
+
+#game-stage .overworld-timer {
+  width: min(60cqw, 360px);
+}
+
+/* Seam split (WP-7A): each panel owns its own rule block, identical
+   declarations for now, so WP-7B..WP-7E can diverge one panel at a time
+   without touching a shared selector. */
+/* WP-7B: land grant is a board phase (the board flex-fills #game-map above
+   this panel per #game-stage's rules), so this panel fills the stage WIDTH
+   instead of capping at the shared 480px column width the other (boardless)
+   panels still use -- only the height it needs, leaving the rest to the
+   board. `cqw` resolves against #game-stage's size-query container
+   (src/style.css's #game-stage rule) rather than the immediate #game-panel
+   parent, which stays shrink-to-fit under #game-stage's align-items:center;
+   a percentage width here would shrink-wrap right back to content size. */
+.land-grant-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
+  width: 92cqw;
+  box-sizing: border-box;
+}
+
+/* Status/prompt/actions row: the hint text and the human's Pass button sit
+   side by side instead of stacked, so the wide panel reads as one line of
+   hierarchy (prompt on the left, action on the right) rather than dead
+   centered space either side of a narrow column. */
+.land-grant-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   width: 100%;
-  max-width: 480px;
+}
+
+.land-grant-panel .land-grant-hint {
+  flex: 1 1 auto;
+  margin: 0;
+  text-align: left;
+}
+
+/* WP-7C: land auction is a board phase (the board flex-fills the slot above
+   this panel per #game-stage #game-map.game-map-filled), so "fill" here means
+   claiming stage WIDTH and only the height its content needs, leaving the
+   rest to the board. `min(92cqw, 1400px)` queries #game-stage's size-query
+   container directly rather than #game-panel's own shrink-to-fit box,
+   mirroring the `.land-grant-panel` / `.map-svg` cqw pattern above. The
+   1400px cap is a sane upper bound only (kept above the map's 1200px so it
+   never binds at the required 1600x900 / 1200x1000 viewports and starves the
+   >=90%-of-stage-width coverage target); it does not need to match the
+   board's own cap since the panel sits in a different row.
+   `.land-auction-body` then spreads the plot/price, high-bidder/going-status,
+   and remaining/controls groups across that width in three columns,
+   preserving the original top-to-bottom reading order left-to-right. */
+.land-auction-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  width: min(92cqw, 1400px);
+  box-sizing: border-box;
+}
+
+.land-auction-body {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.land-auction-info,
+.land-auction-status,
+.land-auction-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 220px;
+}
+
+.land-auction-info p,
+.land-auction-status p,
+.land-auction-side p {
+  margin: 0;
+}
+
+.land-auction-side {
+  align-items: center;
+}
+
+/* WP-7D canvas fill: production is a board phase (#game-map flex-fills above
+   it), so "fill" here means width, not height -- the panel drops the shared
+   480px cap and spans the stage, with the per-player yield rows laid out as a
+   responsive grid (.production-list below) instead of a single centered
+   column, per docs/HUMAN_GUIDANCE.md "Fill the full 16:10 canvas". Uses
+   `cqw` rather than a percentage, matching .land-grant-panel's WP-7B fix
+   above: `#game-panel` is shrink-to-fit under #game-stage's
+   align-items:center, so a percentage width here would shrink-wrap right
+   back to content size; `cqw` resolves against #game-stage's size-query
+   container instead. */
+.production-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 1rem;
+  width: 92cqw;
+  box-sizing: border-box;
+}
+
+/* WP-7E canvas fill: scoring is a boardless phase (no #game-map flex-fill
+   above it, matching .land-auction-panel/.land-grant-panel), and the sparse
+   final-score content (a status line, an optional founder callout, a table,
+   a button) has no natural reason to grow tall on its own -- so both axes
+   are driven explicitly off #game-stage's container-query box (cqw/cqh,
+   from #game-stage's container-type: size) rather than left to intrinsic
+   content height. `min-height: 84cqh` gives the panel a full-canvas-fill
+   footprint per docs/HUMAN_GUIDANCE.md rather than a narrow centered block,
+   and `justify-content: space-between` spreads the status/table/button
+   sections across that height instead of leaving one big blank gap at the
+   bottom. Width is 94cqw with no px cap (measured coverage at 1600x900
+   landed under 90% with a 1200px cap; dropped it rather than raise it
+   further, matching .production-panel's uncapped width). 84cqh (not the
+   plan's 85% height starting hypothesis) is a deliberate one-point trade for
+   a real bottom margin at the tall-window gate viewport (1200x1000):
+   #game-stage has overflow: hidden, so any margin there has to survive
+   future HUD growth or font-metrics drift without silently clipping the
+   Play Again button. 86cqh measured 0px margin there (flush with the stage
+   edge) and 85cqh measured only 0.5px (sub-pixel, effectively the same
+   risk); 84cqh measured a stable 8px margin across repeat runs, the first
+   value with real headroom, so it wins over hitting 85% exactly. See
+   tests/playwright/scoring_screen.spec.mjs's contained-in-stage assertions
+   for the regression guard. This replaces the old `max-width: 480px` cap
+   and the second `.scoring-panel { max-width: 640px }` override further
+   down this file (removed; the panel had two competing rules for the same
+   property, one seam now). */
+.scoring-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  width: 94cqw;
+  min-height: 84cqh;
+  box-sizing: border-box;
 }
 
 .land-grant-button,
@@ -359,18 +582,27 @@ body {
   font-weight: bold;
 }
 
+/* Per-player yield rows as a responsive grid of cards rather than a stacked
+   centered column: auto-fit spreads rows across the panel's full width (one
+   column on a narrow stage, several across on a wide one) instead of wasting
+   the side margins a single-column list would leave. */
 .production-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.5rem 1rem;
   list-style: none;
   margin: 0;
   padding: 0;
   width: 100%;
-  text-align: center;
 }
 
 .production-item {
-  padding: 0.25rem 0;
+  padding: 0.5rem 0.75rem;
   font-size: 1.1rem;
   line-height: 1.4;
+  text-align: left;
+  background-color: #22223a;
+  border-radius: 6px;
 }
 
 /* Yield-pop entrance animation: each resource value scales/
@@ -418,14 +650,13 @@ body {
 }
 
 /* Scoring screen: a colony status banner, an
-   optional First Founder callout, and the ranked score-breakdown table. */
-.scoring-panel {
-  max-width: 640px;
-}
-
+   optional First Founder callout, and the ranked score-breakdown table. The
+   fill-behavior rule for .scoring-panel itself lives with the other panel
+   canvas-fill rules earlier in this file (WP-7E); this section only styles
+   the panel's inner pieces. */
 .scoring-colony-status {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   text-align: center;
 }
 
@@ -437,18 +668,23 @@ body {
 .scoring-first-founder {
   margin: 0;
   font-weight: bold;
+  font-size: 1.1rem;
   color: #ffd23f;
 }
 
+/* Row/font sizing scaled up from the pre-WP-7E defaults (0.95rem text,
+   0.4rem/0.6rem cell padding) to match the panel's wider canvas-fill
+   footprint -- a taller, larger table reads as intentional content filling
+   the space, not the same small table floating in a bigger box. */
 .scoring-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 1.15rem;
 }
 
 .scoring-table th,
 .scoring-table td {
-  padding: 0.4rem 0.6rem;
+  padding: 0.9rem 1rem;
   text-align: right;
   border-bottom: 1px solid #33334f;
 }
@@ -881,6 +1117,86 @@ button:focus-visible,
   cursor: pointer;
 }
 
+/* Corral purchase panel (WP-4A/4B): an in-stage modal layered over the
+   whole town-scene (`.town-scene` is the positioned ancestor, `inset: 0`
+   within it), covering the walkable interior and its notice/End-Turn floor
+   without replacing the phase panel. The backdrop dims the town scene behind
+   it; the card itself is sized generously off #game-stage's container-query
+   box (cqw/cqh) rather than the old fixed 480px habit, echoing the ambient
+   price/stock terminal look of OTHER_REPOS/planet_mule's ShopPainter. */
+.corral-purchase-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: rgb(0 0 0 / 65%);
+}
+
+.corral-purchase-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #ffd23f;
+}
+
+.corral-purchase-figures {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 1rem min(6cqw, 2rem);
+  width: min(70cqw, 640px);
+  justify-content: space-around;
+  background-color: #14142a;
+  border: 2px solid #ffd23f;
+  border-radius: 8px;
+}
+
+.corral-purchase-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.corral-purchase-figure dt {
+  font-size: 0.85rem;
+  color: #b8b8d0;
+}
+
+.corral-purchase-figure dd {
+  margin: 0;
+  font-family: monospace;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.corral-purchase-message {
+  margin: 0;
+  max-width: min(70cqw, 640px);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.corral-purchase-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.corral-purchase-button {
+  min-height: 44px;
+  min-width: 100px;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
 .plot-crystite-badge text {
   font-family: monospace;
   font-weight: bold;
@@ -925,14 +1241,18 @@ button:focus-visible,
   gap: 0.5rem;
 }
 
+/* Fills #game-stage (WP-6B): sized off the stage's own container-query box
+   (cqw/cqh, set by #game-stage's container-type: size in the rule above)
+   rather than a fixed max-width, so the readout/track/log stack spreads to
+   the stage width on every letterboxed viewport instead of sitting in a
+   narrow fixed column. */
 .auction-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
   padding: 1rem 1rem 3rem;
-  width: 100%;
-  max-width: 480px;
+  width: min(94cqw, 1400px);
 }
 
 .auction-screen-header {
@@ -964,9 +1284,17 @@ button:focus-visible,
   gap: 0.75rem;
 }
 
+/* Scales to the stage box instead of a fixed pixel cap: whichever of the two
+   cqw/cqh terms binds first wins, same width-or-height-first technique
+   #game-stage itself uses above. height:auto then derives the other
+   dimension from the svg's own 480:260 viewBox ratio, so the arena is never
+   stretched off-ratio. The 37cqh term leaves headroom in the stage's height
+   budget for the header, price readout, trade log, and intent buttons that
+   share the same column (tuned down from an initial 56cqh, which overflowed
+   #game-stage's clipped box at the 1200x1000 letterboxed viewport -- see
+   WP-6B handoff measurements). */
 .auction-track-svg {
-  width: 100%;
-  max-width: 280px;
+  width: min(92cqw, calc(37cqh * 480 / 260));
   height: auto;
 }
 
@@ -1065,7 +1393,6 @@ button:focus-visible,
   align-items: center;
   gap: 0.35rem;
   width: 100%;
-  max-width: 320px;
   font-family: "SF Mono", "Menlo", "Consolas", monospace;
   color: #e6e6e6;
 }
@@ -1091,7 +1418,10 @@ button:focus-visible,
 
 .auction-price-players {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Was a fixed 2-column grid, sized for the old 480px-capped panel; auto-fit
+     lets the up to 4 player rows spread across the wider stage-filled readout
+     instead of leaving the right half of the row empty. */
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 0.25rem 1.25rem;
   list-style: none;
   margin: 0;

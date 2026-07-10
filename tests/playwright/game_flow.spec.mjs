@@ -126,20 +126,23 @@ test("game flow: buy role in the auction moves the human token on the price trac
   const track = page.locator(".auction-track-svg");
   await expect(track).toBeVisible({ timeout: 10_000 });
 
-  // Record the human's token starting position, then hold ArrowUp to push
-  // price intent up across several auction ticks (AUCTION_TICK_MS = 500ms).
+  // Record the human's token starting price position, then hold ArrowUp to
+  // push price intent up across several auction ticks (AUCTION_TICK_MS =
+  // 500ms). The landscape track's price axis is x: a buyer raising its bid
+  // moves rightward toward the store-sell end (src/ui/solid/auction_screen.tsx
+  // priceToX), so cx should rise, not just change.
   const humanToken = track.locator(".auction-track-token").first();
   await expect(humanToken).toBeVisible();
-  const startY = await humanToken.getAttribute("cy");
+  const startX = await humanToken.getAttribute("cx");
 
   await page.keyboard.down("ArrowUp");
   await expect
     .poll(
       async () => {
-        const currentY = await track.locator(".auction-track-token").first().getAttribute("cy");
-        return currentY !== startY;
+        const currentX = await track.locator(".auction-track-token").first().getAttribute("cx");
+        return Number(currentX) > Number(startX);
       },
-      { timeout: 15_000, message: "human auction token never moved from its starting y" },
+      { timeout: 15_000, message: "human auction token never moved rightward from its starting x" },
     )
     .toBe(true);
   await page.keyboard.up("ArrowUp");

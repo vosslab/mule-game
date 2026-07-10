@@ -119,26 +119,44 @@ async function enterTown(page) {
 }
 
 /**
- * Walk the town avatar in `walkDir` until it stands at `door`. Skips the walk
- * when already there. Unlike town_scene.spec.mjs's `useDoor`, this does not
- * press the action key -- the pub flow needs fine-grained control over each
- * keypress (open confirm, decline, reopen, confirm), which a single combined
- * helper cannot express.
+ * Real-ms duration of one directional hold used to walk through the pub's
+ * walk-in entry line (town_layout.ts's DOOR_ENTER_Y sits only ~8px north of
+ * the street-row spawn line). At this spec's speed
+ * (WALKER_SPEED_PX_PER_SEC * speed=2 = 160px/s) this hold covers roughly
+ * 32px, comfortably past the crossing distance.
+ */
+const DOOR_HOLD_MS = 200;
+
+/**
+ * Walk the town avatar in `walkDir` until it stands at `door`'s street cell,
+ * then walk it north through the doorway to open the pub's confirm affordance
+ * -- the town interaction model (docs/HUMAN_GUIDANCE.md "Town interaction
+ * model") treats walking through an open doorway as the entry action itself
+ * (detectWalkIn, src/ui/scenes/town_scene.tsx:327), no keypress. Unlike
+ * town_scene.spec.mjs's `walkIntoDoor`, this does not walk back south
+ * afterward: the pub flow needs fine-grained control over each subsequent
+ * keypress (decline, reopen, confirm), and walking into the pub freezes
+ * movement anyway once its confirm affordance is up (confirmingGamble,
+ * town_scene.tsx:263), so a return walk would be a no-op.
  *
- * Advances in bounded taps (hold `walkDir` for WALK_TAP_MS, release, then
- * check data-at-door) rather than holding the key down for the whole walk
- * while polling for the exact target door. A continuous hold races the
- * attribute check: town's doors sit one street cell apart and the avatar
+ * Advances the sideways walk in bounded taps (hold `walkDir` for WALK_TAP_MS,
+ * release, then check data-at-door) rather than holding the key down for the
+ * whole walk while polling for the exact target door. A continuous hold races
+ * the attribute check: town's doors sit one street cell apart and the avatar
  * crosses one every ~400ms at this spec's speed, so once a single
  * `getAttribute` round trip runs slow, the poll can miss the target door's
  * entire window and the avatar keeps walking, straight out the far edge exit
- * (see town_scene.spec.mjs's `useDoor` doc comment for the full writeup).
- * Tapping bounds each check to a stationary snapshot, so a slow check merely
- * delays noticing arrival -- it can never let the avatar sail past the door.
+ * (see town_scene.spec.mjs's `walkIntoDoor` doc comment for the full
+ * writeup). Tapping bounds each check to a stationary snapshot, so a slow
+ * check merely delays noticing arrival -- it can never let the avatar sail
+ * past the door.
  */
 async function walkToDoor(page, townAvatar, door, walkDir) {
   for (let tap = 0; tap < MAX_WALK_TAPS; tap++) {
     if ((await townAvatar.getAttribute("data-at-door")) === door) {
+      await page.keyboard.down("ArrowUp");
+      await page.waitForTimeout(DOOR_HOLD_MS);
+      await page.keyboard.up("ArrowUp");
       return;
     }
     await page.keyboard.down(walkDir);
@@ -165,12 +183,10 @@ test("pub: confirm affordance requires a second keypress, Escape declines with n
   await reachHumanDevelop(page, 2, TOWN_COL - 1);
   const townAvatar = await enterTown(page);
 
+  // Walking into the pub already opens the confirm affordance (the walk-in
+  // itself is the entry action); it must not gamble or end the turn by itself.
   await walkToDoor(page, townAvatar, "pub", "ArrowRight");
   const moneyBeforeAsk = await readHumanMoney(page);
-
-  // A single action-key press only opens the confirm affordance; it must not
-  // gamble or end the turn by itself.
-  await page.keyboard.press("Space");
   await expect(page.locator("#town-scene")).toHaveAttribute("data-gamble-confirming", "true");
   await expect(page.locator("[data-town-notice]")).toContainText("Gamble and end turn?");
   await expect(page.locator("#town-scene")).toBeVisible();
@@ -194,7 +210,6 @@ test("pub: confirming a gamble pays out, shows the banner, and ends the turn", a
   await walkToDoor(page, townAvatar, "pub", "ArrowRight");
   const moneyBefore = await readHumanMoney(page);
 
-  await page.keyboard.press("Space");
   await expect(page.locator("#town-scene")).toHaveAttribute("data-gamble-confirming", "true");
   await page.keyboard.press("Enter");
 
@@ -225,7 +240,6 @@ test("pub: reduced motion still shows the payout banner, flagged accordingly", a
   const townAvatar = await enterTown(page);
 
   await walkToDoor(page, townAvatar, "pub", "ArrowRight");
-  await page.keyboard.press("Space");
   await expect(page.locator("#town-scene")).toHaveAttribute("data-gamble-confirming", "true");
   await page.keyboard.press("Space");
 
