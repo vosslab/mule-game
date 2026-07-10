@@ -21,6 +21,15 @@ already shipped and [TODO.md](TODO.md) for the smaller task backlog.
 
 ## Later
 
+- 1983/1990 gameplay-fidelity follow-up: further fidelity work (species
+  handicaps, tournament ruleset, and any other RULE_SOURCES.md items below)
+  targets the original game's RULES -- formulas, economy, and phase mechanics
+  -- not its UI or input scheme. Mouse and arrow-key control stays preferred
+  over the original console/joystick bindings, and a time-based land-selection
+  UI stays an acceptable modernization of the original turn-based land-claim
+  screen (user clarification 2026-07-09). See
+  [HUMAN_GUIDANCE.md](HUMAN_GUIDANCE.md), "Rule fidelity targets game
+  mechanics, not input devices."
 - Sound and music: a separate pass with its own asset pipeline, deliberately
   excluded from the fidelity plan so it could ship a finished game first. See
   [archive/mule_fidelity_plan.md](archive/mule_fidelity_plan.md).
@@ -31,6 +40,153 @@ already shipped and [TODO.md](TODO.md) for the smaller task backlog.
 - Tournament ruleset as a data toggle: the 1983 tournament deltas (higher
   variance amplitude, pirates steal all crystite, AI +$200 starting money)
   are recorded but unimplemented. See [RULE_SOURCES.md](RULE_SOURCES.md).
+
+## Known bugs and gaps (2026-07-10)
+
+Open items for a future manager agent to pick up cold, with file:line
+references verified against the current tree. See
+[TODO.md](TODO.md) for the short backlog pointers these expand on.
+
+### Auction engine: insolvent top bidder blocks solvent trades
+
+Symptom: when the best-priced bidder in a goods auction cannot afford the
+trade, the engine does not fall through to the next solvent bidder (or to
+the store's own standing bid), so a trade that should clear is blocked
+instead.
+
+Evidence: `bestBid` (`src/engine/auction.ts:432-451`) and `bestAsk`
+(`src/engine/auction.ts:461-484`) each select a single best offer and
+return it, with no ranked list of runner-up offers. `resolveTrade`
+(`src/engine/auction.ts:669-722`) calls `canExecute` (`src/engine/
+auction.ts:514-534`) once against that single `bid`/`ask` pair; when
+`canExecute` returns false because the bidder is insolvent, `resolveTrade`
+falls straight to the "nothing crossed" branch (lines 713-721) and resets
+the transaction run, rather than retrying with the next-best solvent
+bidder. Documented at the time the bug was found: `docs/CHANGELOG.md`
+(2026-07-09, Decisions and Failures, walkthrough-harness Patch 9 fix
+round) and `docs/TODO.md` ("Auction fidelity" section).
+
+Suggested approach: change `bestBid`/`bestAsk` to return an ordered list of
+offers (best first) instead of a single best offer, and have
+`resolveTrade` walk that list until it finds a pair where `canExecute`
+succeeds, or exhausts the list. Before implementing, check
+`OTHER_REPOS/planet_mule/data_decompiled/` (see
+[REFERENCE_REPOS.md](REFERENCE_REPOS.md), "planet_mule (primary rule
+authority)", which points at `Shop.java` for store/auction state) for the
+reference matching/fallthrough behavior, and record the citation in
+[RULE_SOURCES.md](RULE_SOURCES.md) once the fix lands.
+
+Verify: add an engine unit test that seats an insolvent bidder above a
+solvent second bidder (and above the store's standing bid) in the same
+auction tick, and assert the solvent trade still executes. Then
+re-strengthen `tests/test_auction_termination.mjs`'s third case ("a
+sold-out seller with no store stock terminates instead of spinning",
+`tests/test_auction_termination.mjs:144-164`) from its current
+termination-only assertion (`trades.length >= 1`, line 163) back to an
+exact expected trade count, since the weakening was a direct symptom of
+this bug (see the comment at lines 160-162 and `docs/CHANGELOG.md`
+2026-07-09 Patch 9 fix-round entry).
+
+### Town interaction model diverges from the NES M.U.L.E. target
+
+User decision (2026-07-09, recorded in `docs/TODO.md` "UI and layout"
+section) sets the target model: buildings are solid (walls block
+walking), each shop has a door that opens when the player walks up to it
+and stays closed otherwise, and walking through the open door triggers
+the shop interaction directly -- no separate action-key press. Three gaps
+remain:
+
+- (a) No collision: the town has no wall/building collision at all, so
+  the player walks through buildings.
+- (b) Shop interaction requires an explicit Enter/Space press at the door
+  instead of door-opens-on-approach plus walk-in-triggers-shop. The
+  current hint strings (in `src/ui/scenes/town_scene.tsx`) that name the
+  Enter/Space key are a documented stopgap, not the target model.
+- (c) No corral/store purchase screen: feedback on a corral purchase
+  attempt is a single notice line via `setNotice` inside `buyAtCorral`
+  (`src/ui/scenes/town_scene.tsx:383-399`), not a dedicated screen or
+  dialog showing price, stock, and funds together. The 1983 original
+  shows standing price/stock labels ambiently at the counter; see
+  `OTHER_REPOS/mule_rules.md`, town section.
+
+Suggested approach: build the wall/door collision and open-on-approach
+trigger first (this is a gesture-layer change only; the develop-plan
+strategy/mechanics separation stays untouched), then add the dedicated
+corral/store purchase screen on top of the existing `setNotice`
+crash/feedback floor. Changing the interaction trigger changes
+`tests/e2e/walkthrough_town.mjs`'s door-walk executors, which currently
+walk to a `[data-door-for]` marker and press the action key
+(`tests/e2e/walkthrough_town.mjs:1-85` documents the door-id/action-key
+scheme); update those executors to walk-in-triggers rather than
+press-to-trigger once the door model lands.
+
+Verify: a Playwright spec that walks the avatar toward a closed shop door,
+asserts the walk stops at the wall (no wall-through movement), then walks
+toward an open door and asserts the shop interaction fires without a
+separate key press; a second spec exercising the corral purchase screen
+for both the success and each failure case (no mules in tow already, out
+of stock, insufficient funds).
+
+### Walker gaps: hunt_wampus/assay_plot develop plans have no spatial executor
+
+Symptom: when the develop AI proposes a `hunt_wampus` or `assay_plot`
+plan, the E2E walkthrough harness does not execute it spatially; it logs
+the skip and ends the turn instead. This was an agreed fallback during the
+walkthrough-harness plan, not an accidental gap.
+
+Evidence: `skipOpportunisticDevelopPlan`
+(`tests/e2e/e2e_walkthrough.mjs:383-390`) logs `"develop plan ... is
+opportunistic with no spatial executor yet; ending the turn"` and calls
+`endDevelopTurn`. `executeDevelopPlan`'s dispatch table
+(`tests/e2e/e2e_walkthrough.mjs:431-441`) routes both `hunt_wampus` and
+`assay_plot` (lines 438-439) to that skip function, unlike `buy_mule`,
+`outfit_mule`, `place_mule`, and `gamble_pub`, which each have a real
+spatial executor. Recorded follow-up: `docs/TODO.md` ("Developer and
+testing" section, last bullet).
+
+Suggested approach: implement spatial executors for both plan kinds
+(walking the avatar to the wampus/plot location and firing the matching
+interaction), matching the pattern of the existing `executePlaceMule`/
+`executeOutfitMule` executors in `tests/e2e/walkthrough_town.mjs` and
+`tests/e2e/walkthrough_overworld.mjs`. This is currently a "nice to have,
+not urgent" item: the deterministic wampus/assay-plot coverage the
+walker's sweep otherwise cannot reach already lives in dedicated
+`tests/playwright/` specs, so only implement the spatial executors if
+sweep placement/coverage thins in a future run.
+
+Verify: run the sweep (`tests/e2e/e2e_walkthrough_sweep.mjs`) and confirm
+`plansAttempted`/`plansCompleted` counters (see
+`tests/e2e/e2e_walkthrough.mjs`'s `report.counters`) include completed
+`hunt_wampus`/`assay_plot` plans rather than only skip-and-end-turn
+entries; also add unit coverage in `tests/test_walkthrough_plan_exec.mjs`
+for the new executors.
+
+### Characterized behaviors: not bugs
+
+A future manager should not mistake these for regressions; each is an
+already-understood engine rule or legitimate variance, not something to
+fix.
+
+- Seed 7 always colony-fails at round 2. This is the engine's colony
+  failure rule firing as designed: `endAuctionGood`
+  (`src/engine/turn.ts:708-720`) calls `checkColonyFailure` (imported from
+  `src/engine/scoring.ts`, `src/engine/turn.ts:52`) after the last good of
+  each round and routes straight to scoring when it fails. The sweep gate
+  waives the `verifiedPlacements >= 1` invariant for such runs and records
+  the waiver honestly (`"placement waived: colony failure at round N"`,
+  see `docs/CHANGELOG.md` 2026-07-10, Patch 28 entry).
+- Seed 3 beginner legitimately varies run-to-run between a full 6-round
+  game and an early colony failure at round 2, because wall-clock gesture
+  timing shifts which goods actually trade and therefore the economy;
+  both shapes pass the release sweep's gates (`docs/CHANGELOG.md`
+  2026-07-10, Decisions and Failures entry).
+- Held-role-no-trade auction windows are normal market outcomes, not a
+  bug: a held-role participant whose AI price already matches the opening
+  tick legitimately pushes no intents and may never trade. The
+  per-run auction-participation check is a logged warning, not a hard
+  invariant, for exactly this reason (`docs/CHANGELOG.md` 2026-07-10,
+  Patch 30 entry); trade-occurrence proof lives in the sweep's
+  `matrixCoverage`, not the per-run check.
 
 ## Explicitly out of scope
 

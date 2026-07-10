@@ -293,6 +293,36 @@ test("an idle window (nobody trades or moves) ends at the idle timeout", () => {
   assert.equal(state.phase.payload.trades.length, 0);
 });
 
+test("an out participant's price is frozen across ticks even with a stale non-hold intent", () => {
+  // Crystite has no store ask (store stocks zero), so a lone buyer walks up
+  // without any trade firing and ending the window early.
+  let state = withPlayers(baseState(5), { 0: { money: 100000 } });
+  const built = createAuctionPayload(state, "crystite");
+  const floor = built.priceFloor;
+  const ceiling = built.priceCeiling;
+  const mid = Math.round((floor + ceiling) / 2);
+  // Player 0 is a live buyer moving up; player 1 sits out but still carries a
+  // stale "up" intent set before going out. The out price must not drift.
+  state = auctionOf(state, "crystite", {
+    0: { role: "buyer", price: floor, intent: "up" },
+    1: { role: "out", price: mid, intent: "up" },
+    2: { role: "out", intent: "hold" },
+    3: { role: "out", intent: "hold" },
+  });
+  const buyerStart = participant(state, 0).price;
+  for (let i = 0; i < 3; i += 1) {
+    state = applyAction(state, { type: "tick" });
+    // The out participant's price never moves, tick after tick.
+    assert.equal(participant(state, 1).price, mid);
+    assert.equal(participant(state, 1).role, "out");
+  }
+  // The live buyer did move, proving the tick actually stepped live prices.
+  assert.ok(
+    participant(state, 0).price > buyerStart,
+    "the live buyer's price rose while the out participant stayed frozen",
+  );
+});
+
 test("end_auction advances to the next good in planet_mule order", () => {
   // Drive to the first (smithore) auction, then step the good chain.
   let state = baseState(6);

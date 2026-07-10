@@ -106,7 +106,7 @@ export function HumanDevelopLayer(props: HumanDevelopLayerProps): JSX.Element {
       <Show when={inTown()}>
         <TutorialHint
           kind="town"
-          message="Walk into a building to shop, then step through an edge exit to return to your plots."
+          message="Walk to a shop door and press Enter (or Space) to shop, then step through an edge exit to return to your plots."
           variant="overlay"
         />
         <TownScene

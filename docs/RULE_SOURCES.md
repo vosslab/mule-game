@@ -188,6 +188,30 @@ For every rule this project implements:
   correctness gate for "same seed plus same action log replays to an identical GameState"; it is
   regenerated whenever the schema changes, not preserved across schema changes.
 
+### Auction "out" role: a deliberate repo addition over PM's buyer/seller binary
+
+- **Deviation:** this engine adds a third goods-auction role, `out`
+  (`AuctionRole = "buyer" | "seller" | "out"`, `src/engine/game_state.ts`), and a
+  matching "Sit Out" button, on top of Planet M.U.L.E.'s buyer/seller model. PM has no
+  explicit third role: a non-participating player simply has `AuctionState.inAuction=false`.
+  This is a user-approved addition for pacing (2026-07-09): a player who is done with a good
+  can sit it out and let the round finish faster, rather than being forced to hold on the track.
+- **Reference behavior (PM):** a non-participating player is drawn OFF the price track near the
+  store and shows NO dollar figure. Verified in
+  `OTHER_REPOS/planet_mule/data_decompiled/com/turborilla/mule/view/AuctionPainter.java`
+  lines 188-215, where the price string `"$" + price` is painted only when `isInAuction()` is
+  true. "No price shown" is PM's non-participation signal.
+- **Rendering and mechanics contract (this engine):** an `out` participant is excluded from
+  trading (skipped in `bestBid`/`bestAsk`, `src/engine/auction.ts`), and its price is frozen by
+  construction: `stepParticipantPrice` returns the participant unchanged when `role === "out"`,
+  regardless of a stale intent set before the player sat out, so `auctionTick` remains the single
+  price-movement authority. The same freeze applies to any seat, human or AI (AI already emits a
+  `hold` intent for the out role in `src/ai/auction_ai.ts`). In the UI
+  (`src/ui/solid/auction_screen.tsx`), an `out` participant shows the `OUT` label with no price
+  (an ASCII `--`) in the readout, draws no token dot on the price axis, and parks its avatar at a
+  sideline "line judge" spectator spot beside the track (`sidelineSpot`, the single layout seam a
+  future landscape-rotation task rewrites), matching PM's "off the track, no figure" treatment.
+
 ## Tournament deltas (recorded, not implemented)
 
 `OTHER_REPOS/mule_rules.md` lines 51-55: tournament mode adds Crystite plus the assay option

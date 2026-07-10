@@ -1,5 +1,73 @@
 # CHANGELOG.md
 
+## 2026-07-10
+
+### Additions and New Features
+
+- Testing (WP-G2): new `tests/e2e/e2e_run_all.sh` step-runs mini_flow,
+  full_game, balance_sim (`--import tsx`), balance_report, and the
+  single-seed active walkthrough; calibration and sweep are excluded as
+  explicit commands (sweep is documented as the release gate). Named
+  `e2e_run_all.sh` rather than the plan's originally proposed `run_all.sh`
+  because `tests/test_test_naming_conventions.py` enforces the `e2e_*.sh`
+  prefix; `docs/E2E_TESTS.md` and the plan doc updated to match.
+- Docs (WP-G3/M8): new `docs/WALKTHROUGH_GUIDE.md` covering the harness
+  layers, run commands, tick budgets with derivation, the 11-kind failure
+  taxonomy with triage steps, an edge-case table, the calibration table plus
+  its regenerate command, the sweep coverage table, and the
+  strategy/mechanics separation and rule-change tolerance the harness relies
+  on. Pointers added from `docs/USAGE.md` and `docs/E2E_TESTS.md`.
+
+### Behavior or Interface Changes
+
+- Testing (Patch 28, colony-failure placement waiver): the sweep gate waives
+  the per-run `verifiedPlacements >= 1` invariant when the game ended via the
+  engine's colony-failure rule (`ScoringPayload.colonyFailed` threaded
+  through `report.write` into sweep evaluation); the waiver is recorded
+  honestly in the run's reasons (`"placement waived: colony failure at round
+  N"`), and matrix-level placement coverage is unchanged. Files:
+  `tests/e2e/e2e_walkthrough.mjs`, `walkthrough_report.mjs`,
+  `e2e_walkthrough_sweep.mjs`, `tests/test_walkthrough_sweep.mjs`.
+- Testing (Patch 30, participation invariant second amendment): the per-run
+  auction-participation check is demoted from a hard invariant to a logged
+  warning -- a held-role participant whose AI price matches from the opening
+  tick legitimately pushes no intents and may never trade (seed 3 flaked
+  around 2/3 of runs); `humanTurnsCompleted` stays a hard invariant, and
+  trade-occurrence proof is owned by the sweep's `matrixCoverage`. Files:
+  `tests/e2e/walkthrough_exec.mjs`, `tests/test_walkthrough_plan_exec.mjs`,
+  the plan doc.
+
+### Fixes and Maintenance
+
+- Testing (Patch 29, truncation accounting fix): `activeDriveDevelop` now
+  decides the plan before the tick-reserve guard runs; a turn cut at the
+  reserve counts as truncated only when the cut plan commits budget
+  (buy/outfit/place, via a new `planCommitsBudget` predicate) -- a
+  `gamble_pub`/`end_turn`/`hunt`/`assay` cut is the natural end of the turn.
+  Root cause of the earlier 5/6-11/12 truncation rates was miscounting turns
+  that were ending anyway (the develop AI returns `gamble`, not `end_turn`,
+  when out of moves); zero gameplay change. Files:
+  `tests/e2e/walkthrough_overworld.mjs`, `e2e_walkthrough.mjs`,
+  `tests/test_walkthrough_overworld.mjs`.
+- Testing (Patch 33, stale run-command headers): `tests/e2e/e2e_balance_sim.mjs`
+  and `e2e_walkthrough.mjs` header comments corrected to `node --import tsx`
+  (plain `node` fails on extensionless `.ts` sibling imports).
+
+### Decisions and Failures
+
+- Testing: final release sweep GREEN 2026-07-10T05:03Z -- exit 0, 6/6 runs
+  pass across `{1, 3, 7} x {beginner, standard}`, `matrixCoverageSatisfied`
+  in both modes, seed-7 legs pass with colony-failure placement waivers;
+  seed 3 beginner shows legitimate run-to-run variance between a full
+  6-round game and an early colony failure at round 2 (wall-clock gesture
+  timing affects the economy), and both shapes pass the gates. The
+  walkthrough harness plan (M1-M8, 17 work packages, 33 patches) is
+  complete; during execution the harness surfaced and drove fixes for real
+  product bugs: the SolidJS stale-`Show` silent crash, the auction
+  commit-gate stall, the documented `bestBid`/insolvent-bidder engine bug
+  (see `docs/TODO.md` follow-up), sit-out incoherence, and the corral
+  hint-string trap.
+
 ## 2026-07-09
 
 ### Additions and New Features
@@ -1113,6 +1181,242 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   docs/RULE_SOURCES.md: "Endgame scoring: per-plot and per-mule terms",
   "Colony failure: food-production gate", "First Founder and colony rating:
   only awarded on survival", and "M9 balance sim record".
+- Docs: copied the approved walkthrough-harness plan into
+  `docs/active_plans/active/walkthrough_harness_plan.md` (ASCII-normalized).
+- Testing (walkthrough-harness Patch 1, WP-P1): new `src/ui/walker_debug.ts`
+  exposes a read-only `window.muleGameState()` projection of the live
+  `GameState` (structuredClone plus deep-freeze) alongside convenience fields
+  `phaseKind`, `activePlayerId`, `humanMoney`, `sweepRow`, `sweepCol`;
+  installed via `createAutosavingStore` so both new-game starts and resumed
+  saves get the projection. `buildWalkerProjection` is exported once and
+  shared by the browser install path and the new `tests/test_walker_debug.mjs`
+  (4 cases). Part of `docs/active_plans/active/walkthrough_harness_plan.md`
+  (M1).
+- Testing (walkthrough-harness Patch 2, WP-P2): additive `data-action`
+  selectors on walker-critical controls -- `land-grant-pass`, `land-bid`,
+  `auction-role` (with `data-role` rendering the engine's own `AuctionRole`
+  values `buyer|seller|out`), `auction-intent-up`/`auction-intent-down`,
+  `auction-continue`, and `develop-end-turn` on both the develop panel and the
+  town end-turn button. Recorded decision: `data-role` uses the engine enum
+  spellings rather than the plan's provisional `buy`/`sell`/`sit_out` text, so
+  the selector and the engine type never drift apart.
+- Testing (walkthrough-harness Patch 3, WP-H1): new `tests/e2e/e2e_walkthrough.mjs`
+  and `tests/e2e/walkthrough_helpers.mjs` bootstrap a headless walkthrough
+  launch -- CLI `--seed`/`--mode`/`--speed`/`--screenshots`/`--bootstrap-only`
+  flags, build-if-missing `dist/`, a random loopback port, `playwright-core`
+  headless launch, `localStorage.clear` plus reload, new-game entry, and an
+  `initial_state.png` screenshot. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-H1).
+- Testing (walkthrough-harness Patch 4, WP-H2): new `tests/e2e/walkthrough_report.mjs`
+  (`createWalkReport`: a severity-tagged log, per-phase timings, and a closed
+  failure taxonomy -- `phase_timeout`, `act_did_not_advance`, `walk_stall`,
+  `decision_gesture_mismatch`, `unknown_plan_kind`, `console_error`,
+  `page_error`, `network_error`, `run_stalled` -- plus summary counters and
+  error collectors that treat `console.error`/`pageerror`/same-origin network
+  failures as fatal and `console.warn` as nonfatal, with an `EXPECTED_NOISE`
+  allowance for the favicon-only 404) and `tests/test_walkthrough_report.mjs`
+  (8 cases). Recorded decision: the evidence module lives in its own file
+  rather than `walkthrough_helpers.mjs`, so the concurrently developed Patch 3
+  and Patch 4 packages never shared a file. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-H2).
+- AI (walkthrough-harness Patch 5, WP-A1): `walkthrough_strategy.mjs` gains a
+  marshalling section, plus `tests/test_walkthrough_strategy.mjs`, proving the
+  projection's JSON round-trip is lossless into engine types (deep-equal and
+  an identical reducer step) and that every `src/ai` decide function runs
+  correctly on the marshalled copy -- a plain `structuredClone` is sufficient
+  for the whole AI decision surface. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-A1).
+- AI (walkthrough-harness Patch 6, WP-A2): decision wrappers
+  `decideLandGrant`/`decideLandAuction`/`decideDevelopPlan`/`decideAuctionIntent`
+  for the walker's seat 0, a frozen exported `PLAN_KINDS` (14 kinds), and a
+  fail-loud `checkedPlan` guard; `hunt_wampus`/`assay_plot` are treated as
+  opportunistic, and `decideDevelopPlan` returns the next single plan since
+  develop turns are reactive. Recorded decision: no narrower AI input than the
+  full `GameState` is sufficient for the walker's decisions. 10/10 tests
+  green. Part of `docs/active_plans/active/walkthrough_harness_plan.md`
+  (WP-A2).
+- Testing (walkthrough-harness Patch 7, WP-H3): the passive-phase loop in
+  `e2e_walkthrough.mjs` now completes a full beginner-mode game -- a report
+  plus 11 phase screenshots, with zero console or network noise across
+  seeds 1/3/7 spot checks -- bounded by the `phase_timeout`/`run_stalled`
+  taxonomy exits from Patch 4. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-H3).
+- Testing (walkthrough-harness Patch 8, WP-E1): new
+  `tests/e2e/walkthrough_land.mjs` adds `driveLandGrant`/`driveLandAuction` gesture
+  drivers for seat 0 -- a land-grant claim fires only when the live sweep
+  cursor matches the adapter-decided plot (a mismatch logs
+  `decision_gesture_mismatch` and retries), and the land-auction bid loop
+  "respects the ceiling" by re-deciding every tick, since the AI's own
+  internal price cap is not exported. A shared `actAndWaitProgress` helper
+  landed in `walkthrough_helpers.mjs`; new `tests/test_walkthrough_land.mjs`
+  (3 cases). Recorded decision: each phase driver lives in its own module
+  file (`walkthrough_land.mjs`, and the auction/town/overworld modules that
+  follow) rather than the plan's "helpers sections" wording, so concurrently
+  developed packages never share a file; the plan's touch-point lists drift
+  accordingly. Part of `docs/active_plans/active/walkthrough_harness_plan.md`
+  (WP-E1).
+- Testing (walkthrough-harness Patch 9, WP-E2): new
+  `tests/e2e/walkthrough_auction.mjs` adds `driveAuction`, exercising the goods-auction
+  role/intent/continue gesture across all four goods and recording a
+  per-good outcome tuple `{role, aiTargetPrice (null; the AI's target price
+  is not exported), priceBefore/After, humanGoodsDelta, humanMoneyDelta}`;
+  the trades counter increments only when a good's human goods delta is
+  nonzero. New `tests/test_walkthrough_auction.mjs`. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-E2).
+- Testing (walkthrough-harness Patch 10, WP-E3): `--active`/
+  `--passive` orchestrator modes wire `driveLandGrant`/`driveLandAuction`/
+  `driveAuction` on phase entry (the develop-phase seam stays pinned to the
+  passive end-turn fallback until the spatial lane lands); a new
+  `assertActiveInvariants` checks `humanTurnsCompleted` equals rounds
+  reached and `trades >= 1`; new `walkthrough_exec.mjs`
+  (`executePlan`/`exitCodeForFailure`) and
+  `tests/test_walkthrough_plan_exec.mjs` (5 cases). Quality-review fixes:
+  `humanTurnsCompleted` now increments only on a confirmed phase advance,
+  and the report's `fail()` is first-failure-wins. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-E3).
+- Testing (walkthrough-harness Patch 10, WP-E3), completion addendum: both
+  open items closed. `executePlan` is wired into the live orchestrator path
+  at `tests/e2e/e2e_walkthrough.mjs` (`ACTIVE_PHASE_DRIVERS` dispatch table
+  around line 473, call site around lines 555-566). The `trades >= 1`
+  triage on seeds 1/3/7 turned up a legitimate case, not a driver bug: a
+  rebuilt diagnostic proved seat-0 AI can genuinely sit out of an auction on
+  some seeds, so `assertActiveInvariants` in `tests/e2e/walkthrough_exec.mjs`
+  (doc comment around lines 118-136) now accepts `trades >= 1` OR every
+  `auction_outcome` role being `'out'` -- an approved, evidence-based
+  deviation from the original invariant text.
+- Testing (walkthrough-harness Patch 11, WP-S1): new
+  `tests/e2e/e2e_walk_calibration.mjs` runs a 5-configuration speed x tap-length x
+  budget matrix against two success metrics (20-attempt door-reach rate;
+  develop-turn errand completion within the tick budget), writing
+  `test-results/walker/calibration.json`. Chosen constants
+  `WALKER_SPEED=4`, `WALK_TAP_MS=120`, `PER_ACT_BUDGET_MS=1000` landed in
+  `walkthrough_helpers.mjs` with a comment naming the winning row. Recorded
+  decision: the winner was chosen on margin, not raw pass rate -- speed 8
+  passes at tap 120 but its tap-180 sibling deterministically overshoots
+  (sitting on the cliff edge), while speed 4 has proven headroom at both
+  tap lengths; rejected rows are recorded alongside the winner. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-S1).
+- Testing (walkthrough-harness Patch 12, WP-S2): `walkthrough_helpers.mjs`
+  gains its spatial section -- a selector audit found zero gaps (every
+  spatial target the drivers need already carries durable `data-*`
+  attributes), a generalized `walkTo` helper (accepts either a fixed key or
+  a direction-provider), `directionToward`, and `enterTown`/`exitTown`;
+  `walk_stall` classification now watches the avatar's per-frame transform
+  instead of only coarse cell/door attributes. New
+  `tests/test_walkthrough_walkto.mjs` (5 cases) plus a live seed-33 town enter/exit
+  proof. Part of `docs/active_plans/active/walkthrough_harness_plan.md`
+  (WP-S2).
+- Testing (walkthrough-harness Patch 13, WP-S3): new
+  `tests/e2e/walkthrough_town.mjs` drives town commerce -- `executeBuyMule`,
+  `executeOutfitMule` (verified via the projection's `carriedMule`), and
+  `executeGamblePub` (the approved two-press pub confirm sequence, verified
+  via `[data-pub-banner]` plus the money delta and a `gambles` counter) --
+  plus a door map and `walkToDoor`, which delegates to the adaptive
+  `walkTownAvatarToCell` walk-helper. New `tests/test_walkthrough_town.mjs`.
+  Part of `docs/active_plans/active/walkthrough_harness_plan.md` (WP-S3).
+- Testing (walkthrough-harness Patch 14, WP-S4): new
+  `tests/e2e/walkthrough_overworld.mjs` adds `executePlaceMule` with
+  projection-based verification (plot ownership, outfit, and mule count),
+  plus graceful turn truncation for `develop`-phase errands that run past
+  budget (`shouldTruncate`/`maybeTruncateTurn`,
+  `DEVELOP_TRUNCATE_RESERVE_TICKS=5`, a `truncatedTurns` counter, and a
+  `"develop_plan_truncated"` warn log). Approved deviation beyond the plan
+  text: BFS town-cell-avoiding routing (`firstStepAvoiding` and
+  `walkOverworldAvatarToCell`) fixes a real geometric blocker where the
+  straight-line path crossed a town cell, re-entering town and unmounting
+  the avatar mid-errand; unit-tested against the exact seed-33 geometry that
+  exposed it. New `tests/test_walkthrough_overworld.mjs`. Part of
+  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-S4).
+- Testing (walkthrough-harness Patch 15, WP-G1): new
+  `tests/e2e/e2e_walkthrough_sweep.mjs` runs the sequential `{1, 3, 7}` x
+  `{beginner, standard}` sweep matrix, writing `sweep_summary.json` with
+  taxonomy counts, a worst-first table, matrix coverage booleans, a
+  deterministic `--find-seeds 1-100` scan, and a `>50%` truncation fail
+  rule; an entry-point guard keeps importing the module for unit tests from
+  launching a live sweep. New `tests/test_walkthrough_sweep.mjs` (22 unit
+  tests). Part of `docs/active_plans/active/walkthrough_harness_plan.md`
+  (WP-G1).
+- Testing (walkthrough-harness Patch 16, consolidation/cleanup):
+  `tests/e2e/e2e_full_game.mjs` and `e2e_mini_flow.mjs` now import
+  `REPO_ROOT`/`startServer` (and `launchBrowser` for `e2e_mini_flow.mjs`)
+  from `tests/e2e/walkthrough_helpers.mjs`, keeping each script's own
+  always-rebuild `buildSite` variant local. `walkthrough_auction.mjs`'s
+  `applyPlan` gained a fail-loud guard that throws a shared "unexpected plan
+  kind" message on any unmapped plan kind, unit-tested. A role-equivalence
+  test was added to `tests/test_walkthrough_strategy.mjs` (an `auction_role`
+  plan exists if and only if the AI's role disagrees with the
+  auto-assigned default), verified non-vacuously on both branches with a
+  real seed-1000 game (11/11 passing). Planning-scaffold tags were stripped
+  from every walker module and test file except
+  `tests/e2e/e2e_walkthrough.mjs` (held for a later cleanup pass), and two
+  stale eslint-disable comments were removed from
+  `tests/e2e/e2e_walkthrough_sweep.mjs`.
+- Testing (walkthrough-harness Patch 17, invariant taxonomy): `tests/e2e/
+  walkthrough_report.mjs`'s `FAILURE_KINDS` gained an `"invariant_violation"`
+  kind; `assertActiveInvariants` (`tests/e2e/walkthrough_exec.mjs`) now
+  classifies via `report.fail` before throwing, closing the one unclassified
+  failure path the first sweep turned up (see Decisions and Failures below).
+- Testing (walkthrough-harness Patch 18, auction report-loss fix): a new
+  `"auction_stalled"` failure kind; `driveAuction`'s tick-ceiling guard
+  classifies before throwing; `runWalkthrough` (`tests/e2e/e2e_walkthrough.
+  mjs`) now persists `playthrough_report.json` via `try`/`finally` on every
+  failure path, not just the success path. New shared `clickIfPresent`
+  helper in `walkthrough_helpers.mjs` (a single-handle visibility
+  pre-check with an explicit `CLICK_TIMEOUT_MS=1000`) replaces the driver's
+  previously swallowed `.catch` clicks.
+- Testing (walkthrough-harness Patch 19, auction role-click tick-0 gate):
+  root-caused seed 7's reproducible ~44s auction phases to the walker
+  clicking role buttons on ticks where the `RolePanel` no longer renders
+  (it only exists at tick 0), hanging on Playwright's roughly 30s default
+  actionability timeout. Gated `auction_role` plans on `payload.tick===0`
+  with one-per-good deferred-role info logging, and added `page.
+  setDefaultTimeout(PAGE_DEFAULT_TIMEOUT_MS=2000)` in `bootstrapGame`.
+  Auction phases dropped to 12-18s; seed 7 beginner became the first fully
+  green active walkthrough. The hang had also silently swallowed outcome
+  logging and exhausted run budgets before this fix (see Decisions and
+  Failures below).
+- Testing (walkthrough-harness Patch 23, mode-derived run budgets):
+  `e2e_walkthrough.mjs` computes `RUN_BUDGET_MS_BY_MODE` as
+  `ROUND_BUDGET_MS(51000) x rounds + overhead(10000)`, with `rounds`
+  imported from `src/engine/constants.ts`, replacing the flat passive-era
+  60s budget that stalled every full active run.
+- Testing (walkthrough-harness Patch 24, stale-dist rebuild guard):
+  renamed `buildSiteIfMissing` to `buildSiteIfStale` in `walkthrough_helpers.
+  mjs`; it now rebuilds whenever `dist/index.html` is older than the newest
+  source input (an explicit `BUILD_SOURCE_INPUTS` list feeding a pure
+  `decideDistStaleness` decision function). New `tests/
+  test_walkthrough_build_staleness.mjs` (7 tests) fixes the twice-hit
+  silent stale-bundle trap (see Decisions and Failures below).
+- Testing (walkthrough-harness Patch 25, transition-based turn counter):
+  new `createHumanDevelopTurnCounter` in `e2e_walkthrough.mjs` counts
+  `phaseKind` transitions out of `"develop"` (fed from the poll loop and
+  the develop driver behind a single flag, so no double-count), removing
+  the old increment from the end-turn gesture path. New `tests/
+  test_walkthrough_turn_counter.mjs` (6 tests) fixes the timing-flaky
+  `humanTurnsCompleted` count, which never incremented for auto-ended
+  turns.
+- Testing (walkthrough-harness Patch 26, participation-proven trades
+  invariant): the `auction_outcome` tuple gained `intentsPushed` (up/down
+  only, hold excluded); `assertActiveInvariants` now requires, for runs
+  where the human held a buyer/seller role, at least one window with
+  pushed intents OR a cleared trade (nonzero `humanGoodsDelta`), replacing
+  the flat `trades >= 1` check. Trade-occurrence coverage now lives at
+  sweep level via `matrixCoverage`. Triage-verified: no-trade-with-held-
+  role is legitimate market behavior, since auction windows close on
+  quiescence (`src/engine/auction.ts:758-795`).
+- Docs: added `docs/HUMAN_GUIDANCE.md` (rules-vs-UI fidelity, the 16:10
+  full-canvas screen preference); `docs/TODO.md` gained a UI-and-layout
+  backlog (landscape auction rotation with sideline judges, a 16:10 screen
+  audit, a corral purchase screen, and an NES door-entry town model) and a
+  developer-testing section (the walker seek-core refactor); `docs/
+  ROADMAP.md` gained a rules-only fidelity clarification.
+- UI (src/ui): `src/ui/solid/error_fallback.tsx` (`GameErrorFallback`: a
+  visible alert panel, the error message in monospace, a reload button,
+  and `console.error` passthrough) wraps an outer `ErrorBoundary` around
+  `GameScreen` and an inner one isolating `HumanDevelopLayer`, plus a
+  `?crash-test=1` dev hook (precedent: `?hints=off`). New `tests/
+  playwright/error_boundary.spec.mjs` (66 Playwright specs total). Reactive
+  crashes now degrade to a visible error panel instead of a silent freeze.
 
 ### Behavior or Interface Changes
 
@@ -1219,6 +1523,14 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   both the shuffle and the new variance draw, and now reads from
   `state.rngState` (the core economy/auction stream) via `turn.ts`'s
   `enterProduction`, which previously never touched the RNG at all.
+- Engine+UI (M11 hardening, Patch 22, sit-out coherence): user-approved
+  deviation recorded in `docs/RULE_SOURCES.md` -- `AuctionRole` "out" is a
+  repo addition over Planet M.U.L.E.'s strict buyer/seller binary.
+  `stepParticipantPrice` now freezes out-role prices; the auction screen
+  shows "--" instead of a dollar figure for OUT, drops the price-track
+  token, and parks the avatar at a sideline judge spot (`sidelineSpot`
+  helper, the seam for the planned landscape rotation). New engine unit
+  test pins the frozen price (`tests/test_auction.mjs`).
 
 ### Fixes and Maintenance
 
@@ -1813,6 +2125,18 @@ build.mjs`, `tools/generate_pwa_icons.mjs`, three sites in
   callout. Updated `README.md`'s managed screenshot block (five embeds,
   matching alt text to each view) and confirmed `pytest tests/
   test_markdown_links.py` passes against the renamed/dropped files.
+- UI (src/ui, Patch 20): fixed a "Stale read from `<Show>`" `page_error`
+  that killed 4 of 6 sweep runs. `game_screen.tsx`'s `Show` now gates on a
+  boolean, with the payload flowing through a store-backed
+  `humanDevelopPayloadLive` accessor that latches the last defined
+  payload; `overworld_scene.tsx`'s `updateFrame` bails early on non-
+  develop/non-human frames. Playwright 65/65 after the fix.
+- UI (src/ui, Patch 27): the four "walk"-only hints in `game_screen.tsx`,
+  `human_develop_layer.tsx`, and `town_scene.tsx` now say "press Enter (or
+  Space)", matching `land_grant_panel.tsx`'s existing pattern. Fixes a
+  user-reported trap (walking to the corral and nothing happening) -- the
+  avatar spawns on the corral door and no hint named the required
+  keypress.
 
 ### Removals and Deprecations
 
@@ -1835,6 +2159,40 @@ build.mjs`, `tools/generate_pwa_icons.mjs`, three sites in
 
 ### Decisions and Failures
 
+- Testing (walkthrough-harness Patch 3, WP-H1), fix round: the live browser
+  walkthrough hit a `DataCloneError` that unit tests had never caught, since
+  they only ever exercised plain reducer states, not a SolidJS `createStore`
+  proxy -- proxies are not `structuredClone`-able. Fixed by having
+  `src/ui/walker_debug.ts` call `structuredClone` on `unwrap(state)` instead
+  of the raw store, and added a `createStore`-proxy regression case to
+  `tests/test_walker_debug.mjs` (5 cases total). A stale `dist/` build masked
+  the bug for a while by serving pre-fix code, so if `window.muleGameState()`
+  is undefined or throws inside a walker run, force a `dist/` rebuild before
+  suspecting the engine.
+- Testing (walkthrough-harness Patch 9, WP-E2), fix round: the engine holds
+  each auction good's clock at tick 0 until the human commits a role via an
+  explicit role-button click (`scene_manager.ts`'s
+  `isAuctionTickable`/`humanAuctionCommitted`); the driver originally
+  skipped that click whenever the AI's desired role already matched the
+  auto-assigned default, stalling every seed at the 4000-tick cap.
+  An earlier engine-fix agent's proof that the reducer genuinely terminates
+  in about 38 ticks when actually ticked was correct and exonerated the
+  engine; it pointed straight at the driver's missing role-commit click as
+  the real cause. Fixed with an unconditional
+  once-per-good role-commit click that emulates the human's explicit
+  commit, plus 2 regression tests. New `tests/test_auction_termination.mjs`
+  (3 reducer-level cases) separately pins that every auction window
+  terminates once ticked, guarding against a repeat of this stall; one case
+  originally asserted an exact trade clear count too, but that assertion
+  tripped the separate `bestBid` bug documented below, so it was weakened
+  to termination-only (a floor on trades, not an exact count).
+  Documented follow-up engine bug (not fixed): `src/engine/auction.ts`'s
+  `bestBid` (426-445)/`bestAsk` (455-478) select a single best offer, and
+  `resolveTrade` (663-716) does not fall through to the next-best solvent
+  participant when the top bidder goes broke -- a broke top bidder blocks
+  solvent lower bidders and the store from trading. Relates to the
+  `docs/TODO.md` "seller-out-of-goods store fallback" item; needs its own
+  task and a `docs/RULE_SOURCES.md` citation before a fix lands.
 - M10/M11 plan close-out (`docs/active_plans/active/mule_fidelity_plan.md`),
   adopted-vs-adjusted summary: PM-anchored constants (production yields,
   store prices, event tables, scoring formula, colony-rating tier
@@ -2008,6 +2366,27 @@ energyNeeded)` can only ever be exactly 0 or exactly `energyNeeded`, never
   yield -- and adjudicated not to add one; production reads
   `plot.crystiteLevel` directly, bypassing the `crystiteRevealed` gate that
   exists for UI/AI-facing code, matching PM's real "blind mining" behavior.
+- Testing (walkthrough-harness Patch 15, WP-G1), first real sweep: the
+  6-run `{1, 3, 7} x {beginner, standard}` matrix exits 1, as expected for a
+  first run against a harness this new. 4 of 6 runs fail on the known
+  SolidJS stale-`Show` `page_error` (fix already in flight). Seed 7 shows a
+  reproducible, mode-independent goods-auction phase taking roughly 44-45
+  seconds regardless of beginner or standard mode; triage of that timing is
+  dispatched as a follow-up. One run also surfaced an unclassified
+  invariant-violation failure path not covered by the existing failure
+  taxonomy; an `"invariant_violation"` taxonomy kind is in flight to close
+  that gap. `matrixCoverage` reports `humanBuy`/`humanSell` not yet
+  observed across the 6-run matrix.
+- Testing (walkthrough-harness Patches 17-19), root cause of the first
+  sweep's seed-7 anomaly: a silent ~30s click hang (the walker clicking a
+  `RolePanel` role button on ticks where it no longer renders) chained into
+  missing outcome tuples, then run-budget exhaustion, then an unclassified
+  invariant-violation failure -- one hang crossing three separate taxonomy
+  gaps, closed across Patches 17-19 (see Additions and New Features above).
+- Testing (walkthrough-harness sweep observation): one seed-3 run ended at
+  scoring after only 2 rounds. Suspected legitimate early colony-failure
+  variance rather than a harness bug; a single occurrence, watched rather
+  than chased in the release sweep.
 
 ### Developer Tests and Notes
 

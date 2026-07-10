@@ -512,11 +512,12 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       </svg>
       <div class="town-hud">
         <p class="town-notice" data-town-notice aria-live="polite">
-          {notice() ?? "Walk to the corral to buy a M.U.L.E."}
+          {notice() ?? "Walk to the corral and press Enter (or Space) to buy a M.U.L.E."}
         </p>
         <button
           type="button"
           class="town-end-turn-button"
+          data-action="develop-end-turn"
           onClick={() => props.store.dispatch({ type: "end_turn", playerId: HUMAN_ID })}
         >
           End turn

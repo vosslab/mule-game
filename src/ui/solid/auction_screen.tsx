@@ -32,7 +32,7 @@
 // the arena root carries `data-reduced-motion`; the trade layer carries a
 // monotonic `data-flash-count`.
 //
-// Slot -> species mapping (fixed until species select lands at M8): player slots
+// Slot -> species mapping (fixed until species selection lands): player slots
 // 0..3 map to SPECIES_BY_SLOT below (humanoid, gollumer, mechtron, packer), the
 // first four silhouette-distinct species in SPECIES_NAMES. Documented here so a
 // later species-select milestone replaces this fixed map with a player choice.
@@ -92,7 +92,7 @@ const GOODS_TRAVEL_MS = 420;
 const FLASH_MS = 320;
 
 /**
- * Fixed slot -> species map used until species select lands at M8. Player slots
+ * Fixed slot -> species map used until species selection lands. Player slots
  * 0..3 (playerId order) take the first four silhouette-distinct species; a later
  * milestone replaces this with the player's chosen species.
  */
@@ -137,7 +137,33 @@ function laneCenterX(slot: number): number {
 
 //============================================
 /**
- * The species a player slot renders until species select lands at M8.
+ * The sideline "line judge" spot where an out participant parks: a spectator
+ * position beside the price track, off the trading lanes, so a sitting-out
+ * player watches the action rather than standing on the price axis. This mirrors
+ * planet_mule, where a non-participating player is drawn off the price track and
+ * shows no price figure (view/AuctionPainter.java:188-215).
+ *
+ * This helper is the single seam the planned landscape-rotation task edits.
+ * Because it returns a full arena point derived from the arena dimensions and
+ * the player's slot, rotating the track (price advancing left-to-right instead
+ * of top-to-bottom) only rewrites this one function, not every avatar-placement
+ * call site. For the current vertical track the sideline runs down the right
+ * edge, with judges staggered by slot so they line up without overlapping.
+ *
+ * @param slot - Player slot (playerId, 0..3).
+ * @returns The judge spot center in arena units.
+ */
+function sidelineSpot(slot: number): Point {
+  // Hug the right edge so the avatar sits fully inside the arena, beside the track.
+  const x = TRACK_WIDTH - AVATAR_SIZE / 2;
+  // Stagger judges down the sideline, one reserved band per slot.
+  const y = (TRACK_HEIGHT * (slot + 0.5)) / PLAYER_LANES;
+  return { x, y };
+}
+
+//============================================
+/**
+ * The species a player slot renders until species selection lands.
  *
  * @param slot - Player slot (playerId, 0..3).
  * @returns The slot's fixed species.
@@ -240,6 +266,7 @@ function FinishedPanel(props: { readonly dispatch: (action: Action) => void }): 
       <button
         type="button"
         class="auction-screen-button auction-screen-continue-button"
+        data-action="auction-continue"
         onClick={() => props.dispatch({ type: "end_auction" })}
       >
         Continue
@@ -275,6 +302,8 @@ function RolePanel(props: { readonly dispatch: (action: Action) => void }): JSX.
           <button
             type="button"
             class="auction-screen-button auction-screen-role-button"
+            data-action="auction-role"
+            data-role={entry.role}
             onClick={() => choose(entry.role)}
           >
             {entry.label}
@@ -347,12 +376,14 @@ function ArenaPanel(props: {
         <IntentButton
           label="Up"
           className="auction-screen-intent-up"
+          dataAction="auction-intent-up"
           onPress={() => setIntent("up")}
           onRelease={() => setIntent("hold")}
         />
         <IntentButton
           label="Down"
           className="auction-screen-intent-down"
+          dataAction="auction-intent-down"
           onPress={() => setIntent("down")}
           onRelease={() => setIntent("hold")}
         />
@@ -389,7 +420,9 @@ function PriceReadout(props: { readonly payload: () => AuctionPayload }): JSX.El
                 style={{ "background-color": playerColor(participant.playerId) }}
               />
               <span class="auction-price-role">{roleLabel(participant.role)}</span>
-              <span class="auction-price-value">{money(participant.price)}</span>
+              <span class="auction-price-value">
+                {participant.role === "out" ? "--" : money(participant.price)}
+              </span>
             </li>
           )}
         </For>
@@ -416,6 +449,13 @@ function PriceArena(props: {
   const axisX = TRACK_WIDTH / 2;
   const bandY = (price: number): number =>
     priceToTrackY(price, props.payload().priceFloor, props.payload().priceCeiling, TRACK_HEIGHT);
+
+  // An avatar's target position: an out participant parks at its sideline judge
+  // spot (beside the track); a buyer or seller stands in its lane at its price.
+  const avatarTarget = (participant: AuctionParticipant): Point =>
+    participant.role === "out"
+      ? sidelineSpot(participant.playerId)
+      : { x: laneCenterX(participant.playerId), y: bandY(participant.price) };
 
   // Imperative avatar state, indexed by player slot (playerId 0..3). The token
   // dots stay reactive; only the avatar groups tween.
@@ -446,9 +486,9 @@ function PriceArena(props: {
     if (participant === undefined) {
       return;
     }
-    const y = bandY(participant.price);
-    avatarY[slot] = y;
-    writeAvatarTransform(group, slot, y);
+    const target = avatarTarget(participant);
+    avatarY[slot] = target.y;
+    writeAvatarTransform(group, target.x, target.y);
   };
 
   //------------------------------------------
@@ -571,19 +611,37 @@ function PriceArena(props: {
 
     for (const participant of payload.participants) {
       const slot = participant.playerId;
-      const target = bandY(participant.price);
-      const current = avatarY[slot] ?? target;
-      const next = reduced
-        ? target
-        : easeToward(current, target, deltaSeconds, TWEEN_RATE, ARRIVAL_EPSILON);
-      avatarY[slot] = next;
-      const moving = !reduced && next !== target;
-
+      const target = avatarTarget(participant);
       const group = avatarGroups[slot];
-      if (group !== undefined) {
-        writeAvatarTransform(group, slot, next);
-      }
       const sprite = avatarSprites[slot];
+
+      // An out participant is a static spectator: snap to its sideline judge
+      // spot and stand still (frame 1, no walk cycle).
+      if (participant.role === "out") {
+        avatarY[slot] = target.y;
+        if (group !== undefined) {
+          writeAvatarTransform(group, target.x, target.y);
+        }
+        if (sprite !== undefined) {
+          const frameId = `#${pickSpeciesFrameId(speciesForSlot(slot), 1, reduced)}`;
+          if (sprite.getAttribute("href") !== frameId) {
+            sprite.setAttribute("href", frameId);
+          }
+        }
+        continue;
+      }
+
+      // A buyer or seller keeps its lane x and eases vertically toward its price.
+      const current = avatarY[slot] ?? target.y;
+      const next = reduced
+        ? target.y
+        : easeToward(current, target.y, deltaSeconds, TWEEN_RATE, ARRIVAL_EPSILON);
+      avatarY[slot] = next;
+      const moving = !reduced && next !== target.y;
+
+      if (group !== undefined) {
+        writeAvatarTransform(group, target.x, next);
+      }
       if (sprite !== undefined) {
         const desiredFrame: 1 | 2 = moving ? walkFrame : 1;
         const frameId = `#${pickSpeciesFrameId(speciesForSlot(slot), desiredFrame, reduced)}`;
@@ -671,13 +729,15 @@ function PriceArena(props: {
       />
       <For each={props.payload().participants}>
         {(participant) => (
-          <circle
-            class="auction-track-token"
-            cx={laneCenterX(participant.playerId)}
-            cy={bandY(participant.price)}
-            r={5}
-            fill={playerColor(participant.playerId)}
-          />
+          <Show when={participant.role !== "out"}>
+            <circle
+              class="auction-track-token"
+              cx={laneCenterX(participant.playerId)}
+              cy={bandY(participant.price)}
+              r={5}
+              fill={playerColor(participant.playerId)}
+            />
+          </Show>
         )}
       </For>
       <For each={props.payload().participants}>
@@ -785,20 +845,20 @@ function Avatar(props: AvatarProps): JSX.Element {
 
 //============================================
 /**
- * Write an avatar group's transform so its vertical center sits at `y` in its
- * lane, and mirror the center y onto `data-y` for browser tests to poll.
+ * Write an avatar group's transform so its center sits at (`centerX`, `centerY`),
+ * and mirror the center y onto `data-y` for browser tests to poll. Taking an
+ * explicit center x (rather than deriving it from the lane) lets an out
+ * participant park on the sideline, off its trading lane.
  *
  * @param group - The avatar group element.
- * @param slot - Player slot (playerId), for the lane x.
- * @param y - The avatar's center y in arena units.
+ * @param centerX - The avatar's center x in arena units.
+ * @param centerY - The avatar's center y in arena units.
  */
-function writeAvatarTransform(group: SVGGElement, slot: number, y: number): void {
-  const x = laneCenterX(slot) - AVATAR_SIZE / 2;
-  group.setAttribute(
-    "transform",
-    `translate(${x.toFixed(2)}, ${(y - AVATAR_SIZE / 2).toFixed(2)})`,
-  );
-  group.setAttribute("data-y", y.toFixed(1));
+function writeAvatarTransform(group: SVGGElement, centerX: number, centerY: number): void {
+  const x = centerX - AVATAR_SIZE / 2;
+  const y = centerY - AVATAR_SIZE / 2;
+  group.setAttribute("transform", `translate(${x.toFixed(2)}, ${y.toFixed(2)})`);
+  group.setAttribute("data-y", centerY.toFixed(1));
 }
 
 //============================================
@@ -851,6 +911,7 @@ function TradeLog(props: { readonly payload: () => AuctionPayload }): JSX.Elemen
 function IntentButton(props: {
   readonly label: string;
   readonly className: string;
+  readonly dataAction: string;
   readonly onPress: () => void;
   readonly onRelease: () => void;
 }): JSX.Element {
@@ -858,6 +919,7 @@ function IntentButton(props: {
     <button
       type="button"
       class={`auction-screen-button auction-screen-intent-button ${props.className}`}
+      data-action={props.dataAction}
       onPointerDown={() => props.onPress()}
       onPointerUp={() => props.onRelease()}
       onPointerLeave={() => props.onRelease()}

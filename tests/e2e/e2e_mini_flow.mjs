@@ -15,35 +15,18 @@
 //
 // Run: node tests/e2e/e2e_mini_flow.mjs
 
-import { chromium } from "playwright-core";
 import { execFileSync } from "node:child_process";
-import http from "node:http";
-import fs from "node:fs";
 import path from "node:path";
-
-/** Repo root, resolved via git so the harness runs from any cwd. */
-const REPO_ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
-  encoding: "utf8",
-}).trim();
-
-/** Built site root the static server serves. */
-const DIST_DIR = path.join(REPO_ROOT, "dist");
+import { REPO_ROOT, startServer, launchBrowser } from "./walkthrough_helpers.mjs";
 
 /** Fixed seed and high speed so the flow is deterministic and fast. */
 const GAME_URL_QUERY = "?seed=99&speed=8";
 
-/** Content types for the handful of extensions dist/ contains. */
-const MIME_TYPES = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".map": "application/json; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-};
-
 //============================================
 /**
  * Build the production bundle into dist/ via the canonical build script.
+ * Always rebuilds (unlike walkthrough_helpers.mjs's buildSiteIfStale) so
+ * this smoke harness never runs against a stale bundle.
  */
 function buildSite() {
   console.log("==> building dist/ (build_github_pages.sh)");
@@ -55,50 +38,12 @@ function buildSite() {
 
 //============================================
 /**
- * Start a minimal static file server for dist/ on a random loopback port.
- *
- * @returns The listening server and its assigned port.
- */
-async function startServer() {
-  const server = http.createServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    const rawPath = decodeURIComponent(requestUrl.pathname);
-    const relPath = rawPath === "/" ? "index.html" : rawPath.replace(/^\/+/, "");
-    const filePath = path.join(DIST_DIR, relPath);
-    // Reject any path that escapes dist/ (path traversal guard).
-    if (!filePath.startsWith(DIST_DIR)) {
-      res.writeHead(403);
-      res.end("forbidden");
-      return;
-    }
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        res.writeHead(404);
-        res.end("not found");
-        return;
-      }
-      const contentType = MIME_TYPES[path.extname(filePath)] ?? "application/octet-stream";
-      res.writeHead(200, { "content-type": contentType });
-      res.end(data);
-    });
-  });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  if (address === null || typeof address === "string") {
-    throw new Error("static server did not bind a numeric port");
-  }
-  console.log(`==> serving dist/ on 127.0.0.1:${address.port}`);
-  return { server, port: address.port };
-}
-
-//============================================
-/**
  * Drive the mini flow through Chromium and assert it advanced without errors.
  *
  * @param baseUrl - The origin the site is served from.
  */
 async function runFlow(baseUrl) {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchBrowser();
   const pageErrors = [];
   try {
     const page = await browser.newPage();

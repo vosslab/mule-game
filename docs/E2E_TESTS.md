@@ -51,8 +51,10 @@ the `e2e_*` prefix as a secondary, human-readable convention.
 
 - Run a single shell runner: `bash tests/e2e/e2e_<name>.sh`.
 - Run a single Python runner: `source source_me.sh && python3 tests/e2e/e2e_<name>.py`.
-- Run all E2E tests: provide a `tests/e2e/run_all.sh` that iterates over the
-  `e2e_*` files and reports pass/fail for each.
+- Run all E2E tests: provide a `tests/e2e/e2e_run_all.sh` that iterates over
+  the routine `e2e_*` files and reports pass/fail for each. The runner itself
+  keeps the `e2e_*.sh` prefix so it does not trip the naming-convention check
+  it lives alongside (see "Naming conventions test" below).
 - For browser-driven Playwright runs, TypeScript repos include `PLAYWRIGHT_USAGE.md` in their propagated `docs/` folder.
 - Do not invoke E2E tests from `pytest tests/`. Keep the two suites separate.
 
@@ -93,6 +95,10 @@ File naming conventions are enforced by `templates/typescript/tests/test_test_na
 
 ## Related docs
 
+- [WALKTHROUGH_GUIDE.md](WALKTHROUGH_GUIDE.md): operating manual for the
+  full-game browser walkthrough harness under `tests/e2e/` (`e2e_walkthrough.mjs`
+  and its supporting modules) -- layers, run commands, output files, budgets,
+  failure taxonomy, and the calibration and sweep coverage tables.
 - [PYTEST_STYLE.md](PYTEST_STYLE.md): fast pytest unit and integration tests under `tests/`.
 - Browser-driven test conventions: the website family (`website` and its inheriting `typescript`) includes `PLAYWRIGHT_USAGE.md` in their propagated `docs/` folder for tests under `tests/playwright/`.
 - Browser test authoring style: the website family (`website` and its inheriting `typescript`) includes `PLAYWRIGHT_TEST_STYLE.md`, shipped via the `templates/website/` overlay, in their propagated `docs/` folder for how to write Playwright tests under `tests/playwright/`.

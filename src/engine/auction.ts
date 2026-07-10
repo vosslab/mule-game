@@ -380,6 +380,11 @@ export function applySetAuctionIntent(
 /**
  * Move a participant's price one step (the good's `priceStep`) in its intent's
  * direction, clamped to the band. A `hold` intent leaves the price unchanged.
+ * An `out` participant never moves regardless of intent: sitting the good out
+ * freezes their price so a stale intent set before they went out cannot drift
+ * it. This mirrors planet_mule, where a non-participating player is off the
+ * price track entirely (`AuctionState.inAuction=false`,
+ * view/AuctionPainter.java:188-215), so their figure is never a live price.
  *
  * @param participant - Participant to move.
  * @param step - The good's per-tick price step.
@@ -393,7 +398,8 @@ function stepParticipantPrice(
   priceFloor: number,
   priceCeiling: number,
 ): AuctionParticipant {
-  if (participant.intent === "hold") {
+  // An out participant is not trading, so their price is frozen by construction.
+  if (participant.role === "out" || participant.intent === "hold") {
     return participant;
   }
   const delta = participant.intent === "up" ? step : -step;

@@ -75,3 +75,18 @@ documented.
 - Fix: this is expected behavior, not a bug -- start a new game. The old
   save remains in `localStorage` but is intentionally never replayed once
   the build version no longer matches.
+
+## `window.muleGameState()` is undefined or throws `DataCloneError`
+
+- Symptom: a browser-driven walkthrough run (`tests/e2e/e2e_walkthrough.mjs`)
+  finds `window.muleGameState` undefined, or the page throws a
+  `DataCloneError` when the projection is built.
+- Cause: two known causes. Most common: a stale `dist/` build served from
+  before `src/ui/walker_debug.ts` existed. Historical (fixed): the projection
+  once called `structuredClone` directly on the live SolidJS `createStore`
+  proxy; proxies are not `structuredClone`-able and threw `DataCloneError`.
+- Fix: force a rebuild first (`./build_github_pages.sh`) before suspecting the
+  engine or walker code. The historical proxy bug was fixed by calling
+  `structuredClone(unwrap(state))` instead of cloning the raw store, in
+  `src/ui/walker_debug.ts`; see `docs/CHANGELOG.md` (2026-07-09, Decisions and
+  Failures, walkthrough-harness Patch 3 fix round) for the full detail.

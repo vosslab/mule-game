@@ -21,10 +21,13 @@
 // (goods dead-window rate < 0.2, land dead-auction rate < 0.2, mid-game land
 // sales clear at or above the round's minimum starting price, both in both
 // modes over 30+ seeded games, with no negative money). Excluded from the
-// pytest fast lane per docs/E2E_TESTS.md; run directly:
+// pytest fast lane per docs/E2E_TESTS.md; run directly. This file imports
+// src/engine/*.ts and src/ai/*.ts directly, which resolve sibling .ts
+// modules by extensionless specifier; Node's own type-stripping resolver
+// cannot follow that (unlike tsx's resolver), so `--import tsx` is required:
 //
-//   node tests/e2e/e2e_balance_sim.mjs            # default 30 seeds per mode
-//   node tests/e2e/e2e_balance_sim.mjs 60         # 60 seeds per mode
+//   node --import tsx tests/e2e/e2e_balance_sim.mjs      # default 30 seeds per mode
+//   node --import tsx tests/e2e/e2e_balance_sim.mjs 60   # 60 seeds per mode
 //
 // Exits non-zero when any gate fails, any game fails to terminate, or any
 // player's money goes negative.

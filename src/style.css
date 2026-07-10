@@ -298,6 +298,50 @@ body {
   gap: 0.75rem;
 }
 
+/* ErrorBoundary fallback: a visible "something went wrong" panel so a
+   reactive-graph crash reads as an error state, never a silent frozen
+   screen. Red-accented so it reads distinctly from every other panel. */
+.error-boundary-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  width: 100%;
+  max-width: 480px;
+  border: 2px solid #ff5a5f;
+  border-radius: 8px;
+  background-color: #2a1418;
+}
+
+.error-boundary-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ff5a5f;
+}
+
+.error-boundary-detail {
+  margin: 0;
+  font-family: monospace;
+  font-size: 0.9rem;
+  text-align: center;
+  word-break: break-word;
+}
+
+.error-boundary-reload-button {
+  min-height: 44px;
+  min-width: 140px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #1a1a2e;
+  background-color: #ffd23f;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 .land-auction-high-bidder {
   display: flex;
   align-items: center;

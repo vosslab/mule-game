@@ -17,7 +17,7 @@
 // payload accessor, and derived board/cursor state is computed with plain
 // accessor functions.
 
-import { Switch, Match, Show, createSignal, createEffect } from "solid-js";
+import { Switch, Match, Show, ErrorBoundary, createSignal, createEffect } from "solid-js";
 import type { JSX } from "solid-js";
 import type {
   AuctionPayload,
@@ -42,6 +42,7 @@ import { ProductionPanel } from "./production_panel";
 import { ScoringPanel } from "./scoring_panel";
 import { HumanDevelopLayer } from "../scenes/human_develop_layer";
 import { AiActorLayer } from "./ai_actor_layer";
+import { GameErrorFallback } from "./error_fallback";
 import {
   EventBanner,
   PASSIVE_EVENT_BANNER_HOLD_MS,
@@ -65,6 +66,32 @@ export interface GameScreenProps {
  */
 export function GameScreen(props: GameScreenProps): JSX.Element {
   const state = (): GameState => props.store.state;
+  // Payload accessor feeding the develop layer below, reading store fields
+  // rather than the gating <Show>'s narrowing accessor. Passing the narrowing
+  // accessor down made the layer's descendant scene memos (town/overworld
+  // `carrying`, `ticksLeft`) subscribe to the Show's internal `when` memo;
+  // when the human's develop turn ended synchronously (gamble, or the tick
+  // budget running out) those memos recomputed once in the same pass that
+  // disposed them and hit Solid's stale-read guard, throwing
+  // "Stale read from <Show>". Reading the store makes them subscribe to store
+  // fields instead and dispose cleanly. This accessor also never returns
+  // undefined: on that final teardown recompute a live read is undefined, so
+  // it returns the last develop-payload reference. The store reconciles that
+  // reference toward the next phase in place, so those scalar memos read
+  // `carriedMule`/`ticksRemaining` as undefined for that one disposed-anyway
+  // recompute (harmless) rather than dereferencing undefined. The one reader
+  // of the payload's nested wampus object (overworld's rAF loop) guards its
+  // own teardown frame separately; see overworld_scene.tsx's updateFrame.
+  let lastHumanPayload: DevelopPayload | undefined;
+  const humanDevelopPayloadLive = (): DevelopPayload => {
+    const live = humanDevelopPayload(state());
+    if (live !== undefined) {
+      lastHumanPayload = live;
+    }
+    // The gating <Show> only mounts the layer while the payload is defined, so
+    // the first read always latches before any consumer runs.
+    return lastHumanPayload as DevelopPayload;
+  };
   // Tracks whether the human's develop-turn avatar is currently inside the
   // town scene, so the develop panel below can suppress its own hint-and-
   // End-Turn footer while the town scene's footer is showing (see
@@ -128,7 +155,9 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
   });
 
   return (
-    <>
+    <ErrorBoundary
+      fallback={(err: unknown, reset) => <GameErrorFallback error={err} reset={reset} />}
+    >
       <div id="game-hud">
         <Hud state={state()} />
       </div>
@@ -139,15 +168,35 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
         {/* Spatial develop layer: on the human's develop turn the avatar walks
             the overworld and the walkable town. The unkeyed Show closes during
             AI turns and reopens next human turn, so the layer remounts fresh
-            each turn and its town/assay sub-state resets. */}
-        <Show when={humanDevelopPayload(state())}>
-          {(payload) => (
+            each turn and its town/assay sub-state resets.
+
+            The Show gates on a boolean and the layer reads its payload through
+            a plain store-backed accessor (`humanDevelopPayloadLive`), NOT
+            through the Show's own narrowing accessor. Passing the narrowing
+            accessor down made descendant memos (the town/overworld scenes'
+            `carrying`/`ticksLeft`) subscribe to the Show's internal `when`
+            memo; when the develop turn ends synchronously (gambling, or the
+            tick budget running out mid-walk) those memos recomputed in the
+            same pass that disposed them and hit Solid's stale-read guard,
+            throwing "Stale read from <Show>". Reading the store directly makes
+            the scenes subscribe to store fields and be disposed cleanly on the
+            phase flip, matching the AI develop layer below. */}
+        <Show when={humanDevelopPayload(state()) !== undefined}>
+          {/* A second boundary just for this layer: the develop-phase spatial
+              scenes (town/overworld) are the layer this workstream's
+              stale-read crash actually came from, so an error here should not
+              also take down the HUD and #game-panel below -- only this one
+              turn's spatial view degrades to the fallback panel. */}
+          <ErrorBoundary
+            fallback={(err: unknown, reset) => <GameErrorFallback error={err} reset={reset} />}
+          >
+            <ForcedCrashProbe />
             <HumanDevelopLayer
               store={props.store}
-              payload={payload}
+              payload={humanDevelopPayloadLive}
               onInTownChange={setHumanInTown}
             />
-          )}
+          </ErrorBoundary>
         </Show>
         {/* AI develop-turn avatar, in place of the old
             text-only WaitingPanel. Keyed on a per-turn string (not the raw
@@ -233,7 +282,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
           </Match>
         </Switch>
       </div>
-    </>
+    </ErrorBoundary>
   );
 }
 
@@ -257,18 +306,20 @@ function DevelopPanel(props: {
     <div class="develop-panel">
       <TutorialHint
         kind="develop"
-        message="Walk onto the town to buy and outfit a M.U.L.E., then place it on an owned plot before your ticks run out."
+        message="Walk onto the town, then press Enter (or Space) at a shop door to buy and outfit a M.U.L.E., and again on an owned plot to place it before your ticks run out."
       />
       <div class="develop-panel-status">
         <span class="develop-panel-money">{`Money: $${money()}`}</span>
         <span class="develop-panel-ticks">{`Ticks left: ${props.payload().ticksRemaining}`}</span>
       </div>
       <p class="develop-panel-hint">
-        Walk onto the town to buy and outfit a M.U.L.E., then place it on an owned plot.
+        Walk onto the town, then press Enter (or Space) at a shop door to buy and outfit a M.U.L.E.,
+        and again on an owned plot to place it.
       </p>
       <button
         type="button"
         class="develop-end-turn-button"
+        data-action="develop-end-turn"
         onClick={() => props.store.dispatch({ type: "end_turn", playerId: HUMAN_ID })}
       >
         End turn
@@ -351,6 +402,36 @@ function humanDevelopPayload(state: GameState): DevelopPayload | undefined {
     return state.phase.payload;
   }
   return undefined;
+}
+
+//============================================
+/**
+ * Whether `?crash-test=1` is present in the page URL: a dev/test-only escape
+ * hatch (same shape as src/ui/hint_store.ts's `?hints=off`) that lets a
+ * Playwright spec force a real synchronous throw inside the develop layer's
+ * subtree, proving the surrounding <ErrorBoundary> actually catches a crash
+ * rather than only being reachable in theory.
+ */
+function forcedCrashRequested(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return new URLSearchParams(window.location.search).get("crash-test") === "1";
+}
+
+//============================================
+/**
+ * Renders nothing, unless `?crash-test=1` is set, in which case it throws
+ * during its own (run-once) render -- Solid propagates that throw to the
+ * nearest `<ErrorBoundary>`, which mounts `HumanDevelopLayer` alongside it.
+ *
+ * @returns An empty fragment, or never (throws) when the test flag is set.
+ */
+function ForcedCrashProbe(): JSX.Element {
+  if (forcedCrashRequested()) {
+    throw new Error("forced crash for ErrorBoundary test (?crash-test=1)");
+  }
+  return <></>;
 }
 
 //============================================

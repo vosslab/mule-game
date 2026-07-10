@@ -146,6 +146,14 @@ stat tiles. `tests/e2e/e2e_balance_report.mjs` asserts every section anchor
 renders at a tiny seed count, as a fast regression check on the report
 pipeline itself.
 
+## Browser walkthrough harness
+
+For proof the game is playable start to finish through the real rendered
+UI (the human seat played actively by the game's own AI), see
+[docs/WALKTHROUGH_GUIDE.md](WALKTHROUGH_GUIDE.md): layers, run commands,
+output files, budgets, failure taxonomy, and the calibration and sweep
+coverage tables.
+
 ## Known gaps
 
 - [ ] Confirm whether any Playwright spec requires environment variables or

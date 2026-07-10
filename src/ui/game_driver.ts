@@ -32,6 +32,7 @@ import {
 } from "./save_log";
 import { showScreen } from "./screen_router";
 import { startSceneLoop, stopSceneLoop } from "./scenes/scene_manager";
+import { installWalkerDebug } from "./walker_debug";
 
 /** Player id of the single human player; ids 1..3 are AI. */
 export const HUMAN_ID = 0;
@@ -141,6 +142,9 @@ function createAutosavingStore(initial: GameState, priorActions: readonly Action
   // Persist the base save immediately so a reload right after start (or resume),
   // before any further dispatch, still finds a resumable game.
   writeSave(buildSave(log));
+  // Install (or reinstall) the walker debug projection so window.muleGameState
+  // always reads off this store, not a prior replaced one.
+  installWalkerDebug(store);
   return store;
 }
 

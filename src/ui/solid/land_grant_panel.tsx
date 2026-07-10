@@ -88,6 +88,7 @@ export function LandGrantPanel(props: LandGrantPanelProps): JSX.Element {
           type="button"
           id="land-grant-pass-button"
           class="land-grant-button"
+          data-action="land-grant-pass"
           onClick={passTurn}
         >
           Pass

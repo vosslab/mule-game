@@ -1,6 +1,6 @@
-// Land-auction panel as a SolidJS component (M5, the UI arm of the colony
+// Land-auction panel as a SolidJS component, the UI arm of the colony
 // land-auction phase; previously an unassigned gap that stalled the scene
-// loop -- see tests/playwright/tick_ownership.spec.mjs).
+// loop -- see tests/playwright/tick_ownership.spec.mjs.
 //
 // Renders the plot under the hammer (highlighted on the board through
 // GameScreen's shared cursor, reusing MapLayer's existing `plot-cursor`
@@ -115,6 +115,7 @@ export function LandAuctionPanel(props: LandAuctionPanelProps): JSX.Element {
             type="button"
             id="land-bid-button"
             class="land-auction-button"
+            data-action="land-bid"
             disabled={!canBid(state(), props.payload())}
             onClick={bid}
           >

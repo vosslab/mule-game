@@ -224,6 +224,21 @@ export function OverworldScene(props: OverworldSceneProps): JSX.Element {
   // Advance one presentation frame: sample held keys, move the avatar and the
   // towed follower, and update the reactive cell / facing / walk-frame state.
   function updateFrame(dtSeconds: number, keys: ReturnType<typeof createKeyState>): void {
+    // Bail once this scene no longer owns a live human develop turn. The scene
+    // manager drains the turn's tick budget from its own rAF loop; when the
+    // budget runs out it dispatches the turn's end, which reconciles the
+    // develop payload away (the wampus, ticks, and carried M.U.L.E. fields are
+    // gone the moment the phase advances to production). That dispatch and this
+    // loop can land in the same animation frame, so this frame may run one tick
+    // after the turn ended but before Solid disposes the scene and its onCleanup
+    // cancels this loop. Reading the payload then (updateWampusPresentation
+    // below reads `props.payload().wampus`) would touch a now-invalid payload.
+    // Checking `phase.kind` first short-circuits before the payload's develop-
+    // only fields are read. `entering` covers the in-turn town-entry swap.
+    const phase = props.store.state.phase;
+    if (entering || phase.kind !== "develop" || phase.payload.activePlayer !== HUMAN_ID) {
+      return;
+    }
     const direction = directionFromKeys({
       up: keys.anyDown(UP_KEYS),
       down: keys.anyDown(DOWN_KEYS),
