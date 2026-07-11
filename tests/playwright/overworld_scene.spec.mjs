@@ -5,16 +5,24 @@
 // #land-grant-pass-button phase control, and the overworld scene
 // (src/ui/scenes/overworld_scene.tsx) attributes: the avatar
 // .overworld-svg g[data-actor="player-0"] with data-cell-row / data-cell-col /
-// data-carrying, and the [data-timer] HUD bar. Stepping onto the town cell now
+// data-carrying, and the [data-timer] HUD bar. Stepping onto the town cell
 // mounts the town scene (#town-scene, src/ui/scenes/town_scene.tsx), which
 // replaced the M5 interim store overlay. Player 0 is always the human and always
 // picks first in round 1 (src/engine/land_grant.ts).
 //
+// Town-first navigation (WP-4B): every human develop turn now starts IN TOWN
+// at the corral (human_develop_layer.tsx), not on the overworld, so
+// reachHumanDevelop below waits on #town-scene and then walks the avatar out
+// the LEFT exit (a pure ArrowLeft hold never crosses a door threshold, per
+// town_street.spec.mjs) to reach the overworld this spec actually tests. The
+// left exit returns the avatar one cell WEST of the town cell
+// (zones.ts's overworldReturnCell), which is exactly this spec's original
+// spawn assumption (col 3, one cell left of the town cell at col 4), so every
+// downstream assertion below is unchanged.
+//
 // Fixed seed 33 has an all-plains town row (row 2) with the town cell at the row
-// center (col 4). The avatar now spawns one cell left of the town cell (col 3)
-// so the develop turn does not begin inside town. ?speed=8 fast-forwards the
-// develop clock; every motion assertion polls a data attribute rather than
-// timing a frame.
+// center (col 4). ?speed=8 fast-forwards the develop clock; every motion
+// assertion polls a data attribute rather than timing a frame.
 
 import { test, expect } from "@playwright/test";
 
@@ -45,7 +53,11 @@ async function passThroughLandGrant(page) {
 
 /**
  * Start a game, claim the plot at (row, col), pass the rest of the land grant,
- * and wait until the human's develop turn is up (the overworld avatar mounts).
+ * and wait until the human's develop turn is up. Every human develop turn now
+ * starts IN TOWN at the corral (WP-4B), so this waits on the town scene and
+ * then walks the avatar out the left exit to reach the overworld avatar at
+ * the return cell one cell west of the town cell (col 3) -- see the module
+ * doc for why that matches this spec's spawn assumption unchanged.
  */
 async function reachHumanDevelop(page, claimRow, claimCol) {
   await page.locator("#new-game-button").click();
@@ -55,8 +67,12 @@ async function reachHumanDevelop(page, claimRow, claimCol) {
   await expect(claimPlot).toBeVisible();
   await claimPlot.click();
   await passThroughLandGrant(page);
+
+  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 30_000 });
+  await page.keyboard.down("ArrowLeft");
   const avatar = page.locator(".overworld-svg [data-actor='player-0']");
-  await expect(avatar).toHaveCount(1, { timeout: 30_000 });
+  await expect(avatar).toHaveCount(1, { timeout: 20_000 });
+  await page.keyboard.up("ArrowLeft");
   return avatar;
 }
 

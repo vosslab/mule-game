@@ -261,6 +261,46 @@ body {
   cursor: pointer;
 }
 
+/* Town chrome strip (WP-2C): the dedicated screen-space HUD that renders in
+   #game-panel while the human is in town -- the mirror image of
+   `.develop-panel`'s overworld-only slot (see game_screen.tsx's paired
+   <Show>s). Sized off #game-stage's container-query box (cqw/cqh), matching
+   `.develop-panel`'s column-width convention, since this is screen-space
+   chrome, not part of the town scene's own world-scale SVG. */
+.town-chrome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  width: min(92cqw, 640px);
+}
+
+.town-chrome-timer {
+  width: min(60cqw, 360px);
+  height: 8px;
+  background-color: #22223a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.town-chrome-timer-fill {
+  height: 100%;
+  background-color: #ffd23f;
+}
+
+.town-chrome-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.1rem;
+}
+
+.town-chrome-money {
+  color: #ffd23f;
+}
+
 #screen-map,
 #screen-town,
 #screen-game {
@@ -1089,8 +1129,117 @@ button:focus-visible,
 }
 
 .town-svg {
-  width: min(92vw, calc((100vh - 280px) * 2.28), 1200px);
+  /* Aspect multiplier matches the camera window viewBox
+     (TOWN_REFERENCE_VIEWPORT_WIDTH / worldHeight = 576 / 272), so the fallback
+     width cap keeps the scaled town inside the height budget. */
+  width: min(92vw, calc((100vh - 280px) * 2.12), 1200px);
   height: auto;
+}
+
+/* Industrial facade street (WP-3A): a shared plate look for every composed
+   facade, a worn street surface (flat low-opacity patches, no editor-grid
+   lines), and a shared ground baseline all the facades sit on. `.town-facade-
+   rect` keeps a single solid computed fill (no gradient, no per-facade
+   override) because tests/playwright/town_street.spec.mjs reads its computed
+   `fill` directly to contrast-check the label -- per-facade identity comes
+   from the trim band and emblem badge (town_scene.tsx's FacadeView), not from
+   recoloring the plate itself. */
+.town-facade-band {
+  fill: #101024;
+}
+
+.town-street-surface {
+  fill: #26241e;
+}
+
+.town-street-worn ellipse {
+  fill: #1c1a16;
+  opacity: 0.35;
+}
+
+.town-baseline-curb {
+  fill: #3a382e;
+}
+
+.town-facade-rect {
+  fill: #262640;
+  stroke: #45456a;
+  stroke-width: 2;
+}
+
+/* Corrugated-panel seam lines (FacadeTexture): a flat, low-opacity overlay on
+   top of the plate rather than a change to its own fill, so the label
+   contrast check above keeps reading one solid plate color. */
+.town-facade-texture line {
+  stroke: #1a1a30;
+  stroke-width: 1;
+  opacity: 0.5;
+}
+
+.town-facade-label {
+  fill: #f5f5ff;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Reserved ambient-economics slot (WP-3B binds the live value; see
+   town_scene.tsx's ambientPlaceholderText). Dimmer than the signage label so
+   it reads as secondary information, still 5.5:1+ on the plate. */
+.town-facade-ambient {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Emblem badge backdrop: shared by the outer badge circle and (for the
+   smithore gear) its own center-hole cutout, town_scene.tsx's FacadeEmblem. */
+.town-facade-emblem-badge {
+  fill: #14142a;
+  stroke: #45456a;
+  stroke-width: 1.5;
+}
+
+/* Integrated door (WP-3A): two leaves flush in the doorway at rest, sliding
+   apart into the jambs when `data-door-state="open"`. The 32px slide distance
+   matches town_world.ts's TOWN_DOOR_WIDTH / 2 (one leaf's own width), kept as
+   a literal here because CSS cannot read that TypeScript constant directly. */
+.town-door-frame {
+  fill: #14142a;
+}
+
+.town-door-leaf {
+  transform: translateX(0);
+}
+
+.town-door-panel {
+  fill: #52527a;
+  stroke: #7a7aa8;
+  stroke-width: 1.5;
+}
+
+.town-door-handle {
+  fill: #14142a;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .town-door-leaf {
+    transition:
+      transform 0.25s ease,
+      opacity 0.25s ease;
+  }
+}
+
+[data-door-state="open"] .town-door-leaf-left {
+  transform: translateX(-32px);
+  opacity: 0.4;
+}
+
+[data-door-state="open"] .town-door-leaf-right {
+  transform: translateX(32px);
+  opacity: 0.4;
 }
 
 .town-hud {
@@ -1115,6 +1264,20 @@ button:focus-visible,
   border-radius: 8px;
   border: none;
   cursor: pointer;
+}
+
+/* End turn, relocated into the town chrome strip (WP-5C): a small secondary
+   control, clearly distinct from the Pub (the primary turn-end destination
+   via walk-in). Layered on top of `.town-end-turn-button` -- same class,
+   same [data-action="develop-end-turn"] hook, so existing specs still find
+   it -- with a smaller footprint so it reads as secondary chrome, not a
+   promoted call to action. Placed after `.town-end-turn-button` in source
+   order so these overrides win the equal-specificity tie. */
+.town-chrome-end-turn-button {
+  min-height: 32px;
+  min-width: 84px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
 }
 
 /* Corral purchase panel (WP-4A/4B): an in-stage modal layered over the
@@ -1196,6 +1359,29 @@ button:focus-visible,
   border: none;
   cursor: pointer;
 }
+
+/* Outfit panel (WP-5A): reuses corral-purchase-panel/-figures/-actions/
+   -button classes above; only the per-resource confirm button needs its own
+   layout, since it pairs a resource emblem with a label (the corral panel's
+   buttons are text-only). */
+.outfit-resource-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.outfit-resource-emblem {
+  flex-shrink: 0;
+}
+
+/* Land Office and Assay Office panels (WP-5B): both reuse the
+   corral-purchase-panel/-title/-message/-actions/-button classes above
+   verbatim -- neither needs a special button layout (unlike the outfit
+   panel's resource-emblem pairing above), since every action here is a
+   plain text button. No dedicated land-office or assay-office rules are
+   needed; .land-office-panel and .assay-office-panel exist purely as
+   selector/debugging hooks on the panel root and carry no styles of their
+   own. */
 
 .plot-crystite-badge text {
   font-family: monospace;

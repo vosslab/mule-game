@@ -1,13 +1,21 @@
 // Selector contract: this spec depends on src/ui/main.tsx's #new-game-button
 // wiring, src/ui/solid/game_screen.tsx's #screen-game / #game-hud / #game-map /
 // #game-panel containers and phase panels (land-grant-pass-button,
-// develop-end-turn-button, auction-screen-*), src/ui/solid/map_layer.tsx's
-// data-row / data-col plot attributes, src/ui/scenes/overworld_scene.tsx's
-// overworld avatar (.overworld-svg g[data-actor="player-0"]), and
-// src/ui/solid/hud.tsx's .hud-player markup. Buying, outfitting, and placing a
-// M.U.L.E. moved to the walkable town scene (tests/playwright/town_scene.spec.mjs
-// owns that loop); this spec covers the broad phase flow. Player 0 is always the
-// human and always picks first in round 1 (src/engine/land_grant.ts).
+// auction-screen-*), src/ui/solid/map_layer.tsx's data-row / data-col plot
+// attributes, src/ui/scenes/overworld_scene.tsx's overworld avatar
+// (.overworld-svg g[data-actor="player-0"]), src/ui/scenes/town_scene.tsx's
+// #town-scene container and its .town-end-turn-button
+// (data-action="develop-end-turn"), and src/ui/solid/hud.tsx's .hud-player
+// markup. Buying, outfitting, and placing a M.U.L.E. moved to the walkable
+// town scene (tests/playwright/town_street.spec.mjs and its sibling town
+// specs own that loop); this spec covers the broad phase flow. Player 0 is
+// always the human and always picks first in round 1 (src/engine/land_grant.ts).
+//
+// Town-first navigation (WP-4B/WP-4C): every human develop turn now starts IN
+// TOWN at the corral (human_develop_layer.tsx), so the human's End turn
+// control at turn start is the town scene's .town-end-turn-button, not
+// DevelopPanel's .develop-end-turn-button (game_screen.tsx renders
+// DevelopPanel only once the human has walked out to the overworld).
 
 import { test, expect } from "@playwright/test";
 
@@ -82,16 +90,16 @@ test("game flow: claim a plot, reach the human develop turn, and end it", async 
 
   await passThroughLandGrant(page);
 
-  // The human's develop turn: the overworld avatar mounts and the develop panel
-  // offers an off-map End turn button.
-  const avatar = page.locator(".overworld-svg [data-actor='player-0']");
-  await expect(avatar).toHaveCount(1, { timeout: 30_000 });
-  const endTurnButton = page.locator(".develop-end-turn-button");
+  // The human's develop turn now starts in town at the corral (WP-4B): the
+  // town scene mounts with its own small End turn control.
+  const townScene = page.locator("#town-scene");
+  await expect(townScene).toBeVisible({ timeout: 30_000 });
+  const endTurnButton = page.locator(".town-end-turn-button");
   await expect(endTurnButton).toBeVisible();
 
-  // Ending the turn tears down the develop overlay (the avatar unmounts).
+  // Ending the turn tears down the develop overlay (the town scene unmounts).
   await endTurnButton.click();
-  await expect(avatar).toHaveCount(0, { timeout: 30_000 });
+  await expect(townScene).toHaveCount(0, { timeout: 30_000 });
 });
 
 test("game flow: buy role in the auction moves the human token on the price track", async ({
@@ -109,9 +117,11 @@ test("game flow: buy role in the auction moves the human token on the price trac
 
   await passThroughLandGrant(page);
 
-  // End the human's develop turn immediately; the remaining AI develop turns and
-  // the production interstitial run on timers into the auction.
-  const endTurnButton = page.locator(".develop-end-turn-button");
+  // End the human's develop turn immediately from its town-first start
+  // (WP-4B: the turn opens in town at the corral, with its own small End
+  // turn control); the remaining AI develop turns and the production
+  // interstitial run on timers into the auction.
+  const endTurnButton = page.locator(".town-end-turn-button");
   await expect(endTurnButton).toBeVisible({ timeout: 30_000 });
   await endTurnButton.click();
 

@@ -2,12 +2,18 @@
 //
 // Selector contract: this spec depends on the ?seed= / ?speed= hooks in
 // src/ui/main.tsx, the #new-game-button title control, the
-// #land-grant-pass-button / .develop-end-turn-button / .auction-screen-role-button
+// #land-grant-pass-button / .town-end-turn-button / .auction-screen-role-button
 // phase controls, and src/ui/solid/event_banner.tsx's own markup:
 // [data-event-banner], [data-event-id], [data-event-polarity], and
 // [data-event-kind] on the banner root, with an `<svg><use href="#...">` icon
 // matching src/ui/sprites/sprites_events.ts's symbol ids. Player 0 is always
 // the human and always picks first in round 1 (src/engine/land_grant.ts).
+//
+// Town-first navigation (WP-4B): every human develop turn now starts IN TOWN
+// at the corral, and this spec never walks anywhere (it only ends turns), so
+// the human's own turn is always ended via town_scene.tsx's
+// `.town-end-turn-button` rather than the overworld-only
+// `.develop-end-turn-button`.
 //
 // Fixed seed 30 (probed directly against src/engine/turn.ts and events.ts via
 // an all-AI playthrough, including player 0's decisions, before writing this
@@ -90,7 +96,7 @@ async function endDevelopTurnIfUp(page) {
   if (await personalBanner.isVisible().catch(() => false)) {
     return;
   }
-  const endTurnButton = page.locator(".develop-end-turn-button");
+  const endTurnButton = page.locator(".town-end-turn-button");
   if (await endTurnButton.isVisible().catch(() => false)) {
     await endTurnButton.click().catch(() => undefined);
   }
@@ -172,7 +178,7 @@ test("personal event banner: renders at the human's develop turn, auto-dismisses
   // goes away, and the develop panel (proof the turn is progressing, not
   // stalled) is still reachable afterward.
   await expect(banner).toHaveCount(0, { timeout: 10_000 });
-  const endTurnButton = page.locator(".develop-end-turn-button");
+  const endTurnButton = page.locator(".town-end-turn-button");
   await expect(endTurnButton).toBeVisible({ timeout: 10_000 });
   await endTurnButton.click().catch(() => undefined);
   await expect(endTurnButton).toHaveCount(0, { timeout: 10_000 });
@@ -224,6 +230,6 @@ test("reduced motion: the personal event banner renders statically and the game 
   // Still a plain timed display: it self-dismisses and the turn proceeds,
   // exactly as under full motion.
   await expect(banner).toHaveCount(0, { timeout: 10_000 });
-  const endTurnButton = page.locator(".develop-end-turn-button");
+  const endTurnButton = page.locator(".town-end-turn-button");
   await expect(endTurnButton).toBeVisible({ timeout: 10_000 });
 });

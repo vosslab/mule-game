@@ -18,16 +18,17 @@ import { execFileSync } from "node:child_process";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { WALKER_SPEED_PX_PER_SEC } from "../../src/ui/scenes/walker.ts";
-import { TOWN_CELL_PX } from "../../src/ui/scenes/zones.ts";
+import { WALKER_SPEED_PX_PER_SEC, WALKER_CELL_PX } from "../../src/ui/scenes/walker.ts";
+import { TOWN_DOOR_WIDTH, TOWN_AVATAR_RADIUS } from "../../src/ui/scenes/town_world.ts";
 
 //============================================
 // Realtime-walk calibration constants.
 //
-// MEASURED, not guessed: these are the winning row of the timing matrix in
-// tests/e2e/e2e_walk_calibration.mjs. Regenerate with
-// `node tests/e2e/e2e_walk_calibration.mjs`, which writes the full matrix to
-// test-results/walker/calibration.json and prints the chosen row.
+// MEASURED, not guessed: these were the winning row of a timing matrix swept
+// by the retired tests/e2e/e2e_walk_calibration.mjs (removed as stale against
+// the mode-composed street model; its measurement is superseded by the
+// locked, geometry-derived constants below and recorded in
+// docs/active_plans/audits/town_spacing_experiment.md).
 //
 // Winning row: speed=4, WALK_TAP_MS=120 (seed 33). Every config in the sweep
 // hit 100% (20/20) door-reach, but the errand metric split the field: speed=8
@@ -50,8 +51,8 @@ export const WALKER_SPEED = 4;
  * walkthrough run: the scene's base land speed scaled by the `?speed=`
  * multiplier the harness drives at. Deriving the tap hold durations below from
  * this keeps per-tap TRAVEL constant when WALKER_SPEED_PX_PER_SEC is retuned --
- * raising the base speed (WP-2A raised it 80 -> 320) shortens the hold instead
- * of quadrupling the distance each tap covers.
+ * raising the base speed shortens the hold instead of quadrupling the
+ * distance each tap covers.
  */
 const EFFECTIVE_WALK_SPEED_PX_PER_SEC = WALKER_SPEED_PX_PER_SEC * WALKER_SPEED;
 
@@ -81,30 +82,17 @@ function tapMsForStepPx(stepPx) {
 }
 
 /**
- * Real-ms hold duration of one bounded walk tap, derived so each tap travels
- * about half a street cell. Sub-cell travel is the safety invariant: a single
- * tap can never leap clear across a target door's cell (arrival is the coarse
- * per-cell data-at-door read, so a tap that jumped the whole cell would sail
- * past the door into the edge exit beyond it before the seek could react), and
- * a walk-back-to-street tap lands inside the street row instead of overshooting
- * to the far south/north edge. At the fixed 120ms this constant used before
- * WP-8A, the WP-2A speed raise had grown one tap to ~2.4 cells, which is exactly
- * how the town avatar sailed off the street into an edge exit.
+ * Real-ms hold duration of one bounded overworld walk tap, derived so each tap
+ * travels about half an overworld cell (walker.ts's WALKER_CELL_PX). Sub-cell
+ * travel is the safety invariant for the overworld/town-edge walks that use it
+ * (walkOverworldAvatarToCell, enterTown, exitTown, and the north-into-a-door
+ * push): a single tap can never leap clear across a target cell, so a slow read
+ * can never let the avatar sail a whole cell past a target before the seek
+ * reacts. The narrow town-door x-alignment uses its own, finer gap-proportional
+ * step (see walkTownAvatarToDoorX below), since the door-entry window is much
+ * tighter than an overworld cell.
  */
-export const WALK_TAP_MS = tapMsForStepPx(TOWN_CELL_PX / 2);
-
-/**
- * Real-ms hold for a walk-back-to-street tap (walkBackToStreet), derived so each
- * tap travels about a quarter of a street cell -- half the seek step. The
- * walk-back nudges the avatar south out of a doorway back onto the street row,
- * and stops at the first tap that clears the building wall line, so its tap must
- * be small enough that a single step cannot carry the avatar clear past the
- * street row's south edge (a larger step lands it in the open ground south of
- * the row, where data-at-door no longer reads and the next horizontal seek
- * stalls, or -- in the store's central bay column -- straight into the south
- * edge exit).
- */
-export const WALK_BACK_TAP_MS = tapMsForStepPx(TOWN_CELL_PX / 4);
+export const WALK_TAP_MS = tapMsForStepPx(WALKER_CELL_PX / 2);
 
 /**
  * Wall-clock budget for a single walker act (walk-to-door, enter/exit town,
@@ -531,8 +519,9 @@ export async function waitForPhaseKind(page, phaseKind, timeoutMs, pollIntervalM
 //
 // Selector audit -- every spatial target the walk drivers below need already
 // carries a durable data-* hook in the scene source, so this section adds NO
-// attributes to src/ui; it only reads them. Audited 2026-07-09 against
-// src/ui/scenes/town_scene.tsx and src/ui/scenes/overworld_scene.tsx:
+// attributes to src/ui; it only reads them. Re-audited 2026-07-11 against
+// src/ui/scenes/town_scene.tsx, src/ui/scenes/town_scene_render.tsx, and
+// src/ui/scenes/overworld_scene.tsx:
 //
 //   target            selector                                        present
 //   ----------------- ----------------------------------------------- -------
@@ -540,26 +529,29 @@ export async function waitForPhaseKind(page, phaseKind, timeoutMs, pollIntervalM
 //   town buildings    [data-building="<name>"]                        yes
 //   town edge exits   [data-exit="<edge>"]                            yes
 //   town avatar       #town-scene [data-actor="player-0"]             yes
-//     at-door          ...same node... [data-at-door]                 yes
+//     at-door          ...same node... [data-at-door]                 RETIRED
+//     avatar x/y       ...same node... [data-town-avatar-x]/[-y]      yes
 //     carrying         ...same node... [data-carrying]                yes
 //   overworld avatar  .overworld-svg [data-actor="player-0"]          yes
 //     cell row/col     ...same node... [data-cell-row]/[data-cell-col] yes
 //     carrying         ...same node... [data-carrying]                yes
 //   pub payout banner [data-pub-banner] (appended to document.body)   yes
 //
-// Both avatar nodes also carry an imperatively-written `transform`
-// (translate x y) rewritten every rAF frame while moving (town_scene.tsx and
-// overworld_scene.tsx `writeTransforms`). That transform, not the coarse
-// per-cell/at-door attributes, is the fine-grained per-tap movement signal the
-// stall detector below watches: it changes on every moving tap, so N taps with
-// an unchanged transform is a genuine stall (a wall, a frozen scene, a
-// dropped keypress) rather than the avatar merely walking between two doors.
+// data-at-door was retired from town_scene.tsx during the town rebuild; it is
+// no longer a live attribute and this module no longer reads it. Both avatar
+// nodes carry an imperatively-written `transform` (translate x y) rewritten
+// every rAF frame while moving (town_scene.tsx and overworld_scene.tsx
+// `writeTransforms`). That transform, not a coarse per-cell attribute, is the
+// fine-grained per-tap movement signal the stall detector below watches: it
+// changes on every moving tap, so N taps with an unchanged transform is a
+// genuine stall (a wall, a frozen scene, a dropped keypress) rather than the
+// avatar merely walking between two doors.
 //============================================
 
 /** Overworld avatar node carrying data-cell-row/col and data-carrying. */
 export const OVERWORLD_AVATAR = ".overworld-svg [data-actor='player-0']";
 
-/** Town-interior avatar node carrying data-at-door and data-carrying. */
+/** Town-interior avatar node carrying data-town-avatar-x/-y and data-carrying. */
 export const TOWN_AVATAR = "#town-scene [data-actor='player-0']";
 
 /** Upper bound on bounded taps before a walk gives up (matches the specs). */
@@ -581,7 +573,7 @@ const STALL_TAPS = 8;
  * correction below a tap that still moves the avatar. Sharing the speed-aware
  * seam keeps it in step with WALK_TAP_MS if the base speed is retuned again.
  */
-const MIN_WALK_TAP_MS = tapMsForStepPx(TOWN_CELL_PX / 4);
+const MIN_WALK_TAP_MS = tapMsForStepPx(WALKER_CELL_PX / 4);
 
 //============================================
 /**
@@ -606,78 +598,6 @@ export function directionToward(current, target) {
   }
   if (target.row < current.row) {
     return "ArrowUp";
-  }
-  return null;
-}
-
-//============================================
-/**
- * Parse the x component out of an SVG `translate(x y)` transform -- the
- * per-frame center position town_scene.tsx / overworld_scene.tsx write on the
- * avatar node every rAF frame. Returns null for a null/absent/unrecognized
- * transform so a caller treats a missing avatar as "position unknown" rather
- * than fabricating a 0 that would read as the far-west edge.
- *
- * @param transform - The raw `transform` attribute value, or null.
- * @returns The numeric x translate, or null when it cannot be parsed.
- */
-export function parseTranslateX(transform) {
-  if (transform === null) {
-    return null;
-  }
-  const match = transform.match(/translate\(\s*(-?[0-9.]+)/);
-  if (match === null) {
-    return null;
-  }
-  const x = Number(match[1]);
-  return Number.isNaN(x) ? null : x;
-}
-
-//============================================
-/**
- * Parse the y translate out of an SVG `transform="translate(x y)"` attribute,
- * the 2D twin of parseTranslateX. Used to derive a positional (not per-cell)
- * arrival check for a north-then-south door round trip: the coarse
- * data-at-door attribute reads true for the whole street-row cell height,
- * which includes the doorway interior just north of the actual walkable
- * street line, so it cannot tell "back on the street" from "still in the
- * doorway" the way this raw pixel y can.
- *
- * @param transform - The raw `transform` attribute value, or null.
- * @returns The numeric y translate, or null when it cannot be parsed.
- */
-export function parseTranslateY(transform) {
-  if (transform === null) {
-    return null;
-  }
-  const match = transform.match(/translate\(\s*-?[0-9.]+[ ,]+(-?[0-9.]+)/);
-  if (match === null) {
-    return null;
-  }
-  const y = Number(match[1]);
-  return Number.isNaN(y) ? null : y;
-}
-
-//============================================
-/**
- * The arrow key that steps the town avatar horizontally from `avatarX` toward
- * `targetX` (both in the town SVG's pixel space). Returns null when the avatar
- * is already aligned with the target column, so a caller reads arrival from the
- * coarse data-at-door attribute rather than an exact-pixel match. Unlike the
- * fixed heading a door's spawn-side would imply, this recomputes each tap from
- * the live position, so an overshoot past the target flips the returned key and
- * walks the avatar back toward the door.
- *
- * @param avatarX - The avatar center's current x in town pixel space.
- * @param targetX - The target door center's x in town pixel space.
- * @returns "ArrowRight", "ArrowLeft", or null when aligned.
- */
-export function horizontalSeekKey(avatarX, targetX) {
-  if (targetX > avatarX) {
-    return "ArrowRight";
-  }
-  if (targetX < avatarX) {
-    return "ArrowLeft";
   }
   return null;
 }
@@ -741,14 +661,13 @@ async function snapshotAvatar(page, selector) {
   if (handle === null) {
     return "gone";
   }
-  const [transform, atDoor, row, col, carrying] = await Promise.all([
+  const [transform, row, col, carrying] = await Promise.all([
     handle.getAttribute("transform"),
-    handle.getAttribute("data-at-door"),
     handle.getAttribute("data-cell-row"),
     handle.getAttribute("data-cell-col"),
     handle.getAttribute("data-carrying"),
   ]);
-  return [transform, atDoor, row, col, carrying].join("|");
+  return [transform, row, col, carrying].join("|");
 }
 
 //============================================
@@ -816,78 +735,17 @@ export async function walkTo(page, scope, predicate, dir, budget = MAX_WALK_TAPS
 
 //============================================
 /**
- * Read the town avatar's live center x in town pixel space, or null when the
- * avatar node is unmounted (the avatar walked out an edge exit and the town
- * scene tore down). Resolves the node fresh each call so a remount never
- * stale-reads.
- *
- * @param page - The Playwright page.
- * @returns The avatar center's x, or null when the node is absent.
- */
-async function readTownAvatarX(page) {
-  const handle = await page.$(TOWN_AVATAR);
-  if (handle === null) {
-    return null;
-  }
-  return parseTranslateX(await handle.getAttribute("transform"));
-}
-
-//============================================
-/**
- * Read the town door the avatar currently stands at (its data-at-door), or null
- * when the avatar node is absent. This coarse per-cell attribute is the arrival
- * signal a door walk waits on; the fine per-frame transform only steers.
- *
- * @param page - The Playwright page.
- * @returns The door id string, or null.
- */
-async function readTownAtDoor(page) {
-  const handle = await page.$(TOWN_AVATAR);
-  if (handle === null) {
-    return null;
-  }
-  return handle.getAttribute("data-at-door");
-}
-
-//============================================
-/**
- * Read a town door marker's center x in town pixel space, or null when the
- * marker is not mounted. town_scene.tsx renders each door as a
- * `[data-door-for] <use x width>` in the same SVG user space the avatar's
- * transform lives in, so `x + width / 2` is the door center directly comparable
- * to the avatar's transform x -- no hardcoded cell geometry in the harness.
- *
- * @param page - The Playwright page.
- * @param door - The target [data-door-for] door id.
- * @returns The door center's x, or null when the marker is absent.
- */
-async function readTownDoorCenterX(page, door) {
-  const handle = await page.$(`[data-door-for='${door}'] use`);
-  if (handle === null) {
-    return null;
-  }
-  const x = await handle.getAttribute("x");
-  const width = await handle.getAttribute("width");
-  if (x === null || width === null) {
-    return null;
-  }
-  const centerX = Number(x) + Number(width) / 2;
-  return Number.isNaN(centerX) ? null : centerX;
-}
-
-//============================================
-/**
- * Shared overshoot-correcting seek core behind walkTownAvatarToDoor (1D) and
- * walkOverworldAvatarToCell (2D). Each tap re-samples the avatar (arrival flag
- * plus a position, via `spec.sample`), turns that position into a candidate
- * step (arrow key, seek axis, sign toward target, via `spec.computeStep`), and
- * taps: a step that crosses the target on its axis since the last committed
- * step means the previous tap overshot, so the tap is halved (down to
- * `minTapMs`) so the correction lands inside the target cell/door; switching
- * axis restarts the tap at full length, since the new axis gets its own
- * overshoot budget. A null step (nothing left to steer toward an unreachable
- * or already-aligned-but-unarrived target) counts as a stalled tap rather than
- * spinning forever.
+ * Shared overshoot-correcting seek core behind walkTownAvatarNorthUntil (a
+ * fixed one-axis heading) and walkOverworldAvatarToCell (2D). Each tap
+ * re-samples the avatar (arrival flag plus a position, via `spec.sample`),
+ * turns that position into a candidate step (arrow key, seek axis, sign
+ * toward target, via `spec.computeStep`), and taps: a step that crosses the
+ * target on its axis since the last committed step means the previous tap
+ * overshot, so the tap is halved (down to `minTapMs`) so the correction lands
+ * inside the target cell/door; switching axis restarts the tap at full
+ * length, since the new axis gets its own overshoot budget. A null step
+ * (nothing left to steer toward an unreachable or already-aligned-but-
+ * unarrived target) counts as a stalled tap rather than spinning forever.
  *
  * Stall detection: `stallTaps` consecutive taps with no change in the avatar
  * snapshot (a wall, a frozen scene, a dropped keypress) classify the walk as
@@ -901,11 +759,10 @@ async function readTownDoorCenterX(page, door) {
  *   computeStep, vanishDetail, stallDetail }`.
  *   `sample()` is `async () => { arrived: true } | { vanished: true } |
  *   { position }`, called once per tap (and once more after the budget is
- *   spent) so 1D callers can combine an independent arrival read with the
- *   position read exactly as before.
+ *   spent).
  *   `computeStep(position)` returns `{ key, axis, side } | null`; `axis`
- *   distinguishes the overshoot-halving state across seek dimensions (1D
- *   callers use one constant axis; 2D callers use "row"/"col").
+ *   distinguishes the overshoot-halving state across seek dimensions (a fixed
+ *   one-axis caller uses one constant axis; 2D callers use "row"/"col").
  * @returns True once `sample` reports arrived, false on stall/budget/vanish.
  */
 async function seekAvatarToTarget(page, report, spec) {
@@ -981,70 +838,246 @@ async function seekAvatarToTarget(page, report, spec) {
 }
 
 //============================================
+// Town door x-alignment in WORLD coordinates (the mode-composed street model).
+//
+// The town executors (walkthrough_town.mjs) DISCOVER the active street from
+// src/ui/scenes/town_world.ts and pass a target door's composed WORLD center x
+// here. Alignment reads the camera-independent data-town-avatar-x attribute
+// town_scene.tsx writes each frame, so the seek never touches the camera offset.
+//
+// A door's walk-in only fires when the avatar CENTER sits within
+// (TOWN_DOOR_WIDTH / 2 - TOWN_AVATAR_RADIUS) world px of the door center --
+// outside that the door jambs wall off the north push. That entry window is far
+// tighter than an overworld cell, so this seek uses GAP-PROPORTIONAL taps (each
+// tap's hold shrinks with the remaining gap, the proven town_street.spec.mjs /
+// pub_gamble.spec.mjs pattern) that converge on the narrow window instead of
+// fixed-length taps that overshoot it. Tap bounds and the arrival tolerance are
+// DERIVED from the composed door geometry and the effective walk speed. Locked
+// as of 2026-07-10: spacing stayed unchanged, so the derived bounds are final
+// at the current town geometry; door-reach measured 100% (beginner 25/25,
+// standard 30/30, +-8 px window, zero stalls) at the calibrated speed.
+//============================================
+
 /**
- * Walk the town avatar along the single street row to `door`, seeking by live
- * position so an overshoot self-corrects. Each tap recomputes the heading from
- * the avatar's transform x versus the target door's center x
- * (`horizontalSeekKey`), so a tap that sails past the door flips the heading and
- * walks back toward it -- unlike a fixed spawn-side heading, which at the fast
- * default speed steps more than one cell per tap and sails clean past a
- * mid-street door and out the far edge (the counter-smithore walk stall).
+ * World-px half-window the avatar center must reach around a door center to push
+ * north through the door, less a small margin so a converged seek is clear of
+ * the jambs. Derived from town geometry (TOWN_DOOR_WIDTH, TOWN_AVATAR_RADIUS),
+ * never a hand-set pixel count. This is the source of truth for the door
+ * alignment tolerance; tests/playwright/pub_gamble.spec.mjs and
+ * tests/playwright/town_street.spec.mjs run against built HTML over HTTP and
+ * cannot import this module, so they each carry their own bare `8`-px
+ * constant naming this export as its source. Update this value and the two
+ * spec constants together.
+ */
+export const TOWN_DOOR_ALIGN_TOLERANCE_PX = Math.max(
+  2,
+  TOWN_DOOR_WIDTH / 2 - TOWN_AVATAR_RADIUS - 2,
+);
+
+/**
+ * Longest per-tap hold the door x-seek uses far from the target, derived so one
+ * tap covers about a door width: long enough to close a big gap quickly, short
+ * enough that a single tap cannot sail the avatar clear past a whole facade and
+ * out an edge exit. Locked as of 2026-07-10 at the current town geometry.
+ */
+const DOOR_SEEK_MAX_TAP_MS = tapMsForStepPx(TOWN_DOOR_WIDTH);
+
+/**
+ * Shortest per-tap hold the door x-seek shrinks to near the target, derived so
+ * one tap travels a little under twice the alignment tolerance: small enough that
+ * the near-target overshoot lands back inside the tolerance window (so the seek
+ * converges instead of oscillating), yet not so short that a sub-frame tap
+ * routinely fails to move the avatar at all. Computed WITHOUT the frame-safe
+ * floor tapMsForStepPx applies (that 20ms floor's travel would exceed the narrow
+ * window at speed), then floored at a small reliable-motion minimum.
+ * Locked as of 2026-07-10 at the current town geometry.
+ */
+const DOOR_SEEK_MIN_TAP_MS = Math.max(
+  10,
+  Math.round(((2 * TOWN_DOOR_ALIGN_TOLERANCE_PX - 2) / EFFECTIVE_WALK_SPEED_PX_PER_SEC) * 1000),
+);
+
+//============================================
+/**
+ * Read the town avatar's live WORLD x from the camera-independent
+ * data-town-avatar-x attribute (town_scene.tsx writeTransforms), or null when
+ * the avatar node is unmounted (walked out an exit, scene torn down). Resolves
+ * the node fresh each call so a remount never stale-reads.
  *
- * Overshoot convergence, stall detection, and arrival semantics are owned by
- * the shared `seekAvatarToTarget` core; this wrapper supplies the 1D sampling
- * (an independent data-at-door read plus the avatar's live x) and stepping
- * (`horizontalSeekKey` on a single constant axis). Arrival is the coarse
- * data-at-door attribute, never an exact-pixel match, so the seek only accepts
- * the requested door and not a neighbor it happens to pass.
+ * @param page - The Playwright page.
+ * @returns The avatar center's world x, or null when the node is absent.
+ */
+async function readTownAvatarWorldX(page) {
+  const handle = await page.$(TOWN_AVATAR);
+  if (handle === null) {
+    return null;
+  }
+  const raw = await handle.getAttribute("data-town-avatar-x");
+  if (raw === null) {
+    return null;
+  }
+  const x = Number(raw);
+  return Number.isNaN(x) ? null : x;
+}
+
+//============================================
+/**
+ * Read the town avatar's live WORLD y from data-town-avatar-y, the 2D twin of
+ * readTownAvatarWorldX. Exported because walkBackToStreet (walkthrough_town.mjs)
+ * needs a world y to tell "back on the street lane" from "still in the doorway".
+ *
+ * @param page - The Playwright page.
+ * @returns The avatar center's world y, or null when the node is absent.
+ */
+export async function readTownAvatarWorldY(page) {
+  const handle = await page.$(TOWN_AVATAR);
+  if (handle === null) {
+    return null;
+  }
+  const raw = await handle.getAttribute("data-town-avatar-y");
+  if (raw === null) {
+    return null;
+  }
+  const y = Number(raw);
+  return Number.isNaN(y) ? null : y;
+}
+
+//============================================
+/**
+ * Walk the town avatar along the street lane until its world x is within
+ * `tolerancePx` of `targetX` (a composed door center), seeking by live world
+ * position so an overshoot self-corrects. Each tap heads whichever way currently
+ * closes the gap and holds for a duration proportional to the remaining distance
+ * (clamped to [DOOR_SEEK_MIN_TAP_MS, DOOR_SEEK_MAX_TAP_MS]), so a fast walker
+ * converges on the narrow door-entry window instead of overshooting it every
+ * tap. Pure horizontal taps never cross a threshold notch (that needs a north
+ * push), so this cannot fire a walk-in while it aligns. A vanished avatar (walked
+ * out an exit) or `stallTaps` consecutive no-move taps report a walk_stall.
  *
  * @param page - The Playwright page.
  * @param report - The walk report, for walk_stall classification (optional).
- * @param door - The target [data-door-for] door id.
- * @param options - `{ budget, tapMs, stallTaps, minTapMs }`, all optional.
- * @returns True once data-at-door reads the door, false on stall/budget/exit.
+ * @param targetX - The target door center's world x (composed doorCenterX).
+ * @param options - `{ budget, stallTaps, tolerancePx }`, all optional.
+ * @returns True once aligned within tolerance, false on stall/budget/exit.
  */
-export async function walkTownAvatarToDoor(page, report, door, options = {}) {
-  const arrived = async () => (await readTownAtDoor(page)) === door;
-  // Already at the door: no walk (and no door geometry) needed. Checked before
-  // resolving the marker so an already-arrived caller never depends on it.
-  if (await arrived()) {
+export async function walkTownAvatarToDoorX(page, report, targetX, options = {}) {
+  const {
+    budget = MAX_WALK_TAPS,
+    stallTaps = STALL_TAPS,
+    tolerancePx = TOWN_DOOR_ALIGN_TOLERANCE_PX,
+  } = options;
+  const failStall = (detail) => {
+    if (report !== undefined) {
+      report.fail("walk_stall", detail);
+    }
+  };
+  const aligned = (x) => x !== null && Math.abs(targetX - x) <= tolerancePx;
+  let stall = 0;
+  for (let tap = 0; tap < budget; tap++) {
+    const avatarX = await readTownAvatarWorldX(page);
+    if (avatarX === null) {
+      failStall(`town avatar left the street before aligning to the door at x=${targetX}`);
+      return false;
+    }
+    if (aligned(avatarX)) {
+      return true;
+    }
+    const remaining = targetX - avatarX;
+    // Hold proportional to the remaining gap so the tap shrinks as the avatar
+    // closes on the target, then clamp to the derived door-seek bounds.
+    const proportionalMs = Math.round(
+      (Math.abs(remaining) / EFFECTIVE_WALK_SPEED_PX_PER_SEC) * 1000,
+    );
+    const tapMs = Math.min(DOOR_SEEK_MAX_TAP_MS, Math.max(DOOR_SEEK_MIN_TAP_MS, proportionalMs));
+    const key = remaining > 0 ? "ArrowRight" : "ArrowLeft";
+    const before = await snapshotAvatar(page, TOWN_AVATAR);
+    await tapWalk(page, key, tapMs);
+    const after = await snapshotAvatar(page, TOWN_AVATAR);
+    stall = after === before ? stall + 1 : 0;
+    if (stall >= stallTaps) {
+      failStall(
+        `town avatar never aligned to the door at x=${targetX} (stalled ${stallTaps} taps)`,
+      );
+      return false;
+    }
+  }
+  // A convergence that lands on the final tap still counts.
+  if (aligned(await readTownAvatarWorldX(page))) {
     return true;
   }
-  // The street layout is static for the turn, so resolve the target once.
-  const targetX = await readTownDoorCenterX(page, door);
-  if (targetX === null) {
+  failStall(`town avatar never reached the door at x=${targetX} within ${budget} taps`);
+  return false;
+}
+
+//============================================
+/**
+ * Walk the town avatar's world y to targetY (the composed street's lane
+ * center), seeking by live position so an overshoot self-corrects -- the y-twin
+ * of walkTownAvatarToDoorX. The walk-back after a panel interaction
+ * (walkBackToStreet, walkthrough_town.mjs) used to be a plain one-way south
+ * walk with a fixed tap sized off the retired grid's quarter-cell, which can
+ * overshoot the lane by more than DOOR_OPEN_RADIUS_PX's vertical margin above
+ * it (root-caused during triage: seed 1's "town door mining never
+ * reported data-door-state=\"open\"" walk_stall -- the avatar had overshot
+ * south of the lane by more than the open-radius margin, so the next door's
+ * approach never registered within range). Converging on the lane instead of
+ * a one-way "at least there" walk fixes this regardless of any single tap's
+ * step size.
+ *
+ * @param page - The Playwright page.
+ * @param report - The walk report, for walk_stall classification (optional).
+ * @param targetY - The target world y (the composed street's streetLaneY).
+ * @param options - `{ budget, stallTaps, tolerancePx }`, all optional.
+ * @returns True once aligned within tolerance, false on stall/budget/exit.
+ */
+export async function walkTownAvatarToStreetLaneY(page, report, targetY, options = {}) {
+  const {
+    budget = MAX_WALK_TAPS,
+    stallTaps = STALL_TAPS,
+    tolerancePx = TOWN_DOOR_ALIGN_TOLERANCE_PX,
+  } = options;
+  const failStall = (detail) => {
     if (report !== undefined) {
-      report.fail("walk_stall", `town door ${door} marker was not mounted to walk toward`);
+      report.fail("walk_stall", detail);
     }
-    return false;
+  };
+  const aligned = (y) => y !== null && Math.abs(targetY - y) <= tolerancePx;
+  let stall = 0;
+  for (let tap = 0; tap < budget; tap++) {
+    const avatarY = await readTownAvatarWorldY(page);
+    if (avatarY === null) {
+      failStall(`town avatar left the street before returning to the lane at y=${targetY}`);
+      return false;
+    }
+    if (aligned(avatarY)) {
+      return true;
+    }
+    const remaining = targetY - avatarY;
+    // Hold proportional to the remaining gap, clamped to the same derived
+    // door-seek bounds walkTownAvatarToDoorX uses, so this converges instead
+    // of a fixed-length tap sailing past the lane.
+    const proportionalMs = Math.round(
+      (Math.abs(remaining) / EFFECTIVE_WALK_SPEED_PX_PER_SEC) * 1000,
+    );
+    const tapMs = Math.min(DOOR_SEEK_MAX_TAP_MS, Math.max(DOOR_SEEK_MIN_TAP_MS, proportionalMs));
+    const key = remaining > 0 ? "ArrowDown" : "ArrowUp";
+    const before = await snapshotAvatar(page, TOWN_AVATAR);
+    await tapWalk(page, key, tapMs);
+    const after = await snapshotAvatar(page, TOWN_AVATAR);
+    stall = after === before ? stall + 1 : 0;
+    if (stall >= stallTaps) {
+      failStall(
+        `town avatar never returned to the lane at y=${targetY} (stalled ${stallTaps} taps)`,
+      );
+      return false;
+    }
   }
-  const sample = async () => {
-    if (await arrived()) {
-      return { arrived: true };
-    }
-    const avatarX = await readTownAvatarX(page);
-    if (avatarX === null) {
-      return { vanished: true };
-    }
-    return { position: avatarX };
-  };
-  const computeStep = (avatarX) => {
-    const side = Math.sign(targetX - avatarX);
-    if (side === 0) {
-      // Aligned in x yet not registered at the door: nothing left to steer, so
-      // let the stall counter end the walk rather than spin in place.
-      return null;
-    }
-    return { key: horizontalSeekKey(avatarX, targetX), axis: "x", side };
-  };
-  return await seekAvatarToTarget(page, report, {
-    ...options,
-    avatarSelector: TOWN_AVATAR,
-    sample,
-    computeStep,
-    vanishDetail: `town avatar left the street before reaching the ${door} door`,
-    stallDetail: `town avatar never reached the ${door} door`,
-  });
+  // A convergence that lands on the final tap still counts.
+  if (aligned(await readTownAvatarWorldY(page))) {
+    return true;
+  }
+  failStall(`town avatar never returned to the lane at y=${targetY} within ${budget} taps`);
+  return false;
 }
 
 //============================================
@@ -1052,13 +1085,13 @@ export async function walkTownAvatarToDoor(page, report, door, options = {}) {
  * Tap the town avatar north (into the buildings) until `arrived` reports that
  * a door's walk-in interaction fired, or the walk stalls/exhausts its budget.
  * town_scene.tsx's door model (docs/HUMAN_GUIDANCE.md "Town interaction
- * model") fires a door's action the instant the avatar's center crosses the
- * door-enter line north of the street -- walking through an open doorway or
- * pushing flush against a solid counter podium both reach it, so this is a
- * plain northward press toward that line, not a seek toward a known pixel
- * target (the entry line's y is private to town_layout.ts and this harness
- * does not duplicate town geometry). Reuses the shared `seekAvatarToTarget`
- * core (WP-8A) purely for its bounded-tap, stall, and vanish handling: north
+ * model") opens a door's panel the instant the avatar's center crosses the
+ * inner-threshold entry line north of the street -- walking north through an
+ * open doorway reaches it, so this is a plain northward press toward that line,
+ * not a seek toward a known pixel target (the entry line's y lives in
+ * town_collision.ts's townDoorAtThreshold and this harness does not duplicate
+ * town geometry). Reuses the shared `seekAvatarToTarget`
+ * core purely for its bounded-tap, stall, and vanish handling: north
  * is always the correct heading here, so `computeStep` never needs the
  * overshoot-halving branch (there is nothing to overshoot toward).
  *
@@ -1105,7 +1138,7 @@ export async function walkTownAvatarNorthUntil(page, report, arrived, options = 
 /**
  * Walk the overworld avatar to grid cell `target`, seeking one axis at a time
  * (columns before rows, per directionToward) off the avatar's live cell so an
- * overshoot self-corrects. This is the 2D twin of walkTownAvatarToDoor: each tap
+ * overshoot self-corrects. This is the 2D twin of walkTownAvatarToDoorX: each tap
  * recomputes the heading from the avatar's live data-cell-row/col versus the
  * target cell, so a tap that sails past the target cell flips the heading and
  * walks back toward it -- unlike a fixed heading, which at the fast default speed

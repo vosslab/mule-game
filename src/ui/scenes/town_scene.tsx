@@ -1,14 +1,27 @@
 // Walkable town interior for the human's develop turn.
 //
-// This scene replaces the interim store-menu overlay: when the overworld avatar
+// This scene renders the mode-composed scrolling street from town_world.ts
+// through the horizontal camera in town_camera.ts. When the overworld avatar
 // steps onto the town cell it enters here, a self-contained walkable interior.
 // The player walks an avatar (species by player slot, tinted the player color)
-// down the town street, tows a bought M.U.L.E. behind it, and uses building
-// doors: the corral buys a M.U.L.E. (buy_mule), the four outfit counters outfit
-// the carried M.U.L.E. (outfit_mule), the pub gambles (gamble),
-// and the assay office arms an assay so the next plot the avatar stands on
-// back in the overworld is assayed. The four edge exits return to the
+// along the street, tows a bought M.U.L.E. behind it, and uses storefront doors
+// by walking through them: the corral buys a M.U.L.E. (buy_mule), the outfit
+// facades outfit the carried M.U.L.E. (outfit_mule), the pub gambles (gamble),
+// and the assay office arms an assay so the next plot the avatar stands on back
+// in the overworld is assayed. The two street-endpoint exits return to the
 // overworld.
+//
+// Camera and reactivity (the risk-register concern): the composed street's
+// facades, doors, and exits render ONCE inside a world-space group -- the street
+// never re-composes mid-turn (mode is fixed for the game). The camera scrolls by
+// writing that group's `transform` imperatively in the rAF loop (bypassing
+// reactivity for 60fps), the same imperative-write pattern the avatar and tow
+// use. Only two things are reactive: each door's open/closed state (a
+// fine-grained signal, so approaching a door re-renders just that one door
+// marker) and the notice/gamble-confirm/corral-panel derived state. The camera
+// offset and the avatar/tow transforms are never signals, so the per-frame
+// imperative writes and Solid's fine-grained reactivity never fight over the
+// same DOM.
 //
 // Pub gambling always ends the turn, so it needs a confirm step (one
 // accidental keypress must not end a turn) and its payout banner cannot live
@@ -16,9 +29,9 @@
 // flips the human's develop payload away (game_screen.tsx's HumanDevelopLayer
 // mount is gated on `activePlayer === HUMAN_ID`), which tears this whole scene
 // down as part of that same dispatch call, before any code after it in this
-// module could render. `showPubBanner` below sidesteps that by appending a
-// plain DOM node straight to `document.body`, outside Solid's ownership, so it
-// survives the teardown.
+// module could render. `showPubBanner` (town_scene_render.tsx) sidesteps that by
+// appending a plain DOM node straight to `document.body`, outside Solid's
+// ownership, so it survives the teardown.
 //
 // Town is a UI sub-state of the human's develop turn, not an engine phase: the
 // engine stays in `develop`, so the scene manager keeps draining the turn's
@@ -27,65 +40,69 @@
 // When the tick budget runs out the develop turn ends, the phase changes, and
 // the whole develop overlay (this scene included) unmounts.
 //
-// Solid discipline: run-once component, props read through the props object,
-// per-frame motion written imperatively through refs (bypassing reactivity for
-// 60fps), and only carry / at-door / notice / gamble-confirm derived state
-// rendered reactively. Listeners and the rAF loop are bound in onMount and
-// released in onCleanup.
+// The presentational SVG (facades, doors, emblems, street surface, exit
+// markers, pub banner) lives in town_scene_render.tsx; this file owns the
+// component shell, the rAF movement/camera loop, the interaction state machine,
+// and the panel wiring.
 
-import { createSignal, createMemo, onMount, onCleanup, untrack, Show } from "solid-js";
+import { createSignal, createMemo, onMount, onCleanup, untrack, Show, For } from "solid-js";
 import type { JSX } from "solid-js";
 import type { DevelopPayload } from "../../engine/game_state";
 import type { Resource } from "../../engine/player";
-import { computeOutfitCost } from "../../engine/store";
 import type { GameStore } from "../game_store";
 import { HUMAN_ID } from "../game_driver";
 import { createKeyState } from "../input";
 import { playerColor } from "../sprites";
 import { CorralPurchasePanel } from "../solid/corral_purchase_panel";
+import { OutfitPanel } from "../solid/outfit_panel";
+import { LandOfficePanel } from "../solid/land_office_panel";
+import { AssayOfficePanel } from "../solid/assay_office_panel";
 import { pickSpeciesFrameId, buildSpeciesSpriteDefsMarkup } from "../sprites/sprites_species";
 import {
   MULE_TOWED_ID,
   muleOutfitSymbolId,
   buildMuleSpriteDefsMarkup,
 } from "../sprites/sprites_mule";
-import {
-  TOWN_DOOR_SYMBOL_ID,
-  TOWN_GROUND_SYMBOL_ID,
-  buildTownSpriteDefsMarkup,
-  townBuildingSymbolId,
-  townExitSymbolId,
-  townStoreCounterSymbolId,
-} from "../sprites/sprites_town";
+import { buildTownSpriteDefsMarkup } from "../sprites/sprites_town";
 import {
   WALKER_SPEED_PX_PER_SEC,
   TOW_FOLLOW_DISTANCE,
   directionFromKeys,
-  cellCenter,
   stepPosition,
   stepTowFollower,
 } from "./walker";
-import type { Vec2 } from "./walker";
+import type { Vec2, Bounds } from "./walker";
+import type { TownExit } from "./zones";
 import {
-  TOWN_BOUNDS,
-  TOWN_CELL_PX,
-  TOWN_COLS,
-  TOWN_EXITS,
-  TOWN_SPAWN_CELL,
-  townDoorAt,
-  townDoorCenter,
-  townExitAt,
-  townExitCenter,
-} from "./zones";
-import type { TownDoorId, TownExit } from "./zones";
+  composeTownStreetForMode,
+  TOWN_AVATAR_SIZE,
+  TOWN_AVATAR_RADIUS,
+  TOWN_REFERENCE_VIEWPORT_WIDTH,
+} from "./town_world";
+import type {
+  TownStreet,
+  ComposedFacade,
+  StorefrontId,
+  OpenDoorSet,
+  PanelKind,
+} from "./town_world";
 import {
-  TOWN_AVATAR_SIZE as AVATAR_SIZE,
+  resolveTownWalk,
   computeOpenDoors,
-  resolveTownWalkWithDoors,
-  townBuildingFootprint,
-  townCounterFootprint,
-  townDoorAtEntry,
-} from "./town_layout";
+  townDoorAtThreshold,
+  townExitAt,
+} from "./town_collision";
+import { townCameraOffset } from "./town_camera";
+import { WornStreetPatches, FacadeView, ExitMarker, showPubBanner } from "./town_scene_render";
+import type { DoorOpenAccessor } from "./town_scene_render";
+import {
+  doorSetsEqual,
+  endpointToTownExit,
+  movementPhaseAt,
+  movementDoorEqual,
+  streetSideOfDoor,
+} from "./town_interaction";
+import type { TownInteractionState } from "./town_interaction";
 
 /** Rendered towed-M.U.L.E. size in town pixel units. */
 const MULE_SIZE = 34;
@@ -95,15 +112,6 @@ const BADGE_SIZE = 14;
 const WALK_FRAME_MS = 180;
 /** Largest real frame delta consumed, so a backgrounded tab does not lurch. */
 const MAX_FRAME_MS = 100;
-/** Rendered size of a building door marker in town pixel units. */
-const DOOR_MARKER_SIZE = 28;
-/** Rendered size of an edge-exit marker in town pixel units. */
-const EXIT_MARKER_SIZE = 34;
-/**
- * How long the pub payout banner stays up, in ms, matching the overworld
- * scene's wampus-catch-banner hold (WAMPUS_CATCH_BANNER_MS).
- */
-const PUB_BANNER_HOLD_MS = 2200;
 
 /** Movement key sets, sampled each frame from the held-key poller. */
 const UP_KEYS = ["ArrowUp", "w", "W"] as const;
@@ -119,45 +127,13 @@ const ACTION_KEYS = new Set(["Enter", " "]);
 /** Key that declines a pending gamble confirmation. */
 const CANCEL_KEY = "Escape";
 
-/** The four outfit-counter doors and the resource each outfits for. */
-const COUNTER_RESOURCE: Readonly<Record<string, Resource>> = {
-  "counter-food": "food",
-  "counter-energy": "energy",
-  "counter-smithore": "smithore",
-  "counter-crystite": "crystite",
-};
-
-/** Reactive accessor a door marker uses to render its open/closed state. */
-type DoorOpenAccessor = (door: TownDoorId) => boolean;
-
-//============================================
-/**
- * Whether two door-id sets hold the same doors, so the per-frame door refresh
- * only pushes a new reactive value when membership actually changes.
- *
- * @param a - First door set.
- * @param b - Second door set.
- * @returns True when both sets contain exactly the same doors.
- */
-function doorSetsEqual(a: ReadonlySet<TownDoorId>, b: ReadonlySet<TownDoorId>): boolean {
-  if (a.size !== b.size) {
-    return false;
-  }
-  for (const door of a) {
-    if (!b.has(door)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 /** Props for the town scene. */
 export interface TownSceneProps {
   /** The live game store, for dispatch and current-state reads. */
   readonly store: GameStore;
   /** Reactive accessor for the human develop payload. */
   readonly payload: () => DevelopPayload;
-  /** Called when the avatar walks into an edge exit, to return to the overworld. */
+  /** Called when the avatar walks into a street-endpoint exit, to return to the overworld. */
   readonly onExit: (exit: TownExit) => void;
   /** Called when the avatar uses the assay door, to arm an overworld assay. */
   readonly onArmAssay: () => void;
@@ -201,72 +177,118 @@ function prefersReducedMotion(): boolean {
  *
  * @param props - Carries the store, develop payload accessor, and the exit and
  *   arm-assay callbacks.
- * @returns The town scene fragment (buildings, avatar, notice, controls).
+ * @returns The town scene fragment (composed street, avatar, notice, controls).
  */
 export function TownScene(props: TownSceneProps): JSX.Element {
   const reducedMotion = prefersReducedMotion();
   const speed = WALKER_SPEED_PX_PER_SEC * readSpeedMultiplier();
-  // The human's title-screen species pick: read once at
-  // mount, matching overworld_scene.tsx's identical convention -- a
-  // player's species never changes mid-game.
+  // The human's title-screen species pick and the active game mode: read once at
+  // mount (untracked), matching overworld_scene.tsx's convention -- neither a
+  // player's species nor the game mode changes mid-game, so the street is
+  // composed exactly once and never re-composed while the scene lives.
   const species = untrack(() => props.store.state.players[HUMAN_ID].species);
+  const mode = untrack(() => props.store.state.mode);
   const tint = playerColor(HUMAN_ID);
 
-  // Presentation-only pixel state, mutated in the rAF loop (not reactive).
-  const spawn: Vec2 = cellCenter(TOWN_SPAWN_CELL, TOWN_CELL_PX);
+  // The mode-composed street: the SINGLE source of truth for geometry, doors,
+  // exits, spawn, and collision. Composed once; the renderer, camera, and rAF
+  // loop below all read from this one object.
+  const street: TownStreet = composeTownStreetForMode(mode);
+  const worldBounds: Bounds = { width: street.worldWidth, height: street.worldHeight };
+  // A door id -> composed facade lookup, so a walk-in can route by panel kind
+  // and resolve its outfit resource without re-scanning the facade list.
+  const facadesById = new Map<StorefrontId, ComposedFacade>(
+    street.facades.map((facade) => [facade.id, facade]),
+  );
+
+  // Presentation-only world-pixel state, mutated in the rAF loop (not reactive).
+  const spawn: Vec2 = street.spawn;
   let avatarPos: Vec2 = spawn;
   let towPos: Vec2 = { x: spawn.x - TOW_FOLLOW_DISTANCE, y: spawn.y };
+  // The camera offset: the world x that maps to screen x = 0. Written to the
+  // world group's transform imperatively each frame, never a signal.
+  let cameraOffset = townCameraOffset(spawn.x, street.worldWidth, TOWN_REFERENCE_VIEWPORT_WIDTH);
   let walkAccumMs = 0;
-  // Latch so the exit callback fires once even though the scene unmounts on it.
-  let leaving = false;
 
-  // Reactive derived state (drives data-* attributes and the notice).
+  // Reactive derived state (drives the sprite frame, facing, and the notice).
   const [facing, setFacing] = createSignal<1 | -1>(1);
   const [walkFrame, setWalkFrame] = createSignal<1 | 2>(1);
-  const [atDoor, setAtDoor] = createSignal<TownDoorId | null>(null);
   const [notice, setNotice] = createSignal<string | null>(null);
-  // Whether the pub's "gamble and end turn?" confirm affordance is showing.
-  // Gambling always ends the turn (see the module doc comment), so a single
-  // accidental action-key press at the pub door must not trigger it -- this
-  // gates a second explicit keypress and freezes movement in the meantime.
-  const [confirmingGamble, setConfirmingGamble] = createSignal(false);
-  // Whether the corral purchase panel is showing. Walking into the corral
-  // opens the panel with attempt-then-confirm buying (WP-4A/4B); movement
-  // freezes while it is up, matching the gamble-confirm freeze above, and
-  // dismissing it returns the player to the town scene at the door with no
-  // avatar movement in between.
-  const [corralPanelOpen, setCorralPanelOpen] = createSignal(false);
+  // The explicit interaction state machine: one signal of the
+  // TownInteractionState union replaces the old confirmingGamble/corralPanelOpen
+  // booleans. The fixed walk-in / attempt-then-confirm contract
+  // (docs/HUMAN_GUIDANCE.md "Town interaction model") is enforced structurally
+  // by this state -- movement freezes in panel-open/leaving, entry opens a panel
+  // with no economic side effect, and dismissing a panel returns the avatar to
+  // the street side of its door.
+  const [townState, setTownState] = createSignal<TownInteractionState>({ phase: "street" });
+  // Movement is frozen while a panel/confirm is up (panel-open) or the scene is
+  // handing back to the overworld (leaving). The rAF loop reads this each frame;
+  // reading a signal outside a tracking scope creates no subscription.
+  const isFrozen = (): boolean => {
+    const phase = townState().phase;
+    return phase === "panel-open" || phase === "leaving";
+  };
+  // The pub keeps its notice-driven gamble confirm (reuse of the existing
+  // dialog); this derives the legacy confirming flag from the unified state so
+  // the #town-scene [data-gamble-confirming] hook (pub_gamble.spec.mjs) and the
+  // document action-key handler stay pub-scoped.
+  const isConfirmingGamble = (): boolean => {
+    const state = townState();
+    return state.phase === "panel-open" && state.panel === "pub";
+  };
+  // Derived panel routing: exactly one panel renders for the active panel-open
+  // door. Every door kind now has its own dedicated panel component: the
+  // corral's CorralPurchasePanel, outfit's OutfitPanel, and the Land
+  // Office / Assay Office's LandOfficePanel / AssayOfficePanel.
+  const corralPanelOpen = (): boolean => {
+    const state = townState();
+    return state.phase === "panel-open" && state.panel === "corral";
+  };
+  // Shared accessor for the three panel kinds that each mount a facade-carrying
+  // panel: returns the open door's facade only while townState is parked on
+  // panel-open for that specific panel kind, else null.
+  function panelFacadeFor(panel: PanelKind): ComposedFacade | null {
+    const state = townState();
+    if (state.phase === "panel-open" && state.panel === panel) {
+      return facadesById.get(state.door) ?? null;
+    }
+    return null;
+  }
+  const outfitPanelState = (): ComposedFacade | null => panelFacadeFor("outfit");
+  const landPanelState = (): ComposedFacade | null => panelFacadeFor("land-office");
+  const assayPanelState = (): ComposedFacade | null => panelFacadeFor("assay-office");
   const carrying = createMemo(() => props.payload().carriedMule);
   const frameId = createMemo(() => pickSpeciesFrameId(species, walkFrame(), reducedMotion));
 
-  // Door open/closed state, driven by avatar proximity (town_layout's
+  // Door open/closed state, driven by avatar proximity (town_world's
   // computeOpenDoors, with hysteresis). Two views of one set: `openDoors` is the
   // mutable per-frame value the rAF loop reads for collision and the walk-in
   // trigger; `openDoorsSignal` mirrors it reactively so each door marker renders
   // its own open/closed state. refreshDoors updates them together, so the drawn
   // door and the solid door can never disagree.
-  let openDoors: ReadonlySet<TownDoorId> = computeOpenDoors(spawn, new Set());
-  const [openDoorsSignal, setOpenDoorsSignal] = createSignal<ReadonlySet<TownDoorId>>(openDoors);
-  const isDoorOpen: DoorOpenAccessor = (door) => openDoorsSignal().has(door);
-  // Walk-in edge-trigger latch: the door whose entry zone the avatar currently
-  // occupies. A single walk-in fires its interaction once and does not re-fire
-  // while the avatar lingers inside; walking out and back in re-arms it.
-  let enteredDoor: TownDoorId | null = null;
+  let openDoors: OpenDoorSet = computeOpenDoors(street, spawn, new Set());
+  const [openDoorsSignal, setOpenDoorsSignal] = createSignal<OpenDoorSet>(openDoors);
+  const isDoorOpen: DoorOpenAccessor = (id) => openDoorsSignal().has(id);
+  // Walk-in edge-trigger latch: the door whose inner threshold the avatar
+  // currently occupies. A single walk-in fires its interaction once and does not
+  // re-fire while the avatar lingers inside; walking out and back in re-arms it.
+  let enteredDoor: StorefrontId | null = null;
 
+  let worldGroupRef: SVGGElement | undefined;
   let avatarRef: SVGGElement | undefined;
   let towRef: SVGGElement | undefined;
 
   //------------------------------------------
   // Advance one presentation frame: sample held keys, move the avatar and the
-  // towed follower, publish the current door, and auto-exit on an edge exit.
+  // towed follower against the composed street's collision, scroll the camera,
+  // publish door state, and auto-exit at a street endpoint.
   function updateFrame(dtSeconds: number, keys: ReturnType<typeof createKeyState>): void {
-    if (leaving) {
-      return;
-    }
-    // Freeze movement while the gamble confirm affordance is up, so the
-    // player cannot wander off mid-decision -- Enter/Space or Escape are the
-    // only way forward, matching a modal's expected keyboard behavior.
-    if (confirmingGamble() || corralPanelOpen()) {
+    // Freeze all world movement while a panel/confirm is up (panel-open) or the
+    // scene is handing back to the overworld (leaving): the rAF loop simply does
+    // not integrate motion in those phases (the structural movement-freeze that
+    // enforces "movement freezes while a panel is open").
+    if (isFrozen()) {
       return;
     }
     // Open/close doors for the avatar's current position before moving, so this
@@ -280,32 +302,37 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       right: keys.anyDown(RIGHT_KEYS),
     });
     const moving = direction.x !== 0 || direction.y !== 0;
-    // Integrate the open-ground move (full speed, clamped to the town bounds),
-    // then slide it clear of the solid buildings and any closed door. Splitting
-    // the two keeps walker.ts free of town-specific geometry: stepPosition owns
-    // speed and bounds, resolveTownWalkWithDoors owns the walls, doorway gaps,
-    // and the closed-door panels.
+    // Integrate the open-ground move (full speed, clamped to the world bounds),
+    // then slide it clear of the solid facades and any closed door. Splitting the
+    // two keeps walker.ts free of town geometry: stepPosition owns speed and
+    // bounds, resolveTownWalk owns the solid facades and the door thresholds.
     const stepped = stepPosition(
       avatarPos,
       direction,
       speed,
       1,
       dtSeconds,
-      TOWN_BOUNDS,
-      AVATAR_SIZE / 2,
+      worldBounds,
+      TOWN_AVATAR_RADIUS,
     );
-    avatarPos = resolveTownWalkWithDoors(avatarPos, stepped, AVATAR_SIZE / 2, openDoors);
+    avatarPos = resolveTownWalk(street, avatarPos, stepped, TOWN_AVATAR_RADIUS, openDoors);
     towPos = stepTowFollower(towPos, avatarPos, dtSeconds, TOW_FOLLOW_DISTANCE, speed);
+    cameraOffset = townCameraOffset(avatarPos.x, street.worldWidth, TOWN_REFERENCE_VIEWPORT_WIDTH);
     writeTransforms();
     updateFacing(direction.x);
-    const exit = townExitAt(avatarPos);
+    // Endpoint exit wins: latch the terminal leaving phase and fire the
+    // overworld handoff exactly once (the isFrozen guard blocks any re-entry
+    // even though onExit tears this scene down mid-call).
+    const exit = townExitAt(street, avatarPos);
     if (exit !== null) {
-      leaving = true;
-      props.onExit(exit);
+      setTownState({ phase: "leaving", exit });
+      props.onExit(endpointToTownExit(exit));
       return;
     }
-    updateDoor();
+    // Walk-in edge trigger opens a door's panel (panel-open) with no economic
+    // side effect; when none fires, reflect the current movement phase.
     detectWalkIn();
+    syncMovementPhase();
     updateWalkFrame(moving, dtSeconds);
   }
 
@@ -315,7 +342,7 @@ export function TownScene(props: TownSceneProps): JSX.Element {
   // the door markers re-render. The mutable `openDoors` is the source the rAF
   // loop reads; the signal is only for rendering.
   function refreshDoors(): void {
-    const next = computeOpenDoors(avatarPos, openDoors);
+    const next = computeOpenDoors(street, avatarPos, openDoors);
     if (!doorSetsEqual(next, openDoors)) {
       openDoors = next;
       setOpenDoorsSignal(next);
@@ -323,36 +350,59 @@ export function TownScene(props: TownSceneProps): JSX.Element {
   }
 
   //------------------------------------------
-  // Fire a door's interaction when the avatar walks into its entry zone, once
-  // per occupancy. Walking through an open doorway (or pressing up into a solid
-  // counter) IS the entry gesture -- no keypress. A closed (solid) door cannot
-  // be entered, so its interaction never fires. The store's smithore bay doubles
-  // as the north/south cross-street, so its outfit only fires when the avatar is
-  // actually carrying a mule to outfit; otherwise walking the bay to an edge
-  // exit stays pure navigation.
+  // Fire a door's interaction when the avatar walks into its inner threshold,
+  // once per occupancy. Pushing north through an open door into its threshold IS
+  // the entry gesture -- no keypress. A closed (solid) door cannot be reached, so
+  // its interaction never fires.
   function detectWalkIn(): void {
-    const door = townDoorAtEntry(avatarPos);
-    if (door === null) {
+    const id = townDoorAtThreshold(street, avatarPos);
+    if (id === null) {
       enteredDoor = null;
       return;
     }
-    if (door === enteredDoor) {
+    if (id === enteredDoor) {
       return;
     }
-    enteredDoor = door;
-    if (!openDoors.has(door)) {
+    enteredDoor = id;
+    if (!openDoors.has(id)) {
       return;
     }
-    if (door === "counter-smithore" && props.payload().carriedMule !== "unoutfitted") {
-      return;
-    }
-    useDoor(door);
+    useDoor(id);
   }
 
   //------------------------------------------
-  // Write the avatar and towed-M.U.L.E. transforms directly (bypass reactivity).
+  // Reflect the avatar's street/door-opening/at-threshold movement phase into
+  // townState. Never overrides a latched panel-open or leaving phase, and only
+  // pushes a new value on a real phase/door change, so the reactive
+  // data-town-state binding is not re-run every frame.
+  function syncMovementPhase(): void {
+    const current = townState();
+    if (current.phase === "panel-open" || current.phase === "leaving") {
+      return;
+    }
+    const next = movementPhaseAt(street, avatarPos, openDoors);
+    if (current.phase === next.phase && movementDoorEqual(current, next)) {
+      return;
+    }
+    setTownState(next);
+  }
+
+  //------------------------------------------
+  // Write the world-group camera translate and the avatar/tow transforms
+  // directly (bypass reactivity). The world group scrolls by -cameraOffset; the
+  // avatar and tow sit at their world positions inside it. World-coordinate
+  // `data-` attributes ride along so tests read camera + world position with no
+  // pixel math.
   function writeTransforms(): void {
-    avatarRef?.setAttribute("transform", `translate(${avatarPos.x} ${avatarPos.y})`);
+    if (worldGroupRef !== undefined) {
+      worldGroupRef.setAttribute("transform", `translate(${-cameraOffset} 0)`);
+      worldGroupRef.setAttribute("data-town-camera-offset", String(Math.round(cameraOffset)));
+    }
+    if (avatarRef !== undefined) {
+      avatarRef.setAttribute("transform", `translate(${avatarPos.x} ${avatarPos.y})`);
+      avatarRef.setAttribute("data-town-avatar-x", String(Math.round(avatarPos.x)));
+      avatarRef.setAttribute("data-town-avatar-y", String(Math.round(avatarPos.y)));
+    }
     towRef?.setAttribute("transform", `translate(${towPos.x} ${towPos.y})`);
   }
 
@@ -363,16 +413,6 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       setFacing(-1);
     } else if (dx > 0) {
       setFacing(1);
-    }
-  }
-
-  //------------------------------------------
-  // Publish the building door the avatar currently stands at (or null), which
-  // drives data-at-door and gates the action key.
-  function updateDoor(): void {
-    const next = townDoorAt(avatarPos);
-    if (next !== atDoor()) {
-      setAtDoor(next);
     }
   }
 
@@ -395,15 +435,15 @@ export function TownScene(props: TownSceneProps): JSX.Element {
   }
 
   //------------------------------------------
-  // Capture-phase action-key handler. Doors are now entered by walking through
-  // them (no keypress), so this handler only serves the pub's gamble dialog:
-  // while a confirm is pending, Enter/Space confirms it and Escape declines it.
-  // With no dialog up, these keys do nothing here.
+  // Capture-phase action-key handler. Doors are entered by walking through them
+  // (no keypress), so this handler only serves the pub's gamble dialog: while a
+  // confirm is pending, Enter/Space confirms it and Escape declines it. With no
+  // dialog up, these keys do nothing here.
   function handleActionKey(event: KeyboardEvent): void {
     if (event.repeat) {
       return;
     }
-    if (!confirmingGamble()) {
+    if (!isConfirmingGamble()) {
       return;
     }
     if (event.key === CANCEL_KEY) {
@@ -420,96 +460,108 @@ export function TownScene(props: TownSceneProps): JSX.Element {
   }
 
   //------------------------------------------
-  // Route a door use to its action, surfacing a notice either way.
-  function useDoor(door: TownDoorId): void {
-    if (door === "corral") {
-      // Attempt-then-confirm: walking in always opens the purchase panel
-      // (success and every failure case); the panel itself is the SINGLE
-      // corral-entry feedback path -- see CorralPurchasePanel.
-      setCorralPanelOpen(true);
+  // Open a door's panel on walk-in. Entering NEVER changes economic state
+  // (docs/HUMAN_GUIDANCE.md attempt-then-confirm): this only transitions to
+  // panel-open for the door's panel kind (and seeds the pub's notice prompt).
+  // Every state-changing dispatch is deferred to an explicit confirm inside the
+  // panel -- corral Buy, outfit's per-resource confirm, pub Enter,
+  // assay Arm -- or is an informational placeholder that dispatches nothing
+  // (land). detectWalkIn only calls this for an OPEN door, so a closed
+  // (solid) door can never open a panel.
+  function useDoor(id: StorefrontId): void {
+    const facade = facadesById.get(id);
+    if (facade === undefined) {
       return;
     }
-    if (door === "pub") {
-      askGambleConfirm();
-      return;
-    }
-    if (door === "assay") {
-      props.onArmAssay();
-      setNotice("Assay ready: leave town and press action on a plot.");
-      return;
-    }
-    const resource = COUNTER_RESOURCE[door];
-    if (resource !== undefined) {
-      outfitAtCounter(resource);
+    setTownState({ phase: "panel-open", door: id, panel: facade.panelKind });
+    if (facade.panelKind === "pub") {
+      // The pub reuses its existing notice-driven gamble confirm: movement is
+      // frozen by the panel-open phase, and the document action-key handler
+      // (scoped to isConfirmingGamble) turns Enter into confirm and Escape into
+      // decline. No focusable DOM panel is drawn for it.
+      setNotice("Gamble and end turn? Press Enter to confirm, Esc to back out.");
     }
   }
 
   //------------------------------------------
-  // Ask the player to confirm gambling, since it always ends the turn.
-  function askGambleConfirm(): void {
-    setConfirmingGamble(true);
-    setNotice("Gamble and end turn? Press Enter to confirm, Esc to back out.");
+  // Close the open panel and return to the street (docs/THE_TOWN_ANALYSIS.md
+  // "Interaction state": closing a panel puts the avatar outside the threshold
+  // and restores movement). Places the avatar on the street side of its door
+  // (town_interaction.ts's streetSideOfDoor), re-arms the single-fire walk-in
+  // latch, restores the street phase, and repaints. One dismiss path for corral
+  // Leave, outfit/land Dismiss, assay Cancel, and pub Escape. Movement input is
+  // a document-level key poller, so dropping panel focus already restores
+  // movement control.
+  function dismissPanel(): void {
+    const state = townState();
+    if (state.phase === "panel-open") {
+      const facade = facadesById.get(state.door);
+      if (facade !== undefined) {
+        avatarPos = streetSideOfDoor(facade, street);
+      }
+      towPos = { x: avatarPos.x - TOW_FOLLOW_DISTANCE, y: avatarPos.y };
+      cameraOffset = townCameraOffset(
+        avatarPos.x,
+        street.worldWidth,
+        TOWN_REFERENCE_VIEWPORT_WIDTH,
+      );
+    }
+    enteredDoor = null;
+    setTownState({ phase: "street" });
+    refreshDoors();
+    writeTransforms();
   }
 
   //------------------------------------------
-  // Back out of a pending gamble confirmation with no engine effect.
+  // Back out of the pub confirm with no engine effect and return street-side.
   function declineGamble(): void {
-    setConfirmingGamble(false);
     setNotice("Gamble cancelled.");
+    dismissPanel();
   }
 
   //------------------------------------------
   // Confirm the gamble: dispatch it, then show its payout as a self-dismissing
-  // banner. `gamble` always ends the turn, which unmounts this scene as part
-  // of the dispatch call itself (see the module doc comment), so the banner
-  // renders outside Solid's tree via `showPubBanner` rather than local state.
+  // banner. `gamble` always ends the turn, which unmounts this scene as part of
+  // the dispatch call itself (see the module doc comment), so the banner renders
+  // outside Solid's tree via `showPubBanner` rather than local state. The state
+  // flips to street first; repositioning is unnecessary since the scene tears
+  // down on the same dispatch.
   function confirmGamble(): void {
-    setConfirmingGamble(false);
+    setTownState({ phase: "street" });
     const before = props.store.state.players[HUMAN_ID]?.money ?? 0;
     props.store.dispatch({ type: "gamble", playerId: HUMAN_ID });
     const after = props.store.state.players[HUMAN_ID]?.money ?? 0;
     showPubBanner(after - before, reducedMotion);
   }
 
-  //------------------------------------------
-  // Outfit the towed M.U.L.E. for a resource at its counter, or surface why not.
-  function outfitAtCounter(resource: Resource): void {
-    const carried = props.payload().carriedMule;
-    if (carried === "none") {
-      setNotice("Buy a M.U.L.E. at the corral first.");
-      return;
-    }
-    if (carried !== "unoutfitted") {
-      setNotice("This M.U.L.E. is already outfitted.");
-      return;
-    }
-    const cost = computeOutfitCost(resource);
-    const player = props.store.state.players[HUMAN_ID];
-    if (player === undefined || player.money < cost) {
-      setNotice(`Not enough money to outfit for ${resource} ($${cost}).`);
-      return;
-    }
-    props.store.dispatch({ type: "outfit_mule", playerId: HUMAN_ID, resource });
-    setNotice(`Outfitted for ${resource} -- exit town and place it.`);
-  }
-
   onMount(() => {
     const keys = createKeyState();
     document.addEventListener("keydown", handleActionKey, true);
+    // Seed the world-group transform and the avatar/tow positions before the
+    // first frame, so the very first paint shows the camera and avatar in place.
     writeTransforms();
-    setAtDoor(townDoorAt(avatarPos));
 
     let rafHandle = 0;
     let lastFrame = performance.now();
+    // Guards the reschedule below against the onExit-unmount-mid-frame case:
+    // updateFrame() can call props.onExit(), which synchronously unmounts this
+    // scene and runs onCleanup() while frame() is still on the call stack.
+    // Without this flag, the reschedule line runs after cleanup and starts an
+    // orphaned rAF loop that nothing ever cancels.
+    let disposed = false;
     const frame = (now: number): void => {
       const dtSeconds = Math.min(now - lastFrame, MAX_FRAME_MS) / 1000;
       lastFrame = now;
       updateFrame(dtSeconds, keys);
+      if (disposed) {
+        return;
+      }
       rafHandle = requestAnimationFrame(frame);
     };
     rafHandle = requestAnimationFrame(frame);
 
     onCleanup(() => {
+      disposed = true;
       cancelAnimationFrame(rafHandle);
       keys.stop();
       document.removeEventListener("keydown", handleActionKey, true);
@@ -518,7 +570,6 @@ export function TownScene(props: TownSceneProps): JSX.Element {
 
   const defsMarkup =
     buildTownSpriteDefsMarkup() + buildSpeciesSpriteDefsMarkup() + buildMuleSpriteDefsMarkup();
-  const groundMarkup = buildGroundMarkup();
 
   return (
     <div
@@ -526,60 +577,111 @@ export function TownScene(props: TownSceneProps): JSX.Element {
       class="town-scene"
       role="group"
       aria-label="Colony town"
-      data-gamble-confirming={confirmingGamble() ? "true" : "false"}
+      data-town-mode={mode}
+      data-town-state={townState().phase}
+      data-gamble-confirming={isConfirmingGamble() ? "true" : "false"}
     >
       <svg
         class="town-svg"
-        viewBox={`0 0 ${TOWN_BOUNDS.width} ${TOWN_BOUNDS.height}`}
+        viewBox={`0 0 ${TOWN_REFERENCE_VIEWPORT_WIDTH} ${street.worldHeight}`}
         aria-hidden="true"
       >
         <g innerHTML={defsMarkup} />
-        <g class="town-ground" innerHTML={groundMarkup} />
-        <BuildingsLayer isDoorOpen={isDoorOpen} />
-        <ExitsLayer />
-        <Show when={carrying() !== "none"}>
-          <g
-            class="town-tow"
-            ref={(el) => {
-              towRef = el;
-            }}
-          >
-            <use
-              href={`#${MULE_TOWED_ID}`}
-              x={-MULE_SIZE / 2}
-              y={-MULE_SIZE / 2}
-              width={MULE_SIZE}
-              height={MULE_SIZE}
-              style={{ color: tint }}
-            />
-            <Show when={isResourceCarry(carrying())}>
-              <use
-                href={`#${muleOutfitSymbolId(carrying() as Resource)}`}
-                x={MULE_SIZE / 2 - BADGE_SIZE}
-                y={-MULE_SIZE / 2 - 2}
-                width={BADGE_SIZE}
-                height={BADGE_SIZE}
-              />
-            </Show>
-          </g>
-        </Show>
+        {/* World-space group: the composed street scrolls under the fixed camera
+            window by an imperative translate written each frame. Everything
+            world-space (street, facades, doors, exits, tow, avatar) lives here so
+            one transform scrolls them together. */}
         <g
-          data-actor={`player-${HUMAN_ID}`}
-          data-carrying={carrying()}
-          data-at-door={atDoor() ?? undefined}
+          class="town-world"
+          data-town-world-width={street.worldWidth}
           ref={(el) => {
-            avatarRef = el;
+            worldGroupRef = el;
           }}
         >
-          <g class="town-avatar-sprite" transform={facing() === -1 ? "scale(-1 1)" : undefined}>
-            <use
-              href={`#${frameId()}`}
-              x={-AVATAR_SIZE / 2}
-              y={-AVATAR_SIZE / 2}
-              width={AVATAR_SIZE}
-              height={AVATAR_SIZE}
-              style={{ color: tint }}
-            />
+          <rect
+            class="town-facade-band"
+            x={0}
+            y={0}
+            width={street.worldWidth}
+            height={street.facadeBottomY}
+          />
+          <rect
+            class="town-street-surface"
+            x={0}
+            y={street.streetTopY}
+            width={street.worldWidth}
+            height={street.worldHeight - street.streetTopY}
+          />
+          <WornStreetPatches street={street} />
+          <rect
+            class="town-baseline-curb"
+            x={0}
+            y={street.facadeBottomY - 3}
+            width={street.worldWidth}
+            height={6}
+          />
+          <g class="town-facades">
+            <For each={street.facades}>
+              {(facade) => (
+                <FacadeView facade={facade} isDoorOpen={isDoorOpen} store={props.store} />
+              )}
+            </For>
+          </g>
+          <g class="town-exits">
+            <For each={street.exits}>
+              {(exit) => (
+                <ExitMarker
+                  side={exit.side}
+                  centerX={exitCenterX(exit.rect)}
+                  centerY={exit.rect.y + exit.rect.height / 2}
+                />
+              )}
+            </For>
+          </g>
+          <Show when={carrying() !== "none"}>
+            <g
+              class="town-tow"
+              ref={(el) => {
+                towRef = el;
+              }}
+            >
+              <use
+                href={`#${MULE_TOWED_ID}`}
+                x={-MULE_SIZE / 2}
+                y={-MULE_SIZE / 2}
+                width={MULE_SIZE}
+                height={MULE_SIZE}
+                style={{ color: tint }}
+              />
+              <Show when={isResourceCarry(carrying())}>
+                <use
+                  href={`#${muleOutfitSymbolId(carrying() as Resource)}`}
+                  x={MULE_SIZE / 2 - BADGE_SIZE}
+                  y={-MULE_SIZE / 2 - 2}
+                  width={BADGE_SIZE}
+                  height={BADGE_SIZE}
+                />
+              </Show>
+            </g>
+          </Show>
+          <g
+            class="town-avatar"
+            data-actor={`player-${HUMAN_ID}`}
+            data-carrying={carrying()}
+            ref={(el) => {
+              avatarRef = el;
+            }}
+          >
+            <g class="town-avatar-sprite" transform={facing() === -1 ? "scale(-1 1)" : undefined}>
+              <use
+                href={`#${frameId()}`}
+                x={-TOWN_AVATAR_SIZE / 2}
+                y={-TOWN_AVATAR_SIZE / 2}
+                width={TOWN_AVATAR_SIZE}
+                height={TOWN_AVATAR_SIZE}
+                style={{ color: tint }}
+              />
+            </g>
           </g>
         </g>
       </svg>
@@ -587,24 +689,45 @@ export function TownScene(props: TownSceneProps): JSX.Element {
         <p class="town-notice" data-town-notice aria-live="polite">
           {notice() ?? "Walk into the corral to buy a M.U.L.E. Doors open as you approach."}
         </p>
-        <button
-          type="button"
-          class="town-end-turn-button"
-          data-action="develop-end-turn"
-          onClick={() => props.store.dispatch({ type: "end_turn", playerId: HUMAN_ID })}
-        >
-          End turn
-        </button>
       </div>
       <Show when={corralPanelOpen()}>
-        <CorralPurchasePanel
-          store={props.store}
-          payload={props.payload}
-          onDismiss={() => setCorralPanelOpen(false)}
-        />
+        <CorralPurchasePanel store={props.store} payload={props.payload} onDismiss={dismissPanel} />
+      </Show>
+      <Show when={outfitPanelState()}>
+        {(facade) => (
+          <OutfitPanel
+            store={props.store}
+            payload={props.payload}
+            facade={facade()}
+            onDismiss={dismissPanel}
+          />
+        )}
+      </Show>
+      <Show when={landPanelState()}>
+        {(facade) => <LandOfficePanel facade={facade()} onDismiss={dismissPanel} />}
+      </Show>
+      <Show when={assayPanelState()}>
+        {(facade) => (
+          <AssayOfficePanel
+            facade={facade()}
+            onArmAssay={props.onArmAssay}
+            onDismiss={dismissPanel}
+          />
+        )}
       </Show>
     </div>
   );
+}
+
+//============================================
+/**
+ * The world x center of an endpoint exit zone.
+ *
+ * @param rect - The exit zone rect in world space.
+ * @returns The zone's horizontal center in world pixels.
+ */
+function exitCenterX(rect: { x: number; width: number }): number {
+  return rect.x + rect.width / 2;
 }
 
 //============================================
@@ -617,211 +740,4 @@ export function TownScene(props: TownSceneProps): JSX.Element {
  */
 function isResourceCarry(carried: DevelopPayload["carriedMule"]): boolean {
   return carried !== "none" && carried !== "unoutfitted";
-}
-
-//============================================
-/**
- * Show the pub's payout as a brief, self-dismissing banner appended directly
- * to `document.body`. See the module doc comment: confirming a gamble
- * dispatches an action that always ends the turn, which unmounts this scene
- * synchronously as part of that same dispatch call -- so the banner cannot
- * be local Solid state (it would never render before its own owner tears
- * down). A plain DOM node outside Solid's ownership survives that teardown.
- *
- * @param amount - The dollar payout the engine added to the human's money.
- * @param reducedMotion - Whether to gate the CSS entrance animation, mirroring
- *   the event-banner/wampus-catch-banner `data-reduced-motion` convention.
- */
-function showPubBanner(amount: number, reducedMotion: boolean): void {
-  const banner = document.createElement("div");
-  banner.className = "pub-banner";
-  banner.setAttribute("data-pub-banner", "");
-  banner.setAttribute("data-pub-banner-amount", String(amount));
-  banner.setAttribute("data-reduced-motion", reducedMotion ? "true" : "false");
-  banner.setAttribute("role", "status");
-  banner.setAttribute("aria-live", "polite");
-  banner.textContent = `Pub payout: +$${amount}`;
-  document.body.appendChild(banner);
-  window.setTimeout(() => {
-    banner.remove();
-  }, PUB_BANNER_HOLD_MS);
-}
-
-//============================================
-/**
- * Build the tiled town ground as a raw `<use>` string (one per interior cell),
- * set via innerHTML so a full floor renders without a JSX node per tile.
- *
- * @returns Raw SVG markup tiling the ground symbol across the interior.
- */
-function buildGroundMarkup(): string {
-  let markup = "";
-  for (let row = 0; row < TOWN_BOUNDS.height / TOWN_CELL_PX; row++) {
-    for (let col = 0; col < TOWN_COLS; col++) {
-      const x = col * TOWN_CELL_PX;
-      const y = row * TOWN_CELL_PX;
-      markup += `<use href="#${TOWN_GROUND_SYMBOL_ID}" x="${x}" y="${y}" width="${TOWN_CELL_PX}" height="${TOWN_CELL_PX}" />`;
-    }
-  }
-  return markup;
-}
-
-//============================================
-/**
- * Render every building with its door marker: the corral, the store (its four
- * outfit-counter stations grouped as one `data-building="store"`), the pub, and
- * the assay. Each interactive door carries a `[data-door-for]` marker and a
- * building group carries `[data-building]`, matching the town selector contract.
- *
- * @param props - Carries the door-open accessor threaded down to each marker.
- * @returns The buildings layer group.
- */
-function BuildingsLayer(props: { readonly isDoorOpen: DoorOpenAccessor }): JSX.Element {
-  return (
-    <g class="town-buildings">
-      <BuildingGroup building="corral" door="corral" isDoorOpen={props.isDoorOpen} />
-      <g data-building="store" class="town-building">
-        <CounterStation door="counter-food" isDoorOpen={props.isDoorOpen} />
-        <CounterStation door="counter-energy" isDoorOpen={props.isDoorOpen} />
-        <CounterStation door="counter-smithore" isDoorOpen={props.isDoorOpen} />
-        <CounterStation door="counter-crystite" isDoorOpen={props.isDoorOpen} />
-      </g>
-      <BuildingGroup building="pub" door="pub" isDoorOpen={props.isDoorOpen} />
-      <BuildingGroup building="assay" door="assay" isDoorOpen={props.isDoorOpen} />
-    </g>
-  );
-}
-
-/** Props for one named building drawn above its door. */
-interface BuildingGroupProps {
-  /** The building sprite to draw (its footprint symbol). */
-  readonly building: "corral" | "pub" | "assay";
-  /** The door id whose cell the building sits above and whose marker it carries. */
-  readonly door: TownDoorId;
-  /** Accessor for the door's open/closed state, passed to its marker. */
-  readonly isDoorOpen: DoorOpenAccessor;
-}
-
-//============================================
-/**
- * Draw one named building sprite sitting above its street door, plus the door
- * marker on the door cell.
- *
- * @param props - Carries the building sprite name and its door id.
- * @returns The building `<g data-building>` group.
- */
-function BuildingGroup(props: BuildingGroupProps): JSX.Element {
-  // The footprint (position and size) comes from town_layout, the same source
-  // the movement clamp reads its solid walls from, so the drawn building and
-  // its collision box can never drift apart.
-  const footprint = townBuildingFootprint(props.building);
-  return (
-    <g data-building={props.building} class="town-building">
-      <use
-        href={`#${townBuildingSymbolId(props.building)}`}
-        x={footprint.x}
-        y={footprint.y}
-        width={footprint.width}
-        height={footprint.height}
-      />
-      <DoorMarker door={props.door} isDoorOpen={props.isDoorOpen} />
-    </g>
-  );
-}
-
-/** Props for one outfit-counter station. */
-interface CounterStationProps {
-  /** The counter door id (`counter-<resource>`). */
-  readonly door: TownDoorId;
-  /** Accessor for the counter door's open/closed state, passed to its marker. */
-  readonly isDoorOpen: DoorOpenAccessor;
-}
-
-//============================================
-/**
- * Draw one outfit-counter station above its street door, plus the door marker.
- *
- * @param props - Carries the counter door id.
- * @returns The counter station element.
- */
-function CounterStation(props: CounterStationProps): JSX.Element {
-  const resource = COUNTER_RESOURCE[props.door]!;
-  // Footprint from town_layout, so the podium the player sees matches the solid
-  // podium the movement clamp collides against (see BuildingGroup).
-  const footprint = townCounterFootprint(props.door);
-  return (
-    <g class="town-counter">
-      <use
-        href={`#${townStoreCounterSymbolId(resource)}`}
-        x={footprint.x}
-        y={footprint.y}
-        width={footprint.width}
-        height={footprint.height}
-      />
-      <DoorMarker door={props.door} isDoorOpen={props.isDoorOpen} />
-    </g>
-  );
-}
-
-/** Props for a door marker sitting on a door cell. */
-interface DoorMarkerProps {
-  /** The door id this marker belongs to. */
-  readonly door: TownDoorId;
-  /** Accessor for this door's open/closed state (drives the visible state). */
-  readonly isDoorOpen: DoorOpenAccessor;
-}
-
-//============================================
-/**
- * Draw the shared door-highlight marker centered on a door cell, carrying the
- * `[data-door-for]` hook and a reactive `[data-door-state]` of `open`/`closed`
- * (read by tests and the walker). When open, the arch slides up and fades to
- * read as a cleared threshold; when closed it sits solid in the doorway.
- *
- * @param props - Carries the door id and its open-state accessor.
- * @returns The door marker `<g data-door-for>` group.
- */
-function DoorMarker(props: DoorMarkerProps): JSX.Element {
-  const center = townDoorCenter(props.door);
-  const open = (): boolean => props.isDoorOpen(props.door);
-  return (
-    <g data-door-for={props.door} data-door-state={open() ? "open" : "closed"} class="town-door">
-      <use
-        href={`#${TOWN_DOOR_SYMBOL_ID}`}
-        x={center.x - DOOR_MARKER_SIZE / 2}
-        y={center.y - DOOR_MARKER_SIZE / 2}
-        width={DOOR_MARKER_SIZE}
-        height={DOOR_MARKER_SIZE}
-        opacity={open() ? 0.3 : 0.9}
-        transform={open() ? "translate(0 -6)" : undefined}
-      />
-    </g>
-  );
-}
-
-//============================================
-/**
- * Render the four edge-exit markers, each carrying a `[data-exit]` hook.
- *
- * @returns The exits layer group.
- */
-function ExitsLayer(): JSX.Element {
-  return (
-    <g class="town-exits">
-      {TOWN_EXITS.map((exit) => {
-        const center = townExitCenter(exit);
-        return (
-          <g data-exit={exit} class="town-exit">
-            <use
-              href={`#${townExitSymbolId(exit)}`}
-              x={center.x - EXIT_MARKER_SIZE / 2}
-              y={center.y - EXIT_MARKER_SIZE / 2}
-              width={EXIT_MARKER_SIZE}
-              height={EXIT_MARKER_SIZE}
-            />
-          </g>
-        );
-      })}
-    </g>
-  );
 }

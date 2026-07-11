@@ -8,10 +8,9 @@
 // Selector contract: this spec depends on src/ui/solid/land_auction_panel.tsx's
 // [data-land-auction] panel root, #land-bid-button, and [data-high-bidder], plus
 // the shared #new-game-button and #land-grant-pass-button controls from earlier
-// phases, the .overworld-svg develop-turn avatar
-// (src/ui/scenes/overworld_scene.tsx, M7's walkable overworld/town replaced the
-// interim store overlay), and window.__tickOwnership from
-// src/ui/scenes/scene_manager.ts.
+// phases, the #town-scene develop-turn avatar (src/ui/scenes/town_scene.tsx;
+// every human develop turn now starts in town at the corral, WP-4B), and
+// window.__tickOwnership from src/ui/scenes/scene_manager.ts.
 
 import { test, expect } from "@playwright/test";
 
@@ -73,8 +72,8 @@ test("land auction: panel renders, ticks advance, and develop eventually begins"
 
   // The land-auction phase (all colony slots in this round's chain) settles on
   // its own and the round reaches development, with no human action required:
-  // the human's develop turn mounts the walkable overworld avatar.
-  const developAvatar = page.locator(".overworld-svg [data-actor='player-0']");
+  // the human's develop turn mounts in town at the corral.
+  const developAvatar = page.locator("#town-scene [data-actor='player-0']");
   await expect(developAvatar).toHaveCount(1, { timeout: 30_000 });
 
   expect(pageErrors).toEqual([]);

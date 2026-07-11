@@ -57,7 +57,7 @@ export const WALKER_CELL_PX = 64;
  * Source: planet_mule Properties movement speed (land analog); mapped by
  * mule_fidelity_plan.md's task ("Speed: 80 px/s land analog (PM Properties)").
  *
- * Recalibrated (WP-2A, 2026-07-10) from 80 to 320: a food-starved develop
+ * Recalibrated (2026-07-10) from 80 to 320: a food-starved develop
  * turn's tick budget (`DEVELOP_TICKS_MIN` = 5 ticks) is a GAMEPLAY TIMING
  * constraint the walk speed must fit inside, and the corral purchase panel
  * (walk-in -> confirm -> dismiss -> walk-back-to-street) and the
@@ -73,8 +73,9 @@ export const WALKER_CELL_PX = 64;
  * itself (a `walk_stall`, worse than a thin timing margin) because
  * `WALK_TAP_MS` (`tests/e2e/walkthrough_helpers.mjs`) is a fixed 120ms tap
  * length outside this package's touch points -- widening the timing margin
- * further needs that constant retuned too (see the WP-8A follow-on note in
- * the audit doc), not another walker-speed increase.
+ * further needs that constant retuned too (see the follow-on note in
+ * docs/active_plans/audits/mule_trip_timing.md), not another walker-speed
+ * increase.
  */
 export const WALKER_SPEED_PX_PER_SEC = 320;
 

@@ -4,9 +4,10 @@
 // Selector contract: this spec depends on the ?seed= / ?speed= hooks in
 // src/ui/main.tsx, the #new-game-button title control, the
 // #land-grant-pass-button phase control, the town scene's #town-scene
-// container and avatar g[data-actor="player-0"] with data-carrying and
-// data-at-door (src/ui/scenes/town_scene.tsx), and the corral purchase panel
-// itself (src/ui/solid/corral_purchase_panel.tsx): its [data-corral-panel]
+// container (mounted at develop-turn start, WP-4B) and avatar
+// g[data-actor="player-0"] with data-carrying (src/ui/scenes/town_scene.tsx),
+// and the corral purchase panel itself (src/ui/solid/corral_purchase_panel.tsx):
+// its [data-corral-panel]
 // root with role="dialog"/aria-modal, a reactive
 // data-corral-outcome="buyable|purchased|carrying|out_of_stock|insufficient_funds"
 // attribute, the .corral-purchase-figures dl (price/stock/funds), the
@@ -103,8 +104,12 @@ async function claimLandGrantPlotAt(page, targetRow, targetCol) {
 
 /**
  * Start a game, claim the plot at (claimRow, claimCol), pass the rest of the
- * land grant, and wait until the human's develop turn is up (the overworld
- * avatar mounts). Returns the overworld avatar locator.
+ * land grant, and wait until the human's develop turn is up. Every human
+ * develop turn now starts IN TOWN at the corral (WP-4B), so this waits on the
+ * town scene mounting -- there is no overworld avatar to wait on at turn
+ * start, and no walk onto the town cell is needed (an extra walk here would
+ * nudge the avatar off the exact corral-column alignment walkIntoCorral below
+ * depends on). Returns the town avatar locator.
  */
 async function reachHumanDevelop(page, claimRow, claimCol) {
   await page.locator("#new-game-button").click();
@@ -114,19 +119,7 @@ async function reachHumanDevelop(page, claimRow, claimCol) {
   );
   await expect(claimedPlot).toHaveAttribute("data-owner", "0");
   await passThroughLandGrant(page);
-  const avatar = page.locator(".overworld-svg [data-actor='player-0']");
-  await expect(avatar).toHaveCount(1, { timeout: 30_000 });
-  return avatar;
-}
-
-/**
- * Walk the overworld avatar onto the town cell (one cell right of its spawn) and
- * wait for the town interior to mount. Returns the town avatar locator.
- */
-async function enterTown(page) {
-  await page.keyboard.down("ArrowRight");
-  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 15_000 });
-  await page.keyboard.up("ArrowRight");
+  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 30_000 });
   return page.locator("#town-scene [data-actor='player-0']");
 }
 
@@ -177,7 +170,6 @@ test("corral: walking in shows the buyable outcome, figures, and auto-focuses Bu
   test.setTimeout(90_000);
   await page.goto(`/${GAME_QUERY}`);
   await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  await enterTown(page);
 
   const panel = await walkIntoCorral(page);
   await expect(panel).toHaveAttribute("data-corral-outcome", "buyable");
@@ -205,8 +197,7 @@ test("corral: a mouse click on Buy confirms the purchase and updates the figures
 }) => {
   test.setTimeout(90_000);
   await page.goto(`/${GAME_QUERY}`);
-  await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  const townAvatar = await enterTown(page);
+  const townAvatar = await reachHumanDevelop(page, 2, TOWN_COL - 1);
 
   const panel = await walkIntoCorral(page);
   const before = await readCorralFigures(panel);
@@ -232,8 +223,7 @@ test("corral: a mouse click on Buy confirms the purchase and updates the figures
 test("corral: an Enter keypress confirms the pre-focused Buy button", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto(`/${GAME_QUERY}`);
-  await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  const townAvatar = await enterTown(page);
+  const townAvatar = await reachHumanDevelop(page, 2, TOWN_COL - 1);
 
   const panel = await walkIntoCorral(page);
   // Re-assert (not just trust) that Buy carries focus right before the
@@ -252,8 +242,7 @@ test("corral: an arrow key moves focus to Leave before Enter, which declines the
 }) => {
   test.setTimeout(90_000);
   await page.goto(`/${GAME_QUERY}`);
-  await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  const townAvatar = await enterTown(page);
+  const townAvatar = await reachHumanDevelop(page, 2, TOWN_COL - 1);
 
   const panel = await walkIntoCorral(page);
   const buyButton = panel.locator('[data-corral-action="buy"]');
@@ -280,8 +269,7 @@ test("corral: re-entering with a M.U.L.E. already in tow shows the carrying outc
 }) => {
   test.setTimeout(90_000);
   await page.goto(`/${GAME_QUERY}`);
-  await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  const townAvatar = await enterTown(page);
+  const townAvatar = await reachHumanDevelop(page, 2, TOWN_COL - 1);
 
   // Buy once (mouse click, matching the other success-path test) and dismiss.
   const firstPanel = await walkIntoCorral(page);

@@ -424,17 +424,24 @@ test("town scene fixture renders non-blank and on-palette", async ({ page }) => 
   await expect(page.locator("#town-scene")).toBeVisible();
 
   const image = await screenshotPage(page);
-  // Measured (2 consecutive local runs, byte-identical): coverage 0.7363;
-  // palette conformance 0.9991. Coverage sits far higher than the other
-  // scenes here: the walkable town interior fills nearly the whole viewport
-  // with building/floor art, leaving little of the bgDeep sheet visible.
+  // Recalibrated per docs/active_plans/reports/town_street_visual_acceptance.md
+  // (WP-3C): the old 9x5 grid town measured coverage 0.7363, which set the
+  // prior 0.4 floor. That grid town was retired and rebuilt as a
+  // mode-composed scrolling street with a dark night-industrial palette.
+  // Measured on the new town: fixture (this test) ~0.3064, in-game ~0.341.
+  // The sky band, town container, and facade plate all sit within the
+  // deltaE-8 background tolerance of bgDeep, so they register as
+  // "background" even though they are painted content; a dark side-view
+  // street will never approach the old grid town's fill. The floor is set
+  // to 0.24, about 20% margin below the measured 0.3064, still catching a
+  // blank or collapsed render while admitting the real scene.
   const coverage = computeCoverageRatio(
     image,
     BG_DEEP_RGB,
     BACKGROUND_DELTA_E_TOLERANCE,
     FULL_PAGE_STRIDE,
   );
-  expect(coverage, `coverage ratio ${coverage}`).toBeGreaterThanOrEqual(0.4);
+  expect(coverage, `coverage ratio ${coverage}`).toBeGreaterThanOrEqual(0.24);
   expect(coverage, `coverage ratio ${coverage}`).toBeLessThanOrEqual(0.9);
 
   const conformance = computePaletteConformanceRatio(

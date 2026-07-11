@@ -1,5 +1,20 @@
 # The town analysis
 
+## Status: shipped 2026-07-11
+
+The mode-composed, horizontally scrolling street this document proposes was
+implemented and closed on 2026-07-11. The proposal below reads in the
+present tense as open work, but it is not: the "Replacement topology",
+"Geometry contract", "Camera contract", and "Fix sequence" are all shipped.
+See [ROADMAP.md](ROADMAP.md) and [CHANGELOG.md](CHANGELOG.md) for the shipped
+record and work-package history.
+
+The "Current town structure" section and its `9 x 5` grid diagram below
+describe the RETIRED model this rebuild REPLACED, not the current town. They
+are kept for the historical geometry rationale that motivated the rebuild; do
+not read them as the live layout. The "Replacement topology" section is the
+model that shipped.
+
 ## Decision
 
 Replace the current `9 x 5` open floor with a horizontally scrolling NES-style
@@ -338,14 +353,22 @@ the world geometry does not need another redesign.
 
 ## Replacement topology
 
-Use one horizontal world and one shallow interaction axis:
+Amended 2026-07-10 (user decision, same day the topology choice was settled):
+the town is MODE-COMPOSED, not a fixed seven-facade street. Beginner renders a
+smaller town; larger modes add the facades their features need; no mode renders
+an inactive or placeholder destination. This replaces the earlier fixed
+seven-facade recommendation. This amendment and the town rebuild plan cite the
+same composition table so coders receive one consistent authority.
+
+Use one horizontal world and one shallow interaction axis, but generate the
+facade row per mode by filtering a shared storefront catalog:
 
 ```text
-WORLD SPACE, wider than viewport
+WORLD SPACE, wider than viewport (composed per mode)
 
-< EXIT | MINING | ENERGY | FARM | M.U.L.E. | PUB | LAND | ASSAY | EXIT >
-         facade   facade   facade   CORRAL   facade facade facade
-         [door]   [door]   [door]   [door]  [door] [door] [door]
+< EXIT | <ordered catalog facades selected for the active mode> | EXIT >
+         facade   facade   ...   CORRAL   ...   facade
+         [door]   [door]   ...   [door]   ...   [door]
 ==================================================================
                    walkable street and player lane
 ------------------------------------------------------------------
@@ -355,39 +378,82 @@ WORLD SPACE, wider than viewport
                  +------------------------------+
 ```
 
-The world should be at least `1.5` viewport widths and preferably show no more
-than four storefronts at once at the reference desktop size. The exact width
-must be tuned against development time, but the camera must have to scroll for
-the player to see both ends.
+### Storefront catalog
 
-Recommended order:
+A single catalog holds every known facade record (stable id, facade width, door
+center, label, resource icon, ambient text kind, panel kind, and an availability
+predicate). Each mode composes its street by filtering the catalog with explicit
+town-layer capability flags: `landOfficeVisible`, `assayVisible`, and
+`miningOutfits` (the resource list the Mining panel offers). Composition is
+presentation-only; it changes no engine mechanics. The engine gates nothing by
+mode except round count.
 
-1. Mining Outfitting
-2. Energy Outfitting
-3. Farm Outfitting
-4. M.U.L.E. Corral
-5. Pub
-6. Land Office
-7. Assay Office
+### Per-mode composition
 
-The corral remains the starting anchor. Common outfit errands go left; turn-end
-and information errands go right. This reproduces the NES route choice while
-keeping every destination in a predictable order.
+The composition is derived from `OTHER_REPOS/mule_rules.md` (Beginner lines
+40-44; Standard 45-49 adds land auctions, so the Land Office, per line 145;
+Tournament 51-55 adds Crystite and the Assay office, per lines 54, 108, 144,
+since assay is crystite-tied and crystite is Tournament-only):
+
+| Facade | Beginner | Standard | Tournament (catalog-ready, no engine mode yet) |
+| --- | --- | --- | --- |
+| Mining Outfitting | yes (smithore) | yes (smithore) | yes (smithore + crystite) |
+| Energy Outfitting | yes | yes | yes |
+| Farm Outfitting | yes | yes | yes |
+| M.U.L.E. Corral (spawn) | yes | yes | yes |
+| Pub | yes | yes | yes |
+| Land Office | no | yes | yes |
+| Assay Office | no | no | yes |
+
+So the composed streets are:
+
+- Beginner: Mining, Energy, Farm, Corral, Pub (5 facades).
+- Standard: the beginner set plus the Land Office (6 facades).
+- Tournament (a catalog entry, rendered by no current engine mode): plus the
+  Assay Office and the crystite option inside Mining (7 facades).
+
+NES order is preserved among the included facades: Mining, Energy, Farm, Corral,
+Pub, Land, Assay. A destination absent from a mode is not rendered; there is no
+present-but-closed facade.
+
+### Derived geometry
+
+World width, facade positions, door centers, the corral spawn, camera bounds,
+ambient info, and walker routes all DERIVE from the composed list using shared
+spacing and padding constants. The exact spacing is tuned against development
+time, but every mode's composed world stays wider than the viewport, so the
+camera must scroll for the player to see both ends in every mode. The town
+always renders at full scale. Do not force an artificial width on the smaller
+beginner town: the beginner street is genuinely shorter than the standard street
+while still exceeding the viewport on its own composed width.
+
+The corral remains the starting anchor in every composition. Common outfit
+errands go left; turn-end and information errands go right. This reproduces the
+NES route choice while keeping every included destination in a predictable
+order.
 
 ## Geometry contract
 
 The replacement should use world-space rectangles, not a semantic cell grid.
 Keep rendering, collision, interaction, camera, and tests on the same
-`TownWorld` data, but give that source of truth the correct model.
+`TownWorld` data, but give that source of truth the correct model. `TownWorld`
+is the street COMPOSED for the active mode: a mode filter selects an ordered
+subset of the storefront catalog, and every world coordinate derives from that
+subset.
 
-Each storefront record needs:
+The storefront catalog holds one record per known facade; each record needs:
 
 - stable destination id
-- world `x`, facade width, and door center
+- facade width and door center (world `x` is assigned during composition, not
+  stored per record)
 - label and resource icon
 - ambient price or status text
-- availability by game mode
+- an availability predicate driven by the town-layer capability flags
 - panel/action kind
+
+Composition assigns world `x` in NES order among the included facades, then
+derives world width, the corral spawn, camera bounds, and the two endpoint exit
+zones from that ordered composed subset.
 
 Define three vertical bands:
 
@@ -399,6 +465,10 @@ STREET LANE      The normal walkable band.
 
 Required invariants:
 
+- The composed street contains exactly the facades the active mode's flags
+  select, in NES order, with no inactive or placeholder facade.
+- World width derives from the composed subset and exceeds the viewport in
+  every mode.
 - No occupiable world point exists behind a facade.
 - A closed door blocks the threshold.
 - An open door permits movement only into the shallow threshold.
@@ -424,8 +494,8 @@ The camera is part of the layout, not optional polish.
 - Do not scale the whole world down to fit the viewport.
 - At narrow widths, show fewer storefronts rather than shrinking signs below
   legibility.
-- Make storefront labels and door state remain readable at `320 px`, `480 px`,
-  `768 px`, and the reference desktop viewport.
+- Make storefront labels and door state remain readable at the supported
+  viewport widths, from the `1200 x 750` minimum on up.
 
 A camera-follow test should use deterministic world coordinates. Browser tests
 should assert camera offset and visible storefront identities, not pixel-perfect
@@ -516,11 +586,15 @@ Replace them with tests that encode the desired world.
 
 ### Unit tests
 
-- The world width exceeds the viewport width.
-- Storefront order matches the NES street order.
-- Spawn is at the corral street position.
-- Only left and right exits exist.
-- Every storefront threshold is reachable from spawn by the street lane.
+Parameterize the geometry tests over the current modes; the town is composed per
+mode, so a single universal geometry is no longer the assumption.
+
+- In every mode, the composed world width exceeds the viewport width.
+- In every mode, storefront order matches NES order among the included facades.
+- Spawn is at the corral street position in every mode.
+- Only left and right exits exist in every mode.
+- Every composed storefront threshold is reachable from spawn by the street
+  lane.
 - No point behind any facade is reachable.
 - Holding Up against a non-door facade never changes the avatar's inner depth.
 - A closed door blocks the threshold.
@@ -528,7 +602,21 @@ Replace them with tests that encode the desired world.
 - Door entry fires once and cannot continue through the facade.
 - Closing or cancelling a panel returns the avatar to a valid street point.
 - Camera offset follows the avatar inside its soft zone and clamps at both ends.
-- Mining options vary by mode without changing street geometry.
+
+Per-mode composition (presence and absence):
+
+- Each current mode composes exactly its confirmed storefront sequence: beginner
+  is Mining, Energy, Farm, Corral, Pub; standard adds the Land Office.
+- Each mode omits the facades its flags exclude: the beginner street contains no
+  Land Office facade and no Assay Office facade; the standard street contains no
+  Assay Office facade.
+- No mode renders a destination whose feature is unavailable (no
+  present-but-closed facade).
+- Mining outfit options vary by mode (smithore only in the current modes,
+  smithore plus crystite in the Tournament catalog entry) without adding or
+  removing the Mining facade or changing the rest of the composed geometry.
+- Composition is total over the availability flags: a future mode token composes
+  a valid street (catalog-level property test, no new game mode added).
 
 ### Browser tests
 
@@ -606,11 +694,17 @@ implementation.
 
 ## Acceptance gate
 
-The town layout is fixed only when all of these are true:
+The town layout is fixed only when all of these are true (mode-composed model,
+amended 2026-07-10):
 
-- The town is a horizontally scrolling street wider than the viewport.
-- The corral is the development-turn spawn anchor.
-- The ordered facade row is Mining, Energy, Farm, Corral, Pub, Land, Assay.
+- In every mode, the town is a horizontally scrolling street wider than the
+  viewport.
+- The corral is the development-turn spawn anchor in every mode.
+- Each mode composes its street from the shared catalog in NES order among the
+  included facades (beginner: Mining, Energy, Farm, Corral, Pub; standard adds
+  the Land Office), with world width, spawn, exits, and camera bounds derived
+  from that composed list.
+- No mode renders an inactive or placeholder destination.
 - Only left and right endpoint exits return to the overworld.
 - The avatar cannot occupy any point through or behind a facade.
 - Door openings are bounded thresholds, not tunnels.
@@ -618,7 +712,9 @@ The town layout is fixed only when all of these are true:
 - Storefront labels, prices, and door state are readable without memorization.
 - Economic actions occur only after explicit confirmation inside a panel.
 - Desktop, keyboard, mouse-panel, and touch-d-pad flows remain usable.
-- Tests reject the old behind-building and four-exit behavior.
+- Tests reject the old behind-building and four-exit behavior and prove each
+  mode's composition, including the presence and absence of mode-specific
+  facades.
 
 The current collision module should not be patched by adding more rectangles to
 the `9 x 5` floor. Its consistency is not the problem. It consistently enforces

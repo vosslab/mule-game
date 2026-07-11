@@ -1,5 +1,5 @@
 // Corral purchase panel: an in-stage modal transaction screen for the
-// human's M.U.L.E. purchase at the corral door (WP-4A/4B), replacing the old
+// human's M.U.L.E. purchase at the corral door, replacing the old
 // one-line `buyAtCorral` notice. Walking into the corral always opens this
 // panel; the `buy_mule` dispatch fires ONLY on an explicit confirm here, and
 // every outcome -- success or any failure -- shows the same price, stock,
@@ -39,7 +39,7 @@ import { HUMAN_ID } from "../game_driver";
 import { bindKeys, bindRovingFocus } from "../input";
 
 /**
- * The five observable panel states (plan WP-4A exit criteria): `buyable` is
+ * The five observable panel states: `buyable` is
  * the eligible-purchase state before confirmation, `purchased` is the
  * completed-purchase result shown right after an explicit confirm, and the
  * remaining three are the failure states -- a mule already in tow, an empty

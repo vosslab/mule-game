@@ -10,116 +10,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-  TOWN_AVATAR,
   OVERWORLD_AVATAR,
   directionToward,
   walkTo,
-  parseTranslateX,
-  horizontalSeekKey,
-  walkTownAvatarToDoor,
   walkOverworldAvatarToCell,
 } from "./e2e/walkthrough_helpers.mjs";
 import { firstStepAvoiding } from "./e2e/walkthrough_overworld.mjs";
 
 //============================================
-// Town street geometry mirrored from src/ui/scenes/zones.ts for the seek fakes:
-// a 64px cell, door centers at col*64+32 for the left-to-right door order.
+// Overworld grid geometry mirrored from src/ui/scenes/zones.ts for the seek
+// fakes: a 64px cell.
 const CELL_PX = 64;
-const DOOR_CENTERS = {
-  corral: 96,
-  "counter-food": 160,
-  "counter-energy": 224,
-  "counter-smithore": 288,
-  "counter-crystite": 352,
-  pub: 416,
-  assay: 480,
-};
-
-//============================================
-/**
- * The door whose 64px cell contains `x`, mirroring town_scene.tsx's per-frame
- * townDoorAt so a fake avatar's data-at-door tracks its pixel position.
- *
- * @param x - The avatar center x in town pixel space.
- * @returns The door id, or null in the gaps.
- */
-function doorAtX(x) {
-  for (const [door, center] of Object.entries(DOOR_CENTERS)) {
-    if (x >= center - CELL_PX / 2 && x < center + CELL_PX / 2) {
-      return door;
-    }
-  }
-  return null;
-}
-
-//============================================
-/**
- * Build a fake town page whose avatar moves along the street: each walk tap
- * (down, waitForTimeout(ms), up) advances the avatar `pxPerMs * ms` in the held
- * direction, and data-at-door tracks the resulting pixel column exactly like
- * town_scene.tsx. A `pxPerMs` above CELL_PX / tapMs reproduces the fast-speed
- * overshoot regime the seek must correct.
- *
- * @param startX - The avatar's starting center x.
- * @param pxPerMs - Pixels moved per real-ms of held key (0 = motionless).
- * @returns `{ page, state }` where state.x is the live avatar position.
- */
-function townSeekFake(startX, pxPerMs) {
-  const state = { x: startX, held: null, lastTapMs: 0 };
-  const page = {
-    async $(selector) {
-      if (selector === TOWN_AVATAR) {
-        return {
-          async getAttribute(name) {
-            if (name === "transform") {
-              return `translate(${state.x} 0)`;
-            }
-            if (name === "data-at-door") {
-              return doorAtX(state.x);
-            }
-            return null;
-          },
-        };
-      }
-      const marker = selector.match(/^\[data-door-for='(.+)'\] use$/);
-      if (marker !== null) {
-        const center = DOOR_CENTERS[marker[1]];
-        if (center === undefined) {
-          return null;
-        }
-        return {
-          async getAttribute(name) {
-            if (name === "x") {
-              return String(center - 14);
-            }
-            if (name === "width") {
-              return "28";
-            }
-            return null;
-          },
-        };
-      }
-      return null;
-    },
-    keyboard: {
-      async down(key) {
-        state.held = key;
-      },
-      async up() {
-        if (state.held === "ArrowRight") {
-          state.x += pxPerMs * state.lastTapMs;
-        } else if (state.held === "ArrowLeft") {
-          state.x -= pxPerMs * state.lastTapMs;
-        }
-        state.held = null;
-      },
-    },
-    async waitForTimeout(ms) {
-      state.lastTapMs = ms;
-    },
-  };
-  return { page, state };
-}
 
 //============================================
 /**
@@ -256,81 +157,6 @@ test("walkTo without a report still returns false on stall (no throw)", async ()
   });
 
   assert.equal(reached, false);
-});
-
-//============================================
-test("parseTranslateX reads the x of a translate transform and rejects the rest", () => {
-  assert.equal(parseTranslateX("translate(288 160)"), 288);
-  assert.equal(parseTranslateX("translate( -12.5  4 )"), -12.5);
-  assert.equal(parseTranslateX(null), null);
-  assert.equal(parseTranslateX("rotate(45)"), null);
-});
-
-//============================================
-test("horizontalSeekKey steers toward the target and returns null when aligned", () => {
-  assert.equal(horizontalSeekKey(96, 288), "ArrowRight");
-  // Past the target: the key flips to walk back, which a fixed heading cannot.
-  assert.equal(horizontalSeekKey(326, 288), "ArrowLeft");
-  assert.equal(horizontalSeekKey(288, 288), null);
-});
-
-//============================================
-test("walkTownAvatarToDoor corrects an overshoot past a mid-street door", async () => {
-  // pxPerMs 0.64 at the default 120ms tap steps 76.8px -- over one 64px cell,
-  // so a full tap sails past the target and must be walked back. This is the
-  // exact fast-speed regime that stalled the counter-smithore walk.
-  const { page, state } = townSeekFake(DOOR_CENTERS.corral, 0.64);
-  const report = fakeReport();
-
-  const reached = await walkTownAvatarToDoor(page, report, "counter-smithore");
-
-  assert.equal(reached, true);
-  assert.equal(report.calls.length, 0);
-  // The corrected avatar ends inside the smithore cell, not sailed off east.
-  assert.equal(doorAtX(state.x), "counter-smithore");
-});
-
-//============================================
-test("walkTownAvatarToDoor reaches a mid-street door without overshoot at a safe speed", async () => {
-  // pxPerMs 0.32 steps 38.4px per tap -- under a cell, so the seek arrives
-  // straight without ever needing to reverse.
-  const { page, state } = townSeekFake(DOOR_CENTERS.corral, 0.32);
-  const report = fakeReport();
-
-  const reached = await walkTownAvatarToDoor(page, report, "counter-energy");
-
-  assert.equal(reached, true);
-  assert.equal(report.calls.length, 0);
-  assert.equal(doorAtX(state.x), "counter-energy");
-});
-
-//============================================
-test("walkTownAvatarToDoor rejects a neighbor door and reports a stall when stuck", async () => {
-  // Motionless avatar parked at the crystite door (a neighbor of the target):
-  // the seek must not accept the wrong door, and with no movement possible it
-  // classifies a walk_stall rather than returning true.
-  const { page } = townSeekFake(DOOR_CENTERS["counter-crystite"], 0);
-  const report = fakeReport();
-
-  const reached = await walkTownAvatarToDoor(page, report, "counter-smithore", {
-    budget: 40,
-    stallTaps: 4,
-  });
-
-  assert.equal(reached, false);
-  assert.equal(report.calls.length, 1);
-  assert.equal(report.calls[0].kind, "walk_stall");
-});
-
-//============================================
-test("walkTownAvatarToDoor returns immediately when already at the target door", async () => {
-  const { page } = townSeekFake(DOOR_CENTERS["counter-smithore"], 0);
-  const report = fakeReport();
-
-  const reached = await walkTownAvatarToDoor(page, report, "counter-smithore");
-
-  assert.equal(reached, true);
-  assert.equal(report.calls.length, 0);
 });
 
 //============================================

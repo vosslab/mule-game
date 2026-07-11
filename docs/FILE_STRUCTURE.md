@@ -71,11 +71,19 @@ src/
 |  |             dismissal), and pwa_register.ts (service-worker registration)
 |  +- scenes/    rAF loop (scene_manager.ts) and spatial presentation:
 |  |             overworld/town walking scenes, walker/zones pure math,
+|  |             the mode-composed town world model (town_world.ts catalog +
+|  |             composition + types + tunables, town_collision.ts movement
+|  |             clamp + door state, town_camera.ts camera offset) and the town
+|  |             scene split (town_scene.tsx shell, town_scene_render.tsx SVG,
+|  |             town_interaction.ts interaction state + transitions),
 |  |             AI-actor and wampus presentation timing, auction tween, dpad,
 |  |             replay_scene.tsx + replay_fixture.ts (replay viewer)
 |  +- solid/     Reactive screens and panels (app, title, game, HUD, map
 |  |             layer, land-grant/land-auction/auction/production/scoring
-|  |             panels, event banner, mule-escape vignette, tutorial_hint)
+|  |             panels, the town chrome strip (town_chrome.tsx) and town
+|  |             transaction panels (corral_purchase_panel, outfit_panel,
+|  |             land_office_panel, assay_office_panel), event banner,
+|  |             mule-escape vignette, tutorial_hint)
 |  |             plus ?demo= fixture screens (map, town, ai_actor,
 |  |             mule_escape, wampus)
 |  `- sprites/   SVG sprite defs split by family (terrain, town, mule,

@@ -117,13 +117,50 @@ timing, transfer (WS-E-auction)" for the updated figures.
 - Scoring panel wide-viewport has a loose vertical gap between the event
   message and the score table. Polish, found during the WP-7F visual
   acceptance pass.
+- Pub turn-end reads as a locked/hung screen (user-reported 2026-07-10):
+  walking into the Pub freezes the screen and the turn does not end -- it just
+  waits for the develop timer to expire. The engine is correct: the `gamble`
+  action pays out from the remaining ticks and ends the develop turn
+  (`src/engine/turn.ts`, the gamble case calls `endDevelopTurn`). The defect is
+  UI-side in `src/ui/scenes/town_scene.tsx`: walking into the pub door sets
+  `data-gamble-confirming="true"`, freezes avatar movement, and surfaces the
+  "Gamble and end turn?" prompt only in the `[data-town-notice]` banner --
+  unlike every other shop (corral/outfit/land/assay), the pub has no modal
+  confirm panel. The frozen screen plus an easy-to-miss banner reads as a hang,
+  so the player never presses Enter/Space to confirm and the turn only ends
+  when the timer expires. Candidate fixes for whoever picks this up: (a) give
+  the pub a proper confirm panel consistent with the other town shops (a clear
+  modal with a focused "Gamble and end turn" action and a Leave/Decline
+  action) instead of the notice-banner-plus-freeze affordance; (b) verify
+  Escape/decline restores street movement so the player is not left frozen at
+  the pub door after cancelling (check the pub decline path clears the freeze);
+  (c) reconcile the tutorial hint copy ("Walk into the Pub to end your turn")
+  with the required confirm step -- either the hint mentions confirming, or the
+  confirm is obvious enough that walk-in-then-confirm reads as one intent. This
+  is a UX/discoverability/consistency defect, not a broken dispatch: per
+  [HUMAN_GUIDANCE.md](HUMAN_GUIDANCE.md)'s "Town interaction model"
+  (attempt-then-confirm), the pub should require a confirm, so the fix is to
+  make that confirm clear and consistent, not to auto-end on walk-in. Existing
+  coverage `tests/playwright/pub_gamble.spec.mjs` already proves the confirm
+  works mechanically (Enter gambles and ends the turn; Escape declines with no
+  engine effect), so a fix must keep those specs green or update them
+  intentionally if the affordance changes from notice to modal. Not part of the
+  current town-rebuild plan's scope; file as separate follow-up work.
 - Add a `data-assay-armed` attribute to `town_scene.tsx`: the E2E walker
   currently verifies assay arming via an exact `[data-town-notice]` text
   match, which is brittle if the notice string is ever reworded. Found
   during WP-8B.
-- `town_doors.spec.mjs`'s land-grant sweep-cursor timing test flakes under
-  full parallel suite load (passes isolated and repeated runs; two sightings
-  2026-07-10). Harness robustness candidate, not a product bug.
+- Wire `town_chrome.tsx`'s nearest-storefront field (`data-town-nearest`): it
+  is still a permanently-empty WP-3B/WP-4A stub, not populated and not
+  asserted by any spec (found by the town_street_visual_acceptance.md
+  three-second-read checklist, WP-3C).
+- Resolved (superseded by the town street rebuild): `town_doors.spec.mjs` was a
+  grid-topology spec deleted at the WP-2B scene cutover, so its land-grant
+  sweep-cursor parallel-load flake no longer lives here. The same environmental
+  parallel-load flake class was re-observed and filed under
+  `tests/playwright/corral_purchase.spec.mjs` during WP-6C triage (see the
+  "Developer and testing" entry below) -- a shared land-grant bootstrap timing
+  artifact under parallel worker load, not a product bug.
 - Shipped: town interaction model decision (user request 2026-07-09): "in the
   1990 NES game, you walk up to the door, it opens and you walk in. If door
   is closed, then you cannot walk in. -- for our game, I can walk where ever,
@@ -142,31 +179,65 @@ timing, transfer (WS-E-auction)" for the updated figures.
 ## Developer and testing
 
 - Refactor follow-up from the M6 quality review: extract a shared
-  overshoot-correcting seek core from `walkTownAvatarToDoor` and
-  `walkOverworldAvatarToCell` in `tests/e2e/walkthrough_helpers.mjs`, which
-  duplicate about 60 lines of parallel halving/stall logic. Also align
-  `tests/e2e/e2e_walk_calibration.mjs`'s locally redefined `MAX_WALK_TAPS`
-  with the helpers' constant instead of keeping a second copy.
-  Shipped: `seekAvatarToTarget` shared core landed WP-8A (2026-07-10).
+  overshoot-correcting seek core from the town and overworld avatar seeks in
+  `tests/e2e/walkthrough_helpers.mjs`, which duplicated about 60 lines of
+  parallel halving/stall logic. Shipped: `seekAvatarToTarget` shared core landed
+  WP-8A (2026-07-10). The secondary `MAX_WALK_TAPS` second-copy alignment item
+  is moot -- its other copy lived in `e2e_walk_calibration.mjs`, retired
+  (deleted) at WP-6D.
 - Shipped: `hunt_wampus`/`assay_plot` develop plans now execute spatially
   (`executeHuntWampus`/`executeAssayPlot` in
   `tests/e2e/walkthrough_overworld.mjs`, `executeArmAssay` in
   `walkthrough_town.mjs`), replacing the earlier log-and-end-turn fallback.
   See `docs/CHANGELOG.md` 2026-07-10 (Patch 50, WP-8B).
-- Walker-harness deterministic stall at `WALKER_SPEED_PX_PER_SEC = 320`:
-  seeds 1 and 3 of the walkthrough sweep now stall deterministically at the
-  counter-smithore door ("town avatar left the street"), suspected to be a
-  walker-harness artifact -- the seek/gesture constants (`WALK_TAP_MS`,
-  overshoot correction) were tuned against the old 80 px/s speed and were
-  never retuned for 320 (flagged as a follow-on by WP-2A's audit doc). Needs
-  root-cause diagnosis plus speed-aware tap sizing; diagnostic in flight. See
-  `docs/CHANGELOG.md` 2026-07-10, Decisions and Failures (USER DECISION,
-  sweep gate demotion) and
-  [docs/active_plans/decisions/sweep_gate_demotion.md](active_plans/decisions/sweep_gate_demotion.md).
-- WP-8C deferred evidence: once the walker-harness stall above is resolved,
-  add a forced-plan hook to the harness's develop-plan strategy layer (not
-  the executor/dispatch layer) so `hunt_wampus`/`assay_plot` executors are
-  provably exercised by the sweep counter check, rather than relying on
-  natural single-seed occurrence. The hook must drive the identical
-  production dispatch-table entry and executor code as a naturally
-  generated plan -- it may only override which plan the strategy proposes.
+- Walker-harness deterministic stall at `WALKER_SPEED_PX_PER_SEC = 320`
+  (pre-town-rebuild grid town): seeds 1 and 3 of the walkthrough sweep used
+  to stall deterministically at the counter-smithore door. RESOLVED (WP-6C,
+  2026-07-11) as part of the town street rebuild: the entire grid town and
+  its walker executors were replaced by the mode-composed street model
+  (WP-1A-WP-6A), and the sweep is now 6/6 green (see
+  [docs/active_plans/decisions/sweep_gate_demotion.md](active_plans/decisions/sweep_gate_demotion.md)
+  for the current disposition). A separate walker-level bug of the same
+  shape resurfaced at the new geometry and was fixed in the same pass: the
+  post-panel walk-back (`walkBackToStreet`) used a fixed-tap, one-way south
+  walk that could overshoot the street lane by more than
+  `DOOR_OPEN_RADIUS_PX`'s vertical margin, so the next door (reproducibly
+  "mining" on seed 1) never registered as open. Fixed by converging the
+  walk-back onto the lane with the same gap-proportional, self-correcting
+  seek `walkTownAvatarToDoorX` already used for the horizontal approach
+  (new `walkTownAvatarToStreetLaneY`, `tests/e2e/walkthrough_helpers.mjs`).
+- WP-8C deferred evidence: the walker-harness stall above is resolved, so
+  this precondition is now met. Still open: add a forced-plan hook to the
+  harness's develop-plan strategy layer (not the executor/dispatch layer)
+  so `hunt_wampus`/`assay_plot` executors are provably exercised by the
+  sweep counter check, rather than relying on natural single-seed
+  occurrence. The hook must drive the identical production dispatch-table
+  entry and executor code as a naturally generated plan -- it may only
+  override which plan the strategy proposes.
+- Resolved (WP-6D, 2026-07-11): `tests/e2e/e2e_walk_calibration.mjs` was
+  retired (deleted) rather than rewritten. It assumed the pre-rebuild grid town
+  (overworld-start develop turns, cell-based `walkToDoor`/`TOWN_COL` addressing,
+  Space-key entry), all superseded by the composed-street model (corral spawn IN
+  town, world-coordinate `walkTownAvatarToDoorX`, walk-in-only entry). WP-6B's
+  spacing/gesture experiment already replaced its measurement role with the
+  geometry-derived constants and scratch harnesses recorded in
+  [docs/active_plans/audits/town_spacing_experiment.md](active_plans/audits/town_spacing_experiment.md),
+  and `docs/WALKTHROUGH_GUIDE.md`'s "Calibration record" section now documents
+  the retirement and the locked gap-proportional constants.
+- `tests/playwright/corral_purchase.spec.mjs:267` ("corral: re-entering with
+  a M.U.L.E. already in tow shows the carrying outcome") intermittently
+  fails under a full parallel `npx playwright test tests/playwright/` run
+  but passes 5/5 in isolation (found during WP-6C triage). Root-caused: the
+  failure is NOT in this test's own walk-in/re-entry logic at all -- it is
+  the shared `claimLandGrantPlotAt` bootstrap helper (used identically by
+  every test in the file) timing out waiting for the land-grant sweep
+  cursor to reach its target cell (`sweep cursor never reached (2, 3)`,
+  stuck at `(4, 4)`, 20s budget exceeded). The land-grant sweep cursor is a
+  real-time animation with a fixed wall-clock poll, and under full-suite
+  parallel worker CPU contention it can simply run too slowly to reach the
+  target within the timeout -- reproduced twice in a row under load, clean
+  in isolation both times. This is an environmental parallel-load flake in
+  a pre-existing, non-town helper (land grant, not town entry/exit/coords/
+  interactions), not a race in this test's own timing/waits, so it was
+  documented rather than "fixed" by loosening the spec's wait (which would
+  only mask CPU contention, not address it) or touching production code.

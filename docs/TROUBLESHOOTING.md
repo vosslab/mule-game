@@ -46,19 +46,32 @@ documented.
 
 ## Playwright specs flake walking a character to a door
 
-- Symptom: `tests/playwright/town_scene.spec.mjs` or
+- Symptom: `tests/playwright/town_street.spec.mjs` or
   `tests/playwright/pub_gamble.spec.mjs` intermittently time out or walk the
   avatar past a door, especially under parallel worker load, and re-running
   the same spec alone passes.
-- Cause: a continuous-hold-while-polling walk helper races slow CDP round
-  trips; the avatar can travel further than expected between polls and miss
-  the door tile entirely.
-- Fix: use the bounded-tap walk pattern (hold briefly, release, check the
-  `data-at-door` attribute, repeat) rather than holding the key down while
-  polling. Both `town_scene.spec.mjs`'s `useDoor` helper and
-  `pub_gamble.spec.mjs`'s `walkToDoor` helper now use this pattern
-  (`WALK_TAP_MS=120`, `MAX_WALK_TAPS=60`). Guidance: write any new
-  walk-to-target helpers with bounded taps, never continuous-hold-plus-poll.
+- Cause: a fixed-length or continuous-hold walk races slow CDP round trips.
+  The mode-composed street's walker is fast (about `160 px/s` at the specs'
+  speed), so a single overlong hold can carry the avatar clean past a door's
+  narrow alignment window; with one fixed direction it walks straight out the
+  far endpoint exit before the next poll notices.
+- Fix: walk toward the door by its world coordinate, not by an attribute
+  flag. The current helpers read the door-center world `x` off the rendered
+  facade (`.town-facade-rect`) and seek it with bounded, gap-proportional
+  taps against the avatar's live `data-town-avatar-x`: tap in whichever
+  direction closes the gap, shrink each tap's hold as the remaining distance
+  shrinks (clamped to a small min and max), and stop inside an arrival
+  tolerance. This converges on the door center instead of overshooting the
+  narrow alignment window. `pub_gamble.spec.mjs`'s `walkToDoor` and
+  `town_street.spec.mjs`'s `walkAvatarToX` both use this seek; a pure
+  horizontal seek never crosses a door threshold (that needs a separate Up
+  hold), so repositioning cannot trigger an accidental walk-in.
+- Guidance: write any new walk-to-target helper as a world-coordinate seek
+  with gap-proportional bounded taps, never a fixed-length or
+  continuous-hold walk. The harness-wide gesture timings are documented in
+  [WALKTHROUGH_GUIDE.md](WALKTHROUGH_GUIDE.md) and derived in
+  `tests/e2e/walkthrough_helpers.mjs`; reuse those rather than inventing new
+  per-spec hold constants.
 
 ## Title screen shows "Saved game unavailable for this version."
 

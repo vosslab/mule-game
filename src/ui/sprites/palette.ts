@@ -42,6 +42,17 @@ export const PALETTE = {
   // where player2's tinted body-fill alone does not (1.05:1).
   keylineLight: "#ffffff",
 
+  // Town street surfaces (facade street): registers the town scene's
+  // paved-street colors so the palette-conformance gate (tests/playwright/
+  // visual_render.spec.mjs) recognizes them. Both sit past the 20-deltaE
+  // conformance bar from every prior token (measured deltaE ~21.1 and ~20.5
+  // respectively against the nearest prior token, bgDeep) and cover a
+  // meaningful area of the rendered town, so they need their own tokens
+  // rather than being absorbed as background. Values match src/style.css's
+  // `.town-street-surface` and `.town-street-worn` fills; do not diverge.
+  townStreet: "#26241e",
+  townStreetWorn: "#1c1a16",
+
   // Terrain tile fills
   terrainPlain: "#7c9a4e",
   terrainRiver: "#3a7ca5",

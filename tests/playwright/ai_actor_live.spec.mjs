@@ -7,6 +7,15 @@
 // follows `state.players[0].species`, not a hardcoded player-slot index).
 // Player 0 is always the human and always picks first in round 1
 // (src/engine/land_grant.ts).
+//
+// Town-first navigation (WP-4B): every human develop turn now starts IN TOWN
+// at the corral (src/ui/scenes/human_develop_layer.tsx), so ending the human's
+// own turn targets town_scene.tsx's `.town-end-turn-button` rather than the
+// overworld-only `.develop-end-turn-button`. The species-select test proves
+// overworld_scene.tsx's wiring specifically, so it walks the town avatar out
+// the left exit (`.town-avatar` movement never crosses a door threshold,
+// matching town_street.spec.mjs's own left-exit test) before reading the
+// overworld avatar's `<use href>`.
 
 import { test, expect } from "@playwright/test";
 
@@ -52,9 +61,10 @@ test("AI actor mounts live in place of the old WaitingPanel, and Skip advances t
   await claimCurrentLandGrantPlot(page);
   await passThroughLandGrant(page);
 
-  // The human's own turn: end it immediately so the next (AI) player's
-  // develop turn begins.
-  const endTurnButton = page.locator(".develop-end-turn-button");
+  // The human's own turn starts in town; end it immediately so the next (AI)
+  // player's develop turn begins.
+  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 30_000 });
+  const endTurnButton = page.locator(".town-end-turn-button");
   await expect(endTurnButton).toBeVisible({ timeout: 30_000 });
   await endTurnButton.click();
 
@@ -84,7 +94,12 @@ test("species select: the human avatar's sprite reflects the title-screen pick",
   await claimCurrentLandGrantPlot(page);
   await passThroughLandGrant(page);
 
+  // Walk the town avatar out the left exit to reach the overworld avatar this
+  // test actually verifies (see module doc).
+  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 30_000 });
+  await page.keyboard.down("ArrowLeft");
   const avatarUse = page.locator(".overworld-svg [data-actor='player-0'] use").first();
-  await expect(avatarUse).toBeVisible({ timeout: 30_000 });
+  await expect(avatarUse).toBeVisible({ timeout: 20_000 });
+  await page.keyboard.up("ArrowLeft");
   await expect(avatarUse).toHaveAttribute("href", "#sprite-species-flapper-frame1");
 });

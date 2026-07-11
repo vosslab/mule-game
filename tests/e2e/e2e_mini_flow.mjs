@@ -4,10 +4,11 @@
 //
 // It builds the production bundle, serves dist/ on a random loopback port, and
 // drives one real UI flow through Chromium: New Game -> claim a land-grant plot
-// -> reach the human develop turn (the walkable overworld avatar mounts and the
-// develop panel offers End turn) -> assert the game advanced with zero page
-// errors. Exits non-zero on any failure so a broken UI flow fails a CI run
-// loudly. The full seeded playthrough lives in e2e_full_game.mjs.
+// -> reach the human develop turn (every human develop turn now spawns in town
+// at the corral, WP-4B, so the walkable town avatar mounts) and the develop
+// panel offers End turn -> assert the game advanced with zero page errors.
+// Exits non-zero on any failure so a broken UI flow fails a CI run loudly. The
+// full seeded playthrough lives in e2e_full_game.mjs.
 //
 // Uses playwright-core (not the "playwright" / "@playwright/test" packages) so
 // this browser-driving .mjs may live under tests/e2e/ without tripping the
@@ -75,14 +76,22 @@ async function runFlow(baseUrl) {
     // Pass any further land-grant turns until the develop phase takes over.
     await passThroughLandGrant(page);
 
-    // Reach the human's develop turn: the walkable overworld avatar mounts and
-    // the develop panel's End turn button appears, proving the develop phase
+    // Reach the human's develop turn: every human develop turn now spawns in
+    // town at the corral (WP-4B), so the walkable town avatar mounts, and the
+    // develop panel's End turn button appears, proving the develop phase
     // reached the human through the reducer and scene manager.
-    await page.waitForSelector(".overworld-svg [data-actor='player-0']", {
+    await page.waitForSelector("#town-scene [data-actor='player-0']", {
       state: "visible",
       timeout: 30_000,
     });
-    await page.waitForSelector(".develop-end-turn-button", { state: "visible", timeout: 30_000 });
+    // The End turn control's `data-action` hook is shared by the town chrome
+    // strip's button (town_chrome.tsx, where a turn now starts) and the
+    // overworld DevelopPanel's button, so this selector holds in either
+    // location the develop phase currently renders it.
+    await page.waitForSelector("[data-action='develop-end-turn']", {
+      state: "visible",
+      timeout: 30_000,
+    });
 
     if (pageErrors.length > 0) {
       throw new Error(`page errors during flow: ${pageErrors.join("; ")}`);

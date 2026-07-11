@@ -43,7 +43,6 @@ handler in the matching driver.
 | `node --import tsx tests/e2e/e2e_walkthrough.mjs --seed 3 --mode beginner` | One run, directly. `--mode` is `beginner` or `standard`; `--speed` overrides the calibrated `WALKER_SPEED`; `--screenshots <dir>` overrides the default screenshots directory; `--passive` restores the M2 baseline (passive fallbacks for every phase) instead of active play; `--bootstrap-only` just proves the game reaches the first `land_grant` phase. |
 | `node --import tsx tests/e2e/e2e_walkthrough_sweep.mjs` | Release gate. Runs the recorded seed x mode matrix sequentially and checks cross-matrix coverage (see Sweep coverage below). |
 | `node --import tsx tests/e2e/e2e_walkthrough_sweep.mjs --find-seeds` | Deterministic forward scan (seeds 1-100) for a replacement seed set, used only when the recorded set stops satisfying coverage. |
-| `node --import tsx tests/e2e/e2e_walk_calibration.mjs` | Regenerates the timing calibration matrix (see Calibration below). |
 
 `--import tsx` is required on every one of these: the walker modules import
 sibling `.ts` engine and AI files by extensionless specifier, which tsx's
@@ -54,7 +53,6 @@ resolver follows and Node's own type-stripping resolver does not.
 | File | Written by | Contents |
 | --- | --- | --- |
 | `test-results/walker/playthrough_report.json` | `e2e_walkthrough.mjs` (every run, success or failure, via a `try`/`finally` wrapping the whole bootstrap/phase-loop/invariant-check sequence) | `run` (seed, mode, speed, timestamps, `finalRound`, `colonyFailed`), `log` (severity-tagged entries), `phaseTimings`, `failure` (`null` on a clean run), `counters`. |
-| `test-results/walker/calibration.json` | `e2e_walk_calibration.mjs` | The full `speed x WALK_TAP_MS` matrix, per-row door-reach and errand results, and the chosen winning row. |
 | `test-results/walker/sweep/sweep_summary.json` | `e2e_walkthrough_sweep.mjs` | Per-run report copies, a worst-first table, per-run pass/fail against the release rules, `matrixCoverage` (the five coverage booleans, combined with OR across the whole matrix), and `matrixCoverageSatisfied`. |
 | `test-results/walker/phase_NN_<kind>.png`, `initial_state.png` | `e2e_walkthrough.mjs` | One screenshot per phase-kind transition, diagnostic only (never asserted on). |
 
@@ -98,7 +96,7 @@ means, and the first response:
 | `console_error` | The page emitted a `console.error` not matched by `EXPECTED_NOISE`. | Fix the app-origin console error at its source; do not grow the noise allowlist beyond the documented favicon case. |
 | `page_error` | An uncaught `pageerror` fired in the browser. | Read the message for the throwing module and fix the underlying bug; this always indicates a real app or harness defect. |
 | `network_error` | A request failed outright, or a response returned a non-2xx/3xx status. | Check whether `dist/` is stale (see stale-dist rebuild below) or a genuinely broken asset reference. |
-| `run_stalled` | The whole-run wall-clock budget (`RUN_BUDGET_MS_BY_MODE`) elapsed before scoring was reached. | Check the last logged phase transition; a single slow phase inside budget is fine, but a full round taking longer than `ROUND_BUDGET_MS` warrants a rerun of `e2e_walk_calibration.mjs`. |
+| `run_stalled` | The whole-run wall-clock budget (`RUN_BUDGET_MS_BY_MODE`) elapsed before scoring was reached. | Check the last logged phase transition; a single slow phase inside budget is fine, but a full round consistently exceeding `ROUND_BUDGET_MS` warrants re-measuring the gesture constants against the composed street (see Calibration record below). |
 | `invariant_violation` | `assertActiveInvariants` found `humanTurnsCompleted` did not equal the rounds reached at scoring -- the one hard active-mode invariant. | This is deterministic; treat any occurrence as a real bug in the turn-counting or phase-loop logic, not test flake. |
 | `auction_stalled` | `driveAuction` exceeded `MAX_TICKS_PER_AUCTION`, its defensive tick ceiling. | Check for a role-panel click on a tick where the panel no longer renders (see the tick-0 role gate below), or a genuinely stuck auction window. |
 
@@ -114,43 +112,36 @@ means, and the first response:
 | `hunt_wampus`/`assay_plot` spatial executors (M8, WP-8B) | These two opportunistic develop plans now have dedicated spatial executors -- `executeHuntWampus`/`executeAssayPlot` (`walkthrough_overworld.mjs`) and `executeArmAssay` (`walkthrough_town.mjs`) -- that walk the avatar to the wampus/plot and fire the interaction. The old log-and-end `skipOpportunisticDevelopPlan` fallback was removed. | Both are free, strictly-beneficial scouting moves the develop AI slips in opportunistically. WP-8C's sweep-counter natural-occurrence proof for them is deferred with the sweep gate demotion (a forced-plan hook, recorded in `docs/TODO.md`), so a given sweep run may still show zero of these plans without indicating a regression. |
 | Town commerce door-executors walk in rather than key-press | `buy_mule`, `outfit_mule`, and `gamble_pub` x-seek to the target door's street column, wait for `data-door-state="open"`, then press north via `walkTownAvatarNorthUntil` until the door's interaction fires. `buy_mule` walks into the corral, which always opens the corral purchase panel (`[data-corral-panel]`, WP-4A/4B); the executor reads `data-corral-outcome` and presses Enter to confirm the buy only when the outcome is buyable. `walkBackToStreet` returns the avatar to the street row after a successful buy/outfit. | Matches the WP-3B walk-in-triggers-shop door model (no separate action-key press to enter) and the attempt-then-confirm town-transaction rule (walk-in opens the panel with no side effects; Enter confirms). The pub still keys Enter/Space for the turn-ending gamble CONFIRM dialog, a distinct in-dialog confirm, not door entry. |
 
-## Calibration table
+## Calibration record
 
-Regenerate with:
+The old speed x `WALK_TAP_MS` sweep harness (`e2e_walk_calibration.mjs`) was
+retired with the town street rebuild. Its grid-town, Space-key-entry model no
+longer matched the shipped composed street, and a fixed tap length no longer fit
+a world whose facade spacing is derived from geometry rather than a cell grid.
 
-```bash
-node --import tsx tests/e2e/e2e_walk_calibration.mjs
-```
+The walker's gesture timing is now geometry-derived: `tapMsForStepPx`
+(`tests/e2e/walkthrough_helpers.mjs`) sizes each tap from the pixel distance the
+avatar must still cover, so the same seek logic self-corrects at any composed
+world width instead of leaning on a hand-tuned constant. The locked spacing and
+gesture constants and the measurement behind them live in the audit doc
+[docs/active_plans/audits/town_spacing_experiment.md](active_plans/audits/town_spacing_experiment.md):
 
-This writes `test-results/walker/calibration.json` and prints the same
-matrix to the console. Measured against seed 33's isolated `?demo=town`
-fixture (metric 1, door-reach reliability over 20 attempts per config) and a
-full bootstrapped develop-turn errand (metric 2, completion within the
-50-tick develop budget):
+- spacing (`town_world.ts`): facade gap 44, world padding 80, door width 64
+- gesture (`walkthrough_helpers.mjs`): `WALK_TAP_MS` 25, `MIN_WALK_TAP_MS` 20,
+  door-align tolerance +-8 px, both derived through `tapMsForStepPx`
+- `WALKER_SPEED = 4` and `PER_ACT_BUDGET_MS = 1000` are unchanged
 
-| Speed | Tap (ms) | Door-reach (20 attempts) | Errand | Notes |
-| --- | --- | --- | --- | --- |
-| 8 | 120 | 20/20 (100%) | PASS | Passes, but sits on the overshoot cliff (no tap-length headroom). |
-| 8 | 180 | 20/20 (100%) | FAIL | A single tap sails past an adjacent errand door (counter/corral one cell apart) and straight out the town edge exit. |
-| 4 | 120 | 20/20 (100%) | PASS | **Winner.** Fastest speed with proven tap-length headroom (both 120ms and 180ms taps pass at this speed). |
-| 4 | 180 | 20/20 (100%) | PASS | Confirms speed=4's headroom; not chosen because tap=120 at the same speed is faster with an identical pass. |
-| 2 | 120 | 20/20 (100%) | PASS | Slowest tested; the conservative floor, matching the proven-safe speed the existing `town_scene.spec.mjs`/`pub_gamble.spec.mjs` specs use. |
+At the locked constants the door-reach probe (`walkTownAvatarToDoorX` across
+every composed door) reaches every door with zero overshoot in both modes:
 
-Winner selection is margin-based, not raw pass-rate-based: the fastest
-speed can pass at one tap length while sitting right on the overshoot
-cliff, so the winner is chosen from passing rows whose speed also has a
-passing row at a strictly longer tap (proven headroom), or whose speed is
-the slowest tested (the always-trusted conservative floor); among those,
-the fastest speed wins, then the shortest tap.
+| Mode | Door-reach | Tolerance | Overshoot failures |
+| --- | --- | --- | --- |
+| beginner | 25/25 (100%) | +-8 px | 0 |
+| standard | 30/30 (100%) | +-8 px | 0 |
 
-Chosen constants (`walkthrough_helpers.mjs`):
-
-- `WALKER_SPEED = 4`
-- `WALK_TAP_MS = 120`
-- `PER_ACT_BUDGET_MS = 1000`
-
-Revert trigger: a greater than 5% door-reach failure across a sweep
-warrants a rerun of the calibration script.
+Revert trigger: a door-reach overshoot regression across a sweep warrants
+re-measuring the gesture constants against the composed street per that audit
+doc, not a rerun of the retired calibration script.
 
 ## Sweep coverage table
 

@@ -3,8 +3,11 @@
 // Selector contract: this spec depends on the ?seed= / ?speed= hooks in
 // src/ui/main.tsx, the #new-game-button title control, the
 // #land-grant-pass-button phase control, the town scene (src/ui/scenes/town_scene.tsx):
-// the #town-scene container with its [data-gamble-confirming] attribute, its
-// avatar (g[data-actor="player-0"] with data-at-door), the [data-town-notice]
+// the #town-scene container (mounted at develop-turn start, WP-4B) with its
+// [data-gamble-confirming] attribute, its avatar (g[data-actor="player-0"]),
+// each door's [data-door-for]/[data-door-state] (WP-4A's open/closed
+// hysteresis, used here to detect arrival at the pub door since there is no
+// longer a per-avatar "at this door" attribute), the [data-town-notice]
 // banner, and the [data-pub-banner]/[data-pub-banner-amount] payout banner
 // (appended straight to document.body, outside #town-scene, since gambling
 // always ends the turn and unmounts the scene the instant it dispatches); the
@@ -15,11 +18,16 @@
 // (src/engine/land_grant.ts).
 //
 // Fixed seed 33 has an all-plains town row (row 2) with the town cell at the
-// row center (col 4), matching town_scene.spec.mjs's own seed choice, so the
+// row center (col 4), matching town_street.spec.mjs's own seed choice, so the
 // walk from the corral spawn to the pub door stays inside one develop turn's
 // tick budget. A modest ?speed=2 keeps the walk-in loop well inside that
 // budget while every motion assertion polls a data attribute rather than
 // timing a frame.
+//
+// Town-first navigation (WP-4B/WP-4C): every human develop turn now starts IN
+// TOWN at the corral (human_develop_layer.tsx), so reachHumanDevelop below
+// waits on #town-scene rather than the overworld avatar, with no walk onto
+// the town cell needed.
 
 import { test, expect } from "@playwright/test";
 
@@ -36,8 +44,9 @@ const PUB_PAYOUT_CAP = 250;
 /**
  * Real-ms duration of one bounded town-walk tap: comfortably under a door
  * cell's ~400ms crossing time at this spec's speed, so a tap can never carry
- * the avatar past an entire door untouched. See town_scene.spec.mjs's
- * `useDoor` doc comment for the full root-cause writeup.
+ * the avatar past an entire door untouched. See `walkToDoor`'s own doc
+ * comment below (and town_street.spec.mjs's `walkAvatarToX`) for the tap-vs-
+ * poll rationale; docs/CHANGELOG.md holds the original root-cause writeup.
  */
 const WALK_TAP_MS = 120;
 /** Upper bound on taps before concluding a door will never be reached. */
@@ -91,8 +100,11 @@ async function claimLandGrantPlotAt(page, targetRow, targetCol) {
 
 /**
  * Start a game, claim the plot at (claimRow, claimCol), pass the rest of the
- * land grant, and wait until the human's develop turn is up (the overworld
- * avatar mounts). Returns the overworld avatar locator.
+ * land grant, and wait until the human's develop turn is up. Every human
+ * develop turn now starts IN TOWN at the corral (WP-4B), so this waits on the
+ * town scene mounting -- there is no overworld avatar to wait on at turn
+ * start, and no walk onto the town cell is needed. Returns the town avatar
+ * locator.
  */
 async function reachHumanDevelop(page, claimRow, claimCol) {
   await page.locator("#new-game-button").click();
@@ -102,68 +114,73 @@ async function reachHumanDevelop(page, claimRow, claimCol) {
   );
   await expect(claimedPlot).toHaveAttribute("data-owner", "0");
   await passThroughLandGrant(page);
-  const avatar = page.locator(".overworld-svg [data-actor='player-0']");
-  await expect(avatar).toHaveCount(1, { timeout: 30_000 });
-  return avatar;
-}
-
-/**
- * Walk the overworld avatar onto the town cell (one cell right of its spawn) and
- * wait for the town interior to mount. Returns the town avatar locator.
- */
-async function enterTown(page) {
-  await page.keyboard.down("ArrowRight");
-  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 15_000 });
-  await page.keyboard.up("ArrowRight");
+  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 30_000 });
   return page.locator("#town-scene [data-actor='player-0']");
 }
 
 /**
  * Real-ms duration of one directional hold used to walk through the pub's
- * walk-in entry line (town_layout.ts's DOOR_ENTER_Y sits only ~8px north of
- * the street-row spawn line). At this spec's speed
+ * walk-in entry line (town_world.ts's DOOR_ENTRY_BAND_PX sits only a few px
+ * north of the street-lane spawn line). At this spec's speed
  * (WALKER_SPEED_PX_PER_SEC * speed=2 = 160px/s) this hold covers roughly
  * 32px, comfortably past the crossing distance.
  */
 const DOOR_HOLD_MS = 200;
 
 /**
- * Walk the town avatar in `walkDir` until it stands at `door`'s street cell,
- * then walk it north through the doorway to open the pub's confirm affordance
- * -- the town interaction model (docs/HUMAN_GUIDANCE.md "Town interaction
- * model") treats walking through an open doorway as the entry action itself
- * (detectWalkIn, src/ui/scenes/town_scene.tsx:327), no keypress. Unlike
- * town_scene.spec.mjs's `walkIntoDoor`, this does not walk back south
- * afterward: the pub flow needs fine-grained control over each subsequent
- * keypress (decline, reopen, confirm), and walking into the pub freezes
- * movement anyway once its confirm affordance is up (confirmingGamble,
- * town_scene.tsx:263), so a return walk would be a no-op.
- *
- * Advances the sideways walk in bounded taps (hold `walkDir` for WALK_TAP_MS,
- * release, then check data-at-door) rather than holding the key down for the
- * whole walk while polling for the exact target door. A continuous hold races
- * the attribute check: town's doors sit one street cell apart and the avatar
- * crosses one every ~400ms at this spec's speed, so once a single
- * `getAttribute` round trip runs slow, the poll can miss the target door's
- * entire window and the avatar keeps walking, straight out the far edge exit
- * (see town_scene.spec.mjs's `walkIntoDoor` doc comment for the full
- * writeup). Tapping bounds each check to a stationary snapshot, so a slow
- * check merely delays noticing arrival -- it can never let the avatar sail
- * past the door.
+ * A composed facade's door-center world x, read off its rendered
+ * .town-facade-rect (town_scene.tsx) rather than duplicating town_world.ts's
+ * spacing constants here.
  */
-async function walkToDoor(page, townAvatar, door, walkDir) {
+async function readDoorCenterX(page, facadeId) {
+  const rect = page.locator(`[data-facade="${facadeId}"] .town-facade-rect`);
+  const [x, width] = await Promise.all([rect.getAttribute("x"), rect.getAttribute("width")]);
+  return Number(x) + Number(width) / 2;
+}
+
+/**
+ * Walk the town avatar until its world x is aligned with `facadeId`'s door
+ * center, then walk it north through the doorway to open the pub's confirm
+ * affordance -- the town interaction model (docs/HUMAN_GUIDANCE.md "Town
+ * interaction model") treats walking through an open doorway as the entry
+ * action itself (detectWalkIn, src/ui/scenes/town_scene.tsx), no keypress.
+ * This does not walk back south afterward: the pub flow needs fine-grained
+ * control over each subsequent keypress (decline, reopen, confirm), and
+ * walking into the pub freezes movement anyway once its confirm affordance is
+ * up (the WP-4A panel-open phase), so a return walk would be a no-op.
+ *
+ * Advances the sideways walk in bounded taps toward whichever direction
+ * currently closes the gap, shrinking each tap's hold in proportion to the
+ * remaining distance (mirrors town_street.spec.mjs's walkAvatarToX). A fixed
+ * tap length at this spec's walk speed overshoots the door's narrow alignment
+ * window every time and, with only one fixed direction, would carry the
+ * avatar straight past the door and out the far edge exit; shrinking taps as
+ * the gap closes converges on the target instead.
+ */
+async function walkToDoor(page, townAvatar, facadeId) {
+  const MIN_TAP_MS = 15;
+  const MAX_TAP_MS = WALK_TAP_MS;
+  // Mirrors TOWN_DOOR_ALIGN_TOLERANCE_PX (tests/e2e/walkthrough_helpers.mjs),
+  // the source of truth; this spec runs built HTML over HTTP and cannot
+  // import that module, so update both together.
+  const ARRIVAL_TOLERANCE_PX = 8;
+  const targetX = await readDoorCenterX(page, facadeId);
   for (let tap = 0; tap < MAX_WALK_TAPS; tap++) {
-    if ((await townAvatar.getAttribute("data-at-door")) === door) {
+    const currentX = Number(await townAvatar.getAttribute("data-town-avatar-x"));
+    const remaining = targetX - currentX;
+    if (Math.abs(remaining) < ARRIVAL_TOLERANCE_PX) {
       await page.keyboard.down("ArrowUp");
       await page.waitForTimeout(DOOR_HOLD_MS);
       await page.keyboard.up("ArrowUp");
       return;
     }
+    const walkDir = remaining > 0 ? "ArrowRight" : "ArrowLeft";
+    const tapMs = Math.min(MAX_TAP_MS, Math.max(MIN_TAP_MS, Math.abs(remaining) / 6));
     await page.keyboard.down(walkDir);
-    await page.waitForTimeout(WALK_TAP_MS);
+    await page.waitForTimeout(tapMs);
     await page.keyboard.up(walkDir);
   }
-  throw new Error(`avatar never reached the ${door} door after ${MAX_WALK_TAPS} taps`);
+  throw new Error(`avatar never reached the ${facadeId} door after ${MAX_WALK_TAPS} taps`);
 }
 
 /**
@@ -180,12 +197,11 @@ test("pub: confirm affordance requires a second keypress, Escape declines with n
 }) => {
   test.setTimeout(90_000);
   await page.goto(`/${GAME_QUERY}`);
-  await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  const townAvatar = await enterTown(page);
+  const townAvatar = await reachHumanDevelop(page, 2, TOWN_COL - 1);
 
   // Walking into the pub already opens the confirm affordance (the walk-in
   // itself is the entry action); it must not gamble or end the turn by itself.
-  await walkToDoor(page, townAvatar, "pub", "ArrowRight");
+  await walkToDoor(page, townAvatar, "pub");
   const moneyBeforeAsk = await readHumanMoney(page);
   await expect(page.locator("#town-scene")).toHaveAttribute("data-gamble-confirming", "true");
   await expect(page.locator("[data-town-notice]")).toContainText("Gamble and end turn?");
@@ -204,10 +220,9 @@ test("pub: confirm affordance requires a second keypress, Escape declines with n
 test("pub: confirming a gamble pays out, shows the banner, and ends the turn", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto(`/${GAME_QUERY}`);
-  await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  const townAvatar = await enterTown(page);
+  const townAvatar = await reachHumanDevelop(page, 2, TOWN_COL - 1);
 
-  await walkToDoor(page, townAvatar, "pub", "ArrowRight");
+  await walkToDoor(page, townAvatar, "pub");
   const moneyBefore = await readHumanMoney(page);
 
   await expect(page.locator("#town-scene")).toHaveAttribute("data-gamble-confirming", "true");
@@ -236,10 +251,9 @@ test("pub: reduced motion still shows the payout banner, flagged accordingly", a
   test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(`/${GAME_QUERY}`);
-  await reachHumanDevelop(page, 2, TOWN_COL - 1);
-  const townAvatar = await enterTown(page);
+  const townAvatar = await reachHumanDevelop(page, 2, TOWN_COL - 1);
 
-  await walkToDoor(page, townAvatar, "pub", "ArrowRight");
+  await walkToDoor(page, townAvatar, "pub");
   await expect(page.locator("#town-scene")).toHaveAttribute("data-gamble-confirming", "true");
   await page.keyboard.press("Space");
 

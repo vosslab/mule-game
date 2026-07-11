@@ -7,15 +7,18 @@
 // in `develop` the whole time, so the scene manager keeps draining the turn's
 // tick budget while the player is in town.
 //
-// Stepping onto the overworld town cell enters town; walking into a town edge
-// exit returns to the overworld, respawned one cell off the town cell in the
-// exit's direction so the avatar does not immediately re-enter. The town's
-// assay office arms an assay that the overworld's action key then spends on the
-// next assayable plot.
+// Every human develop turn starts IN TOWN, at the corral street position, with
+// the develop timer already running (matching the original NES loop). Walking
+// into either of the street's two endpoint exits returns the avatar to the
+// overworld, respawned one cell off the town cell on the matching side (west
+// for the left endpoint, east for the right endpoint) so it does not
+// immediately re-enter. From the overworld, stepping back onto the town cell
+// re-enters town. The town's assay office arms an assay that the overworld's
+// action key then spends on the next assayable plot.
 //
 // This component is mounted keyed per human develop turn (see game_screen.tsx),
 // so its sub-state (in-town, spawn, assay-armed) resets fresh each turn: every
-// human turn begins on the overworld beside the town.
+// human turn begins in town at the corral.
 //
 // Solid discipline: run-once component, props read through the props object, the
 // scene swap driven by two <Show> branches over a signal, and the fixed board
@@ -65,7 +68,10 @@ export function HumanDevelopLayer(props: HumanDevelopLayerProps): JSX.Element {
   const terrainGrid = initialState.plots.map((row) => row.map((plot) => plot.terrain));
   const townCell = findTownCell(terrainGrid);
 
-  const [inTown, setInTown] = createSignal(false);
+  // Every human develop turn starts in town at the corral (TownScene always
+  // spawns the avatar at the composed street's corral position -- see
+  // town_world.ts corralSpawn), matching the original NES loop.
+  const [inTown, setInTown] = createSignal(true);
   const [spawnCell, setSpawnCell] = createSignal<Cell | undefined>(undefined);
   const [assayArmed, setAssayArmed] = createSignal(false);
 
@@ -106,7 +112,7 @@ export function HumanDevelopLayer(props: HumanDevelopLayerProps): JSX.Element {
       <Show when={inTown()}>
         <TutorialHint
           kind="town"
-          message="Walk to a shop door and press Enter (or Space) to shop, then step through an edge exit to return to your plots."
+          message="Arrow keys walk. Doors open as you approach a shop, and walking through enters it -- confirm your choice inside the panel (Enter, or click the focused action) to buy or outfit; walking through alone changes nothing. Walk into the Pub to end your turn, or use the small End turn control. Step through an edge exit to return to your plots."
           variant="overlay"
         />
         <TownScene

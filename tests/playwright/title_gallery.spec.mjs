@@ -8,7 +8,7 @@
 // gallery module is intentionally standalone (does not touch
 // src/ui/main.tsx), so this spec bundles it directly with esbuild and
 // injects it into the already-built dist/index.html shell, following the
-// same pattern as tests/playwright/town_gallery.spec.mjs.
+// same pattern as tests/playwright/sprite_gallery.spec.mjs.
 
 import { test, expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";

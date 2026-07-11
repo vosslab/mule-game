@@ -1,0 +1,168 @@
+[
+  {
+    "mode": "beginner",
+    "vpName": "1280x800",
+    "pos": "spawn",
+    "worldWidth": 964,
+    "facadeIds": [
+      "mining",
+      "energy",
+      "farm",
+      "corral",
+      "pub"
+    ],
+    "coverage": 0.3064319483549544,
+    "conformance": 0.3380180902221204,
+    "file": "beginner_1280x800_spawn.png"
+  },
+  {
+    "mode": "beginner",
+    "vpName": "1280x800",
+    "pos": "mid",
+    "coverage": 0.3009236112938452,
+    "conformance": 0.33044770898915704,
+    "file": "beginner_1280x800_mid.png"
+  },
+  {
+    "mode": "beginner",
+    "vpName": "1280x800",
+    "pos": "right",
+    "coverage": 0.3009236112938452,
+    "conformance": 0.33044770898915704,
+    "file": "beginner_1280x800_right.png"
+  },
+  {
+    "mode": "beginner",
+    "vpName": "1280x800",
+    "pos": "left",
+    "coverage": 0.30373040724855055,
+    "conformance": 0.33599976897308537,
+    "file": "beginner_1280x800_left.png"
+  },
+  {
+    "mode": "beginner",
+    "vpName": "1200x750",
+    "pos": "spawn",
+    "worldWidth": 964,
+    "facadeIds": [
+      "mining",
+      "energy",
+      "farm",
+      "corral",
+      "pub"
+    ],
+    "coverage": 0.28808,
+    "conformance": 0.3427520133296307,
+    "file": "beginner_1200x750_spawn.png"
+  },
+  {
+    "mode": "beginner",
+    "vpName": "1200x750",
+    "pos": "mid",
+    "coverage": 0.28652,
+    "conformance": 0.3410582158313556,
+    "file": "beginner_1200x750_mid.png"
+  },
+  {
+    "mode": "beginner",
+    "vpName": "1200x750",
+    "pos": "right",
+    "coverage": 0.28652,
+    "conformance": 0.3410582158313556,
+    "file": "beginner_1200x750_right.png"
+  },
+  {
+    "mode": "beginner",
+    "vpName": "1200x750",
+    "pos": "left",
+    "coverage": 0.28625,
+    "conformance": 0.34193886462882095,
+    "file": "beginner_1200x750_left.png"
+  },
+  {
+    "mode": "beginner(demo)",
+    "vpName": "1280x800",
+    "pos": "visual_render-repro",
+    "coverage": 0.3064319483549544,
+    "conformance": 0.3380180902221204,
+    "file": "visual_render_repro_demo_1280x800.png"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1280x800",
+    "pos": "spawn",
+    "worldWidth": 1136,
+    "facadeIds": [
+      "mining",
+      "energy",
+      "farm",
+      "corral",
+      "pub",
+      "land"
+    ],
+    "coverage": 0.3414291854151865,
+    "conformance": 0.34285567487026664,
+    "file": "standard_1280x800_spawn.png"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1280x800",
+    "pos": "mid",
+    "coverage": 0.311387697462481,
+    "conformance": 0.9676065462944706,
+    "file": "standard_1280x800_mid.png"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1280x800",
+    "pos": "right",
+    "note": "exited town before capture"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1280x800",
+    "pos": "left",
+    "coverage": 0.33537703163785315,
+    "conformance": 0.343262893608118,
+    "file": "standard_1280x800_left.png"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1200x750",
+    "pos": "spawn",
+    "worldWidth": 1136,
+    "facadeIds": [
+      "mining",
+      "energy",
+      "farm",
+      "corral",
+      "pub",
+      "land"
+    ],
+    "coverage": 0.32536,
+    "conformance": 0.35311654782394886,
+    "file": "standard_1200x750_spawn.png"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1200x750",
+    "pos": "mid",
+    "coverage": 0.28029,
+    "conformance": 0.9574726176460094,
+    "file": "standard_1200x750_mid.png"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1200x750",
+    "pos": "right",
+    "note": "exited town before capture"
+  },
+  {
+    "mode": "standard",
+    "vpName": "1200x750",
+    "pos": "left",
+    "coverage": 0.3196,
+    "conformance": 0.35284730913642054,
+    "file": "standard_1200x750_left.png"
+  }
+]

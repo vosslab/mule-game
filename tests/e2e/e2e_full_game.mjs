@@ -112,7 +112,11 @@ async function actForCurrentPhase(page) {
     await page.click("#land-grant-pass-button").catch(() => undefined);
     return;
   }
-  if (await isVisible(page, ".develop-end-turn-button")) {
+  // The End turn control's data-action hook is shared by the town chrome
+  // strip's button (town_chrome.tsx, where a develop turn now starts, WP-4B)
+  // and the overworld DevelopPanel's button, so this one selector holds
+  // whichever location the develop phase currently renders it in.
+  if (await isVisible(page, "[data-action='develop-end-turn']")) {
     // Give the develop phase's own tick timer (DEVELOP_TICK_MS in
     // scene_manager.ts, ~119ms at speed=8) one chance to fire before ending
     // the turn, so the tick-ownership ledger actually records a "develop"
@@ -121,7 +125,7 @@ async function actForCurrentPhase(page) {
     // first visibility check can otherwise end the turn with zero develop
     // ticks recorded).
     await page.waitForTimeout(DEVELOP_TICK_SETTLE_MS);
-    await page.click(".develop-end-turn-button").catch(() => undefined);
+    await page.click("[data-action='develop-end-turn']").catch(() => undefined);
     return;
   }
   if (await isVisible(page, ".auction-screen-role-button")) {

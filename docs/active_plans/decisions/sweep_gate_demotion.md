@@ -1,5 +1,69 @@
 # Decision: walkthrough sweep demoted from release gate to diagnostic
 
+## Update (WP-6C, 2026-07-11): sweep RESTORED to release-gate status
+
+Per the town street rebuild plan's Acceptance criteria and gates ("WP-6C
+town gate"): the walkthrough sweep (`{1, 3, 7} x {beginner, standard}`, six
+runs) was re-run after the mode-composed street rebuild (WP-1A-WP-6B) and
+its walker executor rebuild (WP-6A). Result: **6/6 GREEN**, zero town-kind
+failures, `matrixCoverageSatisfied: true`.
+
+One town-kind failure surfaced and was fixed to green during this triage
+(both seed-1 legs, beginner and standard, identically): `walk_stall`, "town
+door mining never reported data-door-state=\"open\"". Root cause: the
+post-panel walk-back (`walkBackToStreet`, `tests/e2e/walkthrough_town.mjs`)
+used a fixed-tap, one-way south walk with no overshoot correction (`walkTo`
+plus the retired grid-cell-derived `WALK_BACK_TAP_MS`), which could overshoot
+the street lane far enough south that the next door's approach fell outside
+`DOOR_OPEN_RADIUS_PX`'s vertical reach -- reproduced directly (avatar landed
+at world y=250 against a lane center of 220, more than the door's 70px open
+radius away from the door's street-level y=168). Fixed by converging the
+walk-back onto the lane with the same gap-proportional, self-correcting seek
+`walkTownAvatarToDoorX` already uses horizontally (new
+`walkTownAvatarToStreetLaneY`, `tests/e2e/walkthrough_helpers.mjs`); the now-
+dead `WALK_BACK_TAP_MS` constant was removed. This is a walker-harness gesture
+fix, not a town production change -- the town geometry itself (spacing,
+facade widths, door radii) is unchanged and stays WP-6B-locked.
+
+Two more town-caused gaps surfaced (both walker-level test tooling, not
+production) and were fixed to green in the same pass, both traced to
+`tests/e2e/e2e_mini_flow.mjs` and `tests/e2e/e2e_full_game.mjs` never having
+been updated for WP-4B's "human develop turn starts in town" change: they
+waited on `.overworld-svg [data-actor='player-0']` (never mounts at turn
+start now) and clicked the class-scoped `.develop-end-turn-button` (now
+overworld-only; town uses a chrome-strip button with the same
+`data-action="develop-end-turn"` hook). Both now wait on `#town-scene
+[data-actor='player-0']` and the shared `[data-action='develop-end-turn']`
+selector, which resolves correctly whether the human is in town or has
+walked out to the overworld.
+
+Non-town items found during this triage, filed as separate follow-up work in
+`docs/TODO.md` rather than fixed here (see that file for full detail):
+
+- `tests/e2e/e2e_walk_calibration.mjs` is stale against the composed-street
+  model (pre-rebuild grid assumptions throughout); out of this triage's
+  required verification surface and a rewrite on the scale of WP-6B's own
+  calibration work. Left for a decision alongside the WP-6D doc close-out
+  (rewrite vs retire, plus a matching refresh of
+  `docs/WALKTHROUGH_GUIDE.md`'s now-stale Calibration table).
+- `tests/playwright/corral_purchase.spec.mjs:267` intermittently fails under
+  full parallel-suite load (reproduced twice in a row) but passes 5/5 in
+  isolation; root-caused to the shared `claimLandGrantPlotAt` bootstrap
+  helper's land-grant sweep-cursor animation timing out under CPU
+  contention -- a non-town, environmental parallel-load flake, not a race in
+  this test's own waits, so it is documented rather than "fixed" by loosening
+  a timeout or touching production code.
+
+Verification: `node --import tsx tests/e2e/e2e_walkthrough_sweep.mjs` exit 0
+(6/6); `bash tests/e2e/e2e_run_all.sh` 5/5; `bash check_codebase.sh` 5/5
+(508/508 unit tests); full `npx playwright test tests/playwright/` green in
+isolation (the one flake above is environmental, not a town-caused defect).
+The sweep is therefore restored as a release gate: the town gate defined by
+the rebuild plan (zero town-kind sweep failures, all town-caused legs green)
+is met, and no residual non-town red remains attached to it.
+
+## Original decision record (2026-07-10, superseded above for the rebuilt town)
+
 ## Date
 
 2026-07-10

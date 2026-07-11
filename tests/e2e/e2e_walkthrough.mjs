@@ -101,8 +101,9 @@ import { ROUND_COUNT_BY_MODE } from "../../src/engine/constants.ts";
 /**
  * Default speed multiplier applied when --speed is not given. Comes from the
  * timing calibration experiment (WALKER_SPEED, walkthrough_helpers.mjs; see
- * tests/e2e/e2e_walk_calibration.mjs for the winning-row measurement), not a
- * value chosen locally -- CLI --speed still overrides it per run.
+ * docs/active_plans/audits/town_spacing_experiment.md for the locked-constant
+ * measurement), not a value chosen locally -- CLI --speed still overrides it
+ * per run.
  */
 const DEFAULT_SPEED = WALKER_SPEED;
 

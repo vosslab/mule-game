@@ -18,7 +18,7 @@
 // [data-land-auction] (panel root), #land-bid-button (human bid button),
 // [data-high-bidder] (current high bidder's player id, or "none").
 //
-// WP-7C canvas fill: this is a board phase, so the panel claims stage width
+// Canvas fill: this is a board phase, so the panel claims stage width
 // (see .land-auction-panel in src/style.css) and only the height its content
 // needs. The plot/price, high-bidder/going-status, and remaining/controls
 // groups sit in three side-by-side columns (.land-auction-body's

@@ -19,10 +19,6 @@
 # explicit command a human or release process invokes directly rather than
 # a step in the routine gate. Run it before a release, not on every patch.
 #
-# The realtime-walk timing calibration experiment is also excluded here; it
-# is a one-off measurement tool, not a pass/fail gate:
-#   node tests/e2e/e2e_walk_calibration.mjs
-#
 # Each script already exits non-zero on its own failure; this runner just
 # invokes each one in turn, records PASS/FAIL, and prints a summary. Exit
 # code is 0 only when every routine script passed.

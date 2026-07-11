@@ -12,12 +12,16 @@ already shipped and [TODO.md](TODO.md) for the smaller task backlog.
   axis, per-player lanes, a buyer/seller meet line, a store price/stock meter,
   and a bottom player dock. See [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md), "Goods
   Auction (the trading floor)."
-- Town rework toward the NES / Planet M.U.L.E. entry model: replace the current
-  street-of-doors town with the reference entry model -- walk INTO buildings
-  (rooms/facades) and per-resource labeled outfitting shops. This also fixes
-  the reproduced glide-auto-outfit bug and the post-buy stranding surfaced in
-  the 2026-07-10 investigation. See [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md),
-  "Town / store interior."
+- Shipped: town rebuilt to the mode-composed horizontally scrolling street
+  (WP-1A through WP-6D, closed 2026-07-11). The old street-of-doors grid town
+  was replaced by a per-mode composed street -- a shared storefront catalog,
+  NES-order facades, two endpoint exits, corral turn spawn, a horizontal camera,
+  solid facades with bounded door thresholds, and always-visible town chrome --
+  rendered in a Planet-inspired modern facade style. Walk-in-then-confirm entry
+  and the corral purchase panel also resolved the reproduced glide-auto-outfit
+  bug and the post-buy stranding from the 2026-07-10 investigation. See
+  `docs/CHANGELOG.md` 2026-07-10 and 2026-07-11 (WP-1A through WP-6D) and
+  [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md), "Town / store interior."
 - Species and color selection screen after New Game: add a human-only pick of
   species (cosmetic) and color between starting a new game and the first phase.
   Requires decoupling `playerColor` from player id via a `colorSlot` at roughly
@@ -36,7 +40,12 @@ already shipped and [TODO.md](TODO.md) for the smaller task backlog.
   so 320 is the practical ceiling until that tap length is retuned. See
   [active_plans/audits/mule_trip_timing.md](active_plans/audits/mule_trip_timing.md)
   for the full evidence table, and the WP-8A follow-on note there for
-  widening the margin further via the tap-length constant.
+  widening the margin further via the tap-length constant. Superseded by the
+  town street rebuild (WP-6B, 2026-07-11): the fixed 120ms tap and the 320 px/s
+  ceiling no longer apply -- the walker's tap length is now geometry-derived
+  (`tapMsForStepPx`, `WALK_TAP_MS` 25) and the spacing/travel-budget arms are
+  re-measured in
+  [active_plans/audits/town_spacing_experiment.md](active_plans/audits/town_spacing_experiment.md).
 - Release cut: bump `VERSION` (CalVer) and cut the first tagged release now
   that the M1-M11 fidelity plan's gates are green. Human decision, not yet
   made. See [archive/mule_fidelity_plan.md](archive/mule_fidelity_plan.md).
@@ -96,24 +105,19 @@ funds. All of it has shipped: collision, the walk-in trigger, and the
 corral purchase modal (`src/ui/solid/corral_purchase_panel.tsx`). See
 `docs/CHANGELOG.md` 2026-07-10 (WP-3A/WP-3B/WP-3C/WP-3D, WP-4A/WP-4B/WP-4C).
 
-### Walker harness: deterministic stall at 320 px/s (harness, not game)
+### Walker harness: deterministic stall at 320 px/s -- resolved
 
-Symptom: after the WP-2A walk-speed raise (`WALKER_SPEED_PX_PER_SEC` 80 to
-320, `src/ui/scenes/walker.ts:60`), the walkthrough sweep stalls
-deterministically on seeds 1 and 3 at the counter-smithore door, logged as
-"town avatar left the street." Seed 7 passes both modes. This is a
-walker-harness artifact, not a product bug: the seek/gesture constants
-(`WALK_TAP_MS`, overshoot correction in
-`tests/e2e/walkthrough_helpers.mjs`) were tuned for the old 80 px/s speed
-and were never retuned for 320. On this evidence the user demoted the
-sweep from a release gate to a diagnostic (2026-07-10, "the deterministic
-walker is suspect, do not keep as a gate").
-
-Suggested approach: root-cause the seed-1/3 counter-smithore stall, then
-add speed-aware tap sizing so the tap length scales with
-`WALKER_SPEED_PX_PER_SEC` instead of being a fixed 120ms. See
-[active_plans/decisions/sweep_gate_demotion.md](active_plans/decisions/sweep_gate_demotion.md)
-and `docs/TODO.md` ("Developer and testing").
+Resolved by the town street rebuild (WP-6A through WP-6C, 2026-07-11). The
+pre-rebuild grid town's seed-1/3 counter-smithore stall was retired along with
+the grid model itself: the walker executors now discover the mode-composed
+street and the gesture timing is geometry-derived (`tapMsForStepPx` in
+`tests/e2e/walkthrough_helpers.mjs`) instead of a fixed 120ms tap. A separate
+walker-level overshoot of the same shape resurfaced at the new geometry and was
+fixed in the same pass (the converging `walkTownAvatarToStreetLaneY` walk-back).
+The sweep is 6/6 green again and restored to release-gate status. See
+[active_plans/decisions/sweep_gate_demotion.md](active_plans/decisions/sweep_gate_demotion.md),
+`docs/CHANGELOG.md` 2026-07-11 (WP-6B/6C), and `docs/TODO.md` ("Developer and
+testing").
 
 Note: the older "hunt_wampus/assay_plot have no spatial executor" gap
 shipped in M8 (WP-8B, 2026-07-10): `executeHuntWampus`/`executeAssayPlot`/

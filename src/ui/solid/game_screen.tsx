@@ -50,6 +50,7 @@ import {
 } from "./event_banner";
 import { playerColor } from "../sprites";
 import { TutorialHint } from "./tutorial_hint";
+import { TownChrome } from "./town_chrome";
 
 /** Props for the game screen. */
 export interface GameScreenProps {
@@ -274,6 +275,17 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
                     <Show when={!humanInTown()}>
                       <DevelopPanel store={props.store} payload={payload} />
                     </Show>
+                    {/* Mirror image of the Show above: the dedicated town chrome
+                      strip keeps the timer/money/tow readout visible for
+                      the entire town visit, since DevelopPanel itself stays
+                      overworld-only and was the town's only source for
+                      `Ticks left` before this strip existed. The chrome strip
+                      also carries the End turn control as a small
+                      secondary control alongside the Pub, which is the primary
+                      turn-end destination via walk-in plus its gamble confirm. */}
+                    <Show when={humanInTown()}>
+                      <TownChrome store={props.store} payload={payload} />
+                    </Show>
                   </Show>
                 </>
               )}
@@ -314,15 +326,18 @@ function DevelopPanel(props: {
     <div class="develop-panel">
       <TutorialHint
         kind="develop"
-        message="Walk onto the town, then press Enter (or Space) at a shop door to buy and outfit a M.U.L.E., and again on an owned plot to place it before your ticks run out."
+        message="Arrow keys walk into town -- shop doors open as you approach, and walking through the open door enters the shop and opens its panel. Confirm your choice inside the panel (Enter, or click the focused action) to buy or outfit -- walking through alone changes nothing. The Pub ends your turn the same way; a small End turn control also lives in the town chrome strip. Press Enter (or Space) on an owned plot to place a M.U.L.E. before your ticks run out."
       />
       <div class="develop-panel-status">
         <span class="develop-panel-money">{`Money: $${money()}`}</span>
         <span class="develop-panel-ticks">{`Ticks left: ${props.payload().ticksRemaining}`}</span>
       </div>
       <p class="develop-panel-hint">
-        Walk onto the town, then press Enter (or Space) at a shop door to buy and outfit a M.U.L.E.,
-        and again on an owned plot to place it.
+        Arrow keys walk into town -- shop doors open as you approach, and walking through the open
+        door enters the shop and opens its panel. Confirm your choice inside the panel (Enter, or
+        click the focused action) to buy or outfit -- walking through alone changes nothing. The Pub
+        ends your turn the same way; a small End turn control also lives in the town chrome strip.
+        Press Enter (or Space) on an owned plot to place a M.U.L.E. before your ticks run out.
       </p>
       <button
         type="button"

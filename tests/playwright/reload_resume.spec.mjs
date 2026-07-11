@@ -1,9 +1,15 @@
 // Selector contract: depends on src/ui/solid/title_screen.tsx's
 // #new-game-button and #resume-game-button, src/ui/solid/game_screen.tsx's
-// #screen-game / #game-map / .develop-end-turn-button, and
+// #screen-game / #game-map, src/ui/scenes/town_scene.tsx's #town-scene, and
 // src/ui/solid/map_layer.tsx's data-row / data-col / data-owner plot attributes.
 // The autosave lives under localStorage key "mule-game-save-v1"
 // (src/ui/save_log.ts SAVE_STORAGE_KEY).
+//
+// Town-first navigation (WP-4B): every human develop turn now starts IN TOWN
+// at the corral, so this spec's "develop turn is stably up" readiness check
+// (both before and after reload/Resume) waits on #town-scene rather than the
+// overworld-only .develop-end-turn-button; this spec never walks or ends the
+// turn, so no exit navigation is needed.
 //
 // Proves reload-mid-game resume: a seeded game is driven a few actions in until
 // the human's develop turn, its board state is snapshotted, the page is
@@ -58,8 +64,7 @@ test("reload mid-game and Resume restores the same board state", async ({ page }
   await claimCurrentLandGrantPlot(page);
   await passThroughLandGrant(page);
 
-  const endTurnButton = page.locator(".develop-end-turn-button");
-  await expect(endTurnButton).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 30_000 });
 
   // Snapshot the plots the human owns right now.
   const ownedBefore = await humanOwnedPlots(page);
@@ -77,7 +82,7 @@ test("reload mid-game and Resume restores the same board state", async ({ page }
   // Resume replays the log back to the human's develop turn (the board is up
   // again), and every plot claimed before the reload is still owned by player 0.
   await expect(page.locator("#screen-game")).toHaveClass(/active/);
-  await expect(page.locator(".develop-end-turn-button")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("#town-scene")).toBeVisible({ timeout: 30_000 });
   const ownedAfter = await humanOwnedPlots(page);
   for (const plot of ownedBefore) {
     expect(ownedAfter).toContain(plot);
