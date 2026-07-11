@@ -119,3 +119,11 @@ behind an explicit confirm (Enter or a mouse click on the focused action). Wire
 arrow keys to move the player outside shops and to move focus inside panels,
 and keep the focused action visibly highlighted. Reserve Enter for confirming
 choices in dialogs and panels after entry.
+
+## Write self-contained changelog entries
+
+Write each changelog entry so a future reader understands it from the entry
+alone: lead with its category (Testing, UI, Docs, Engine) and describe what
+changed -- the files, the behavior, and the user-visible effect. Reference a
+related change by what it changed, so the entry stays clear long after the work
+that produced it is gone.

@@ -448,8 +448,8 @@ createInitialGameState` gained an optional per-player `species` parameter,
   emits per-plot detail, with every plot clamped to `[0, PRODUCTION_MAX_YIELD]`;
   `enterProduction` orchestrates the colony event around production. Added a
   `crater` terrain (meteorite) to the engine `Terrain` union.
-- UI (M1 WS-U-solid, Patches 1-3): adopted SolidJS for the UI, ported in three
-  verified steps. Patch 1 (the Solid proof): added `pipeline/build.mjs` (esbuild
+- UI (M1 WS-U-solid): adopted SolidJS for the UI, ported in three
+  verified steps. Step 1 (the Solid proof): added `pipeline/build.mjs` (esbuild
   JS-API + `esbuild-plugin-solid`, the doc-sanctioned second build path for
   Solid JSX; produces the same single ESM bundle the CLI does -- es2020,
   browser, minified, with sourcemap -- into `dist/main.js`) and wired
@@ -459,14 +459,14 @@ createInitialGameState` gained an optional per-player `species` parameter,
   pure `applyAction` then `setState(reconcile(next))`, with `dispatch` the sole
   writer and `state` the read accessor); ported the title screen to
   `src/ui/solid/title_screen.tsx` mounted into `#screen-title` (New Game button
-  preserved); renamed `src/ui/main.ts` to `main.tsx`. Patch 2: added the
+  preserved); renamed `src/ui/main.ts` to `main.tsx`. Step 2: added the
   phase-router `src/ui/solid/app.tsx` (`<Switch>`/`<Match>` on a reactive
   active-screen signal) and rewrote `src/ui/screen_router.ts` from DOM
   class-toggling to a `createSignal`-backed registry (same
   `registerScreen`/`showScreen` interface, adds `currentScreen()`); `src/index.html`
   became a single `#app` root; ported the HUD to `src/ui/solid/hud.tsx` (`<For>`
   over players and resources, identical `.hud`/`.hud-player[data-player]`/
-  `.hud-good[data-resource]` markup). Patch 3: ported the board to
+  `.hud-good[data-resource]` markup). Step 3: ported the board to
   `src/ui/solid/map_layer.tsx` (`<For>` cells plus `<Show>` mule glyph, identical
   `.map-svg` and `g[data-row][data-col][data-terrain]`/`data-owner`/`data-outfit`
   attributes; the shared `<defs>` sprite markup is reused verbatim via
@@ -545,7 +545,7 @@ createInitialGameState` gained an optional per-player `species` parameter,
   `game_flow.spec.mjs` passing unmodified; the scene manager holds the auction
   clock until the human commits (`notifyAuctionCommit`), then ticks advance the
   clock and swap the panel to the live track.
-- Engine (M1 WS-E-foundation, Patches 2-4): added `GameMode = "beginner" |
+- Engine (M1 WS-E-foundation): added `GameMode = "beginner" |
 "standard"` (`src/engine/game_state.ts`) and `GameState.mode`, plus
   `ROUND_COUNT_BY_MODE = { beginner: 6, standard: 12 }` in
   `src/engine/constants.ts` (source: `OTHER_REPOS/mule_rules.md` line 46 and
@@ -574,7 +574,7 @@ keeping map generation deterministic and behavior-identical -- bloom
 seeding lands in the later WS-E-blooms milestone. The widening forced three
 compiler-driven, zero-behavior-change literal fixes in`src/ui/main.ts`(the demo fixture's two raw`Plot`object literals and its raw`GameState`literal, none of which route through`generateMap`/`createInitialGameState`
 today), following the same "compiler-driven sweep" pattern as the prior
-Resource-widening Patch 1. Added the action-log replay determinism harness
+Resource-widening change. Added the action-log replay determinism harness
 (`tests/test_replay_determinism.mjs`, node test): a frozen, versioned
 `RECORDED_ACTIONS`fixture (673 actions covering land-grant claims/passes,
 develop buy/outfit/place/end_turn, and auction role/intent/tick/end_auction
@@ -1113,16 +1113,15 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   only awarded on survival", and "M9 balance sim record".
 - Docs: copied the approved walkthrough-harness plan into
   `docs/active_plans/active/walkthrough_harness_plan.md` (ASCII-normalized).
-- Testing (walkthrough-harness Patch 1, WP-P1): new `src/ui/walker_debug.ts`
+- Testing (walkthrough-harness): new `src/ui/walker_debug.ts`
   exposes a read-only `window.muleGameState()` projection of the live
   `GameState` (structuredClone plus deep-freeze) alongside convenience fields
   `phaseKind`, `activePlayerId`, `humanMoney`, `sweepRow`, `sweepCol`;
   installed via `createAutosavingStore` so both new-game starts and resumed
   saves get the projection. `buildWalkerProjection` is exported once and
   shared by the browser install path and the new `tests/test_walker_debug.mjs`
-  (4 cases). Part of `docs/active_plans/active/walkthrough_harness_plan.md`
-  (M1).
-- Testing (walkthrough-harness Patch 2, WP-P2): additive `data-action`
+  (4 cases).
+- Testing (walkthrough-harness): additive `data-action`
   selectors on walker-critical controls -- `land-grant-pass`, `land-bid`,
   `auction-role` (with `data-role` rendering the engine's own `AuctionRole`
   values `buyer|seller|out`), `auction-intent-up`/`auction-intent-down`,
@@ -1130,14 +1129,13 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   town end-turn button. Recorded decision: `data-role` uses the engine enum
   spellings rather than the plan's provisional `buy`/`sell`/`sit_out` text, so
   the selector and the engine type never drift apart.
-- Testing (walkthrough-harness Patch 3, WP-H1): new `tests/e2e/e2e_walkthrough.mjs`
+- Testing (walkthrough-harness): new `tests/e2e/e2e_walkthrough.mjs`
   and `tests/e2e/walkthrough_helpers.mjs` bootstrap a headless walkthrough
   launch -- CLI `--seed`/`--mode`/`--speed`/`--screenshots`/`--bootstrap-only`
   flags, build-if-missing `dist/`, a random loopback port, `playwright-core`
   headless launch, `localStorage.clear` plus reload, new-game entry, and an
-  `initial_state.png` screenshot. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-H1).
-- Testing (walkthrough-harness Patch 4, WP-H2): new `tests/e2e/walkthrough_report.mjs`
+  `initial_state.png` screenshot.
+- Testing (walkthrough-harness): new `tests/e2e/walkthrough_report.mjs`
   (`createWalkReport`: a severity-tagged log, per-phase timings, and a closed
   failure taxonomy -- `phase_timeout`, `act_did_not_advance`, `walk_stall`,
   `decision_gesture_mismatch`, `unknown_plan_kind`, `console_error`,
@@ -1146,32 +1144,28 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   failures as fatal and `console.warn` as nonfatal, with an `EXPECTED_NOISE`
   allowance for the favicon-only 404) and `tests/test_walkthrough_report.mjs`
   (8 cases). Recorded decision: the evidence module lives in its own file
-  rather than `walkthrough_helpers.mjs`, so the concurrently developed Patch 3
-  and Patch 4 packages never shared a file. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-H2).
-- AI (walkthrough-harness Patch 5, WP-A1): `walkthrough_strategy.mjs` gains a
+  rather than `walkthrough_helpers.mjs`, so the two concurrently developed
+  packages never shared a file.
+- AI (walkthrough-harness): `walkthrough_strategy.mjs` gains a
   marshalling section, plus `tests/test_walkthrough_strategy.mjs`, proving the
   projection's JSON round-trip is lossless into engine types (deep-equal and
   an identical reducer step) and that every `src/ai` decide function runs
   correctly on the marshalled copy -- a plain `structuredClone` is sufficient
-  for the whole AI decision surface. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-A1).
-- AI (walkthrough-harness Patch 6, WP-A2): decision wrappers
+  for the whole AI decision surface.
+- AI (walkthrough-harness): decision wrappers
   `decideLandGrant`/`decideLandAuction`/`decideDevelopPlan`/`decideAuctionIntent`
   for the walker's seat 0, a frozen exported `PLAN_KINDS` (14 kinds), and a
   fail-loud `checkedPlan` guard; `hunt_wampus`/`assay_plot` are treated as
   opportunistic, and `decideDevelopPlan` returns the next single plan since
   develop turns are reactive. Recorded decision: no narrower AI input than the
   full `GameState` is sufficient for the walker's decisions. 10/10 tests
-  green. Part of `docs/active_plans/active/walkthrough_harness_plan.md`
-  (WP-A2).
-- Testing (walkthrough-harness Patch 7, WP-H3): the passive-phase loop in
+  green.
+- Testing (walkthrough-harness): the passive-phase loop in
   `e2e_walkthrough.mjs` now completes a full beginner-mode game -- a report
   plus 11 phase screenshots, with zero console or network noise across
   seeds 1/3/7 spot checks -- bounded by the `phase_timeout`/`run_stalled`
-  taxonomy exits from Patch 4. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-H3).
-- Testing (walkthrough-harness Patch 8, WP-E1): new
+  taxonomy exits from the report module.
+- Testing (walkthrough-harness): new
   `tests/e2e/walkthrough_land.mjs` adds `driveLandGrant`/`driveLandAuction` gesture
   drivers for seat 0 -- a land-grant claim fires only when the live sweep
   cursor matches the adapter-decided plot (a mismatch logs
@@ -1183,17 +1177,15 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   file (`walkthrough_land.mjs`, and the auction/town/overworld modules that
   follow) rather than the plan's "helpers sections" wording, so concurrently
   developed packages never share a file; the plan's touch-point lists drift
-  accordingly. Part of `docs/active_plans/active/walkthrough_harness_plan.md`
-  (WP-E1).
-- Testing (walkthrough-harness Patch 9, WP-E2): new
+  accordingly.
+- Testing (walkthrough-harness): new
   `tests/e2e/walkthrough_auction.mjs` adds `driveAuction`, exercising the goods-auction
   role/intent/continue gesture across all four goods and recording a
   per-good outcome tuple `{role, aiTargetPrice (null; the AI's target price
   is not exported), priceBefore/After, humanGoodsDelta, humanMoneyDelta}`;
   the trades counter increments only when a good's human goods delta is
-  nonzero. New `tests/test_walkthrough_auction.mjs`. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-E2).
-- Testing (walkthrough-harness Patch 10, WP-E3): `--active`/
+  nonzero. New `tests/test_walkthrough_auction.mjs`.
+- Testing (walkthrough-harness): `--active`/
   `--passive` orchestrator modes wire `driveLandGrant`/`driveLandAuction`/
   `driveAuction` on phase entry (the develop-phase seam stays pinned to the
   passive end-turn fallback until the spatial lane lands); a new
@@ -1202,9 +1194,8 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   (`executePlan`/`exitCodeForFailure`) and
   `tests/test_walkthrough_plan_exec.mjs` (5 cases). Quality-review fixes:
   `humanTurnsCompleted` now increments only on a confirmed phase advance,
-  and the report's `fail()` is first-failure-wins. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-E3).
-- Testing (walkthrough-harness Patch 10, WP-E3), completion addendum: both
+  and the report's `fail()` is first-failure-wins.
+- Testing (walkthrough-harness), completion addendum: both
   open items closed. `executePlan` is wired into the live orchestrator path
   at `tests/e2e/e2e_walkthrough.mjs` (`ACTIVE_PHASE_DRIVERS` dispatch table
   around line 473, call site around lines 555-566). The `trades >= 1`
@@ -1214,7 +1205,7 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   (doc comment around lines 118-136) now accepts `trades >= 1` OR every
   `auction_outcome` role being `'out'` -- an approved, evidence-based
   deviation from the original invariant text.
-- Testing (walkthrough-harness Patch 11, WP-S1): new
+- Testing (walkthrough-harness): new
   `tests/e2e/e2e_walk_calibration.mjs` runs a 5-configuration speed x tap-length x
   budget matrix against two success metrics (20-attempt door-reach rate;
   develop-turn errand completion within the tick budget), writing
@@ -1224,9 +1215,8 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   decision: the winner was chosen on margin, not raw pass rate -- speed 8
   passes at tap 120 but its tap-180 sibling deterministically overshoots
   (sitting on the cliff edge), while speed 4 has proven headroom at both
-  tap lengths; rejected rows are recorded alongside the winner. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-S1).
-- Testing (walkthrough-harness Patch 12, WP-S2): `walkthrough_helpers.mjs`
+  tap lengths; rejected rows are recorded alongside the winner.
+- Testing (walkthrough-harness): `walkthrough_helpers.mjs`
   gains its spatial section -- a selector audit found zero gaps (every
   spatial target the drivers need already carries durable `data-*`
   attributes), a generalized `walkTo` helper (accepts either a fixed key or
@@ -1234,17 +1224,15 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   `walk_stall` classification now watches the avatar's per-frame transform
   instead of only coarse cell/door attributes. New
   `tests/test_walkthrough_walkto.mjs` (5 cases) plus a live seed-33 town enter/exit
-  proof. Part of `docs/active_plans/active/walkthrough_harness_plan.md`
-  (WP-S2).
-- Testing (walkthrough-harness Patch 13, WP-S3): new
+  proof.
+- Testing (walkthrough-harness): new
   `tests/e2e/walkthrough_town.mjs` drives town commerce -- `executeBuyMule`,
   `executeOutfitMule` (verified via the projection's `carriedMule`), and
   `executeGamblePub` (the approved two-press pub confirm sequence, verified
   via `[data-pub-banner]` plus the money delta and a `gambles` counter) --
   plus a door map and `walkToDoor`, which delegates to the adaptive
   `walkTownAvatarToCell` walk-helper. New `tests/test_walkthrough_town.mjs`.
-  Part of `docs/active_plans/active/walkthrough_harness_plan.md` (WP-S3).
-- Testing (walkthrough-harness Patch 14, WP-S4): new
+- Testing (walkthrough-harness): new
   `tests/e2e/walkthrough_overworld.mjs` adds `executePlaceMule` with
   projection-based verification (plot ownership, outfit, and mule count),
   plus graceful turn truncation for `develop`-phase errands that run past
@@ -1255,18 +1243,16 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   `walkOverworldAvatarToCell`) fixes a real geometric blocker where the
   straight-line path crossed a town cell, re-entering town and unmounting
   the avatar mid-errand; unit-tested against the exact seed-33 geometry that
-  exposed it. New `tests/test_walkthrough_overworld.mjs`. Part of
-  `docs/active_plans/active/walkthrough_harness_plan.md` (WP-S4).
-- Testing (walkthrough-harness Patch 15, WP-G1): new
+  exposed it. New `tests/test_walkthrough_overworld.mjs`.
+- Testing (walkthrough-harness): new
   `tests/e2e/e2e_walkthrough_sweep.mjs` runs the sequential `{1, 3, 7}` x
   `{beginner, standard}` sweep matrix, writing `sweep_summary.json` with
   taxonomy counts, a worst-first table, matrix coverage booleans, a
   deterministic `--find-seeds 1-100` scan, and a `>50%` truncation fail
   rule; an entry-point guard keeps importing the module for unit tests from
   launching a live sweep. New `tests/test_walkthrough_sweep.mjs` (22 unit
-  tests). Part of `docs/active_plans/active/walkthrough_harness_plan.md`
-  (WP-G1).
-- Testing (walkthrough-harness Patch 16, consolidation/cleanup):
+  tests).
+- Testing (walkthrough-harness, consolidation/cleanup):
   `tests/e2e/e2e_full_game.mjs` and `e2e_mini_flow.mjs` now import
   `REPO_ROOT`/`startServer` (and `launchBrowser` for `e2e_mini_flow.mjs`)
   from `tests/e2e/walkthrough_helpers.mjs`, keeping each script's own
@@ -1281,12 +1267,12 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   `tests/e2e/e2e_walkthrough.mjs` (held for a later cleanup pass), and two
   stale eslint-disable comments were removed from
   `tests/e2e/e2e_walkthrough_sweep.mjs`.
-- Testing (walkthrough-harness Patch 17, invariant taxonomy): `tests/e2e/
+- Testing (walkthrough-harness, invariant taxonomy): `tests/e2e/
   walkthrough_report.mjs`'s `FAILURE_KINDS` gained an `"invariant_violation"`
   kind; `assertActiveInvariants` (`tests/e2e/walkthrough_exec.mjs`) now
   classifies via `report.fail` before throwing, closing the one unclassified
   failure path the first sweep turned up (see Decisions and Failures below).
-- Testing (walkthrough-harness Patch 18, auction report-loss fix): a new
+- Testing (walkthrough-harness, auction report-loss fix): a new
   `"auction_stalled"` failure kind; `driveAuction`'s tick-ceiling guard
   classifies before throwing; `runWalkthrough` (`tests/e2e/e2e_walkthrough.
   mjs`) now persists `playthrough_report.json` via `try`/`finally` on every
@@ -1294,7 +1280,7 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   helper in `walkthrough_helpers.mjs` (a single-handle visibility
   pre-check with an explicit `CLICK_TIMEOUT_MS=1000`) replaces the driver's
   previously swallowed `.catch` clicks.
-- Testing (walkthrough-harness Patch 19, auction role-click tick-0 gate):
+- Testing (walkthrough-harness, auction role-click tick-0 gate):
   root-caused seed 7's reproducible ~44s auction phases to the walker
   clicking role buttons on ticks where the `RolePanel` no longer renders
   (it only exists at tick 0), hanging on Playwright's roughly 30s default
@@ -1305,19 +1291,19 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   green active walkthrough. The hang had also silently swallowed outcome
   logging and exhausted run budgets before this fix (see Decisions and
   Failures below).
-- Testing (walkthrough-harness Patch 23, mode-derived run budgets):
+- Testing (walkthrough-harness, mode-derived run budgets):
   `e2e_walkthrough.mjs` computes `RUN_BUDGET_MS_BY_MODE` as
   `ROUND_BUDGET_MS(51000) x rounds + overhead(10000)`, with `rounds`
   imported from `src/engine/constants.ts`, replacing the flat passive-era
   60s budget that stalled every full active run.
-- Testing (walkthrough-harness Patch 24, stale-dist rebuild guard):
+- Testing (walkthrough-harness, stale-dist rebuild guard):
   renamed `buildSiteIfMissing` to `buildSiteIfStale` in `walkthrough_helpers.
   mjs`; it now rebuilds whenever `dist/index.html` is older than the newest
   source input (an explicit `BUILD_SOURCE_INPUTS` list feeding a pure
   `decideDistStaleness` decision function). New `tests/
   test_walkthrough_build_staleness.mjs` (7 tests) fixes the twice-hit
   silent stale-bundle trap (see Decisions and Failures below).
-- Testing (walkthrough-harness Patch 25, transition-based turn counter):
+- Testing (walkthrough-harness, transition-based turn counter):
   new `createHumanDevelopTurnCounter` in `e2e_walkthrough.mjs` counts
   `phaseKind` transitions out of `"develop"` (fed from the poll loop and
   the develop driver behind a single flag, so no double-count), removing
@@ -1325,7 +1311,7 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   test_walkthrough_turn_counter.mjs` (6 tests) fixes the timing-flaky
   `humanTurnsCompleted` count, which never incremented for auto-ended
   turns.
-- Testing (walkthrough-harness Patch 26, participation-proven trades
+- Testing (walkthrough-harness, participation-proven trades
   invariant): the `auction_outcome` tuple gained `intentsPushed` (up/down
   only, hold excluded); `assertActiveInvariants` now requires, for runs
   where the human held a buyer/seller role, at least one window with
@@ -1453,7 +1439,7 @@ calcCapacity`), both new. Crystite factories now yield their plot's own
   both the shuffle and the new variance draw, and now reads from
   `state.rngState` (the core economy/auction stream) via `turn.ts`'s
   `enterProduction`, which previously never touched the RNG at all.
-- Engine+UI (M11 hardening, Patch 22, sit-out coherence): user-approved
+- Engine+UI (M11 hardening, sit-out coherence): user-approved
   deviation recorded in `docs/RULE_SOURCES.md` -- `AuctionRole` "out" is a
   repo addition over Planet M.U.L.E.'s strict buyer/seller binary.
   `stepParticipantPrice` now freezes out-role prices; the auction screen
@@ -2055,13 +2041,13 @@ build.mjs`, `tools/generate_pwa_icons.mjs`, three sites in
   callout. Updated `README.md`'s managed screenshot block (five embeds,
   matching alt text to each view) and confirmed `pytest tests/
   test_markdown_links.py` passes against the renamed/dropped files.
-- UI (src/ui, Patch 20): fixed a "Stale read from `<Show>`" `page_error`
+- UI (src/ui): fixed a "Stale read from `<Show>`" `page_error`
   that killed 4 of 6 sweep runs. `game_screen.tsx`'s `Show` now gates on a
   boolean, with the payload flowing through a store-backed
   `humanDevelopPayloadLive` accessor that latches the last defined
   payload; `overworld_scene.tsx`'s `updateFrame` bails early on non-
   develop/non-human frames. Playwright 65/65 after the fix.
-- UI (src/ui, Patch 27): the four "walk"-only hints in `game_screen.tsx`,
+- UI (src/ui): the four "walk"-only hints in `game_screen.tsx`,
   `human_develop_layer.tsx`, and `town_scene.tsx` now say "press Enter (or
   Space)", matching `land_grant_panel.tsx`'s existing pattern. Fixes a
   user-reported trap (walking to the corral and nothing happening) -- the
@@ -2089,7 +2075,7 @@ build.mjs`, `tools/generate_pwa_icons.mjs`, three sites in
 
 ### Decisions and Failures
 
-- Testing (walkthrough-harness Patch 3, WP-H1), fix round: the live browser
+- Testing (walkthrough-harness), fix round: the live browser
   walkthrough hit a `DataCloneError` that unit tests had never caught, since
   they only ever exercised plain reducer states, not a SolidJS `createStore`
   proxy -- proxies are not `structuredClone`-able. Fixed by having
@@ -2099,7 +2085,7 @@ build.mjs`, `tools/generate_pwa_icons.mjs`, three sites in
   the bug for a while by serving pre-fix code, so if `window.muleGameState()`
   is undefined or throws inside a walker run, force a `dist/` rebuild before
   suspecting the engine.
-- Testing (walkthrough-harness Patch 9, WP-E2), fix round: the engine holds
+- Testing (walkthrough-harness), fix round: the engine holds
   each auction good's clock at tick 0 until the human commits a role via an
   explicit role-button click (`scene_manager.ts`'s
   `isAuctionTickable`/`humanAuctionCommitted`); the driver originally
@@ -2296,7 +2282,7 @@ energyNeeded)` can only ever be exactly 0 or exactly `energyNeeded`, never
   yield -- and adjudicated not to add one; production reads
   `plot.crystiteLevel` directly, bypassing the `crystiteRevealed` gate that
   exists for UI/AI-facing code, matching PM's real "blind mining" behavior.
-- Testing (walkthrough-harness Patch 15, WP-G1), first real sweep: the
+- Testing (walkthrough-harness), first real sweep: the
   6-run `{1, 3, 7} x {beginner, standard}` matrix exits 1, as expected for a
   first run against a harness this new. 4 of 6 runs fail on the known
   SolidJS stale-`Show` `page_error` (fix already in flight). Seed 7 shows a
@@ -2307,12 +2293,12 @@ energyNeeded)` can only ever be exactly 0 or exactly `energyNeeded`, never
   taxonomy; an `"invariant_violation"` taxonomy kind is in flight to close
   that gap. `matrixCoverage` reports `humanBuy`/`humanSell` not yet
   observed across the 6-run matrix.
-- Testing (walkthrough-harness Patches 17-19), root cause of the first
+- Testing (walkthrough-harness), root cause of the first
   sweep's seed-7 anomaly: a silent ~30s click hang (the walker clicking a
   `RolePanel` role button on ticks where it no longer renders) chained into
   missing outcome tuples, then run-budget exhaustion, then an unclassified
   invariant-violation failure -- one hang crossing three separate taxonomy
-  gaps, closed across Patches 17-19 (see Additions and New Features above).
+  gaps, closed across three follow-up fixes (see Additions and New Features above).
 - Testing (walkthrough-harness sweep observation): one seed-3 run ended at
   scoring after only 2 rounds. Suspected legitimate early colony-failure
   variance rather than a harness bug; a single occurrence, watched rather
@@ -2530,7 +2516,7 @@ no-preference)` pattern. The two gaps found and closed: no `aria-live` on
 
 ### Additions and New Features
 
-- Engine (M1 WS-E-foundation, Patch 1): widened `Resource` in
+- Engine (M1 WS-E-foundation): widened `Resource` in
   `src/engine/player.ts` to `"food" | "energy" | "smithore" | "crystite"`
   and added crystite to `RESOURCES`, then swept every `Record<Resource, ...>`
   call site to compile against the wider union: `STARTING_GOODS.crystite=0`,
@@ -2682,7 +2668,7 @@ run_playwright_tests.sh`, and the `?demo=map` renderer fixture.
   (`dist/`, `node_modules/`, test/lint caches), the documentation map, and
   where to add new work; cross-linked with the current
   `docs/CODE_ARCHITECTURE.md`.
-- Patch 12: full game wiring (WP-4A1). Added `src/ui/game_driver.ts`, which
+- Full game wiring. Added `src/ui/game_driver.ts`, which
   owns the single mutable `GameState` and sequences the whole phase cycle
   (title -> land_grant -> develop -> production -> auction -> scoring) by
   dispatching through the pure `applyAction` reducer and re-rendering the HUD,
@@ -2704,16 +2690,16 @@ run_playwright_tests.sh`, and the `?demo=map` renderer fixture.
   the develop store flow, production, and auction ticking.
 - README: added `README.md` with title, first paragraph (pure prose, no
   links or badges), current v1 feature scope, quick start, doc links, and
-  license notes (WP-4B1 README portion).
+  license notes.
 - Docs: added `docs/CODE_ARCHITECTURE.md` covering the engine/AI/UI purity
   boundary and its ESLint gate, a module map for `src/engine/`, `src/ai/`,
   and `src/ui/`, the `GameState`/`Action` reducer data flow, the per-round
   phase state machine, the auction tick model, `constants.ts` as the single
   rule authority, and the test layout; linked it from `README.md`'s
-  documentation section (WP-4B1 CODE_ARCHITECTURE.md portion). `src/ui/main.ts`
+  documentation section. `src/ui/main.ts`
   is under active rewrite by another agent, so its "Game driver" section is
   intentionally kept to a stable-seam summary pending a follow-up update.
-- Patch 1: scaffold. Added the browser host scaffold: `src/index.html`,
+- Scaffold. Added the browser host scaffold: `src/index.html`,
   `src/style.css`, `src/main.ts` (entry), `src/ui/main.ts`, and
   `src/ui/screen_router.ts`. The title screen renders an "M.U.L.E." heading
   with a disabled "New Game" placeholder button. Seeded
@@ -2721,7 +2707,7 @@ run_playwright_tests.sh`, and the `?demo=map` renderer fixture.
 tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
   `tools/`). `./run_web_server.sh` serves the title-screen page and
   `./check_codebase.sh` passes all steps.
-- Patch 2: engine state types and seeded RNG (WP-1B1).
+- Engine state types and seeded RNG.
   - `src/engine/rng.ts`: mulberry32 seeded PRNG (`createRng`) with a
     serializable 32-bit accumulator (`getState`) and a same-seed-same-sequence
     guarantee; exposes `next()` and `nextInt(maxExclusive)`.
@@ -2734,7 +2720,7 @@ tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
     throw until each phase package implements them.
   - `tests/test_engine_rng.mjs`: node unit tests covering RNG determinism,
     range bounds, and state resume.
-- Patch 3: seeded map generation (WP-1B2).
+- Seeded map generation.
   - `src/engine/map.ts`: `generateMap(rng) -> Plot[][]` builds a deterministic
     5x9 board -- the center column is the river except the center plot, which
     is `town`; every other plot is `plain` or a weighted `mountain1`/2/3 tier
@@ -2743,8 +2729,8 @@ tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
   - Self-checked via a temporary `_temp_map_check.mjs` (run with `node
 --import tsx`, then deleted): confirmed river column placement, single
     town plot at the grid center, blank ownership/outfit on every plot, and
-    same-seed determinism. The permanent test file lands in WP-2C1.
-- Patch 4: constants, economy, store, scoring (WP-1C1).
+    same-seed determinism. The permanent test file lands with the map/economy tests.
+- Constants, economy, store, scoring.
   - `src/engine/constants.ts`: single rule-authority module for round count
     (6), starting money/goods, M.U.L.E. base price and per-resource outfit
     costs, store opening stock/base prices, land value per plot, per-terrain
@@ -2771,7 +2757,7 @@ tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
     `computeWinnerIndex(state) -> number`.
   - `./check_codebase.sh` passes all 5 steps (typecheck, typecheck:lint,
     lint, format:check, test:node).
-- Patch 5: turn sequencer and land grant (WP-2A1).
+- Turn sequencer and land grant.
   - `src/engine/turn.ts`: the phase state machine and reducer. Cycle per
     round: land_grant (snake-order picks) -> develop x4 players (buy, outfit,
     place a M.U.L.E. on a fixed tick budget) -> production (apply yields +
@@ -2791,7 +2777,7 @@ tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
   - `src/engine/game_state.ts`: replaced the placeholder phase payloads with
     real shapes (`LandGrantPayload`, `DevelopPayload` with a `CarriedMule`
     state, `ProductionPayload` yields snapshot, minimal `AuctionPayload`
-    carrying the current good for WP-2A2 to replace, `ScoringPayload`); grew
+    carrying the current good for the auction engine to replace, `ScoringPayload`); grew
     the `Action` union (`tick`, `pass`, `buy_mule`, `outfit_mule`,
     `place_mule`, `cancel_placement`, `end_turn`, `end_auction`); added a
     `store` field to `GameState`; and delegated `applyAction` to
@@ -2805,7 +2791,7 @@ tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
     place, timer expiry losing an unplaced M.U.L.E., broke player ending a
     turn, cancel_placement, out-of-turn throw, and a full six-round game to
     scoring. `./check_codebase.sh` passes all 5 steps.
-- Patch 6: auction engine (WP-2A2).
+- Auction engine.
   - `src/engine/auction.ts`: tick-based double-auction matching engine. Each
     player declares a role (buyer, seller, out) via `set_auction_role` and a
     per-tick price intent (up, down, hold) via `set_auction_intent`; every
@@ -2842,7 +2828,7 @@ tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
     auctions ending cleanly, timeout ending with no trade, and a fixed
     scripted AI-vs-AI trace asserted tick-by-tick. `./check_codebase.sh`
     passes all 5 steps.
-- Patch 10: store and placement screens (WP-3B1).
+- Store and placement screens.
   - `src/ui/store_screen.ts`: `renderStoreScreen(container, state, dispatch)`
     renders money, ticks-remaining, a buy-M.U.L.E. button (price shown,
     disabled via `canBuyMule`), per-resource outfit buttons (cost shown,
@@ -2852,14 +2838,14 @@ tsconfig.lint.json` needs at least one `.ts` input under `tests/` or
     control. Mode is derived from `DevelopPayload.carriedMule`
     (`none`/`unoutfitted`/`Resource`). Self-contained: builds its own DOM
     grid rather than depending on the in-flight `map_render.ts`/`hud.ts`
-    files from WP-3A1.
+    files from the sprites/map-render/HUD work.
   - `src/ui/input.ts`: `bindKeys(map) -> unbind` keyboard binding helper;
     `store_screen.ts` uses it for Escape (cancel placement) and Enter (end
     turn) parity with the on-screen buttons.
   - `src/style.css`: added `.store-screen*` rules, namespaced under
     `.store-screen`, with 44px-minimum button touch targets and bottom
     padding for mobile.
-- Patch 9: SVG sprites, map render, and HUD (WP-3A1).
+- SVG sprites, map render, and HUD.
   - `src/ui/sprites.ts`: exports `PLAYER_COLORS` (4-color palette: coral red,
     cyan, gold, violet, each checked against the `#1a1a2e` app background for
     the doc's 5.5:1 house contrast target), `TERRAIN_FILLS` (per-`Terrain`
@@ -2898,9 +2884,9 @@ http.server`, so `run_playwright_tests.sh` and `npx playwright test` can
 run_playwright_tests.sh tests/playwright/map_render.spec.mjs` passes (1
     passed). `./check_codebase.sh` passes typecheck/typecheck:lint/lint for
     every file this patch touches; `format:check` fails only on
-    `src/engine/auction.ts`, an in-flight WP-3B2 file this patch did not
+    `src/engine/auction.ts`, an in-flight auction-screen file this patch did not
     touch.
-- Patch 11: auction screen (WP-3B2).
+- Auction screen.
   - `src/ui/auction_screen.ts`: `renderAuctionScreen(container, state,
 dispatch)`, a pure render following `store_screen.ts`'s pattern. Two
     modes driven by `AuctionPayload`: a role-choice bar (Buy / Sell / Sit
@@ -2918,7 +2904,7 @@ dispatch)`, a pure render following `store_screen.ts`'s pattern. Two
   - `src/style.css`: appended `.auction-screen*` and `.auction-track-*`
     rules at the end of the file, namespaced separately from
     `.store-screen*`.
-  - Wiring note for WP-4A1: `renderAuctionScreen` re-renders idempotently
+  - Wiring note for the full-game integration: `renderAuctionScreen` re-renders idempotently
     on every dispatch, same as `renderStoreScreen`. To drive ticks, the
     integrator adds a `setInterval` (started when the phase becomes
     `auction`, cleared when it leaves) that dispatches `{type:'tick'}` then
@@ -2981,7 +2967,7 @@ false` since a foreign server squatting on a randomly chosen port should
 tests/playwright/` run twice, both green with different ports
   (`PW_PORT=4459` then `PW_PORT=4401`, 6 passed each); `npx tsc --noEmit -p
 tsconfig.json` clean.
-- Fixed the "click twice to do anything" bug in the game UI (WP-4A1
+- Fixed the "click twice to do anything" bug in the game UI (full-game wiring
   follow-up). Root cause: the driver dispatches a `tick` every 250 ms during
   the human develop turn and every 500 ms during the auction, and both
   `renderStoreScreen` and `renderAuctionScreen` cleared `container.innerHTML`
@@ -3008,7 +2994,7 @@ tsconfig.json` clean.
   flagging as gaps for `setup-install-usage-docs` / `arch-docs` to fill.
   Verified: `pytest tests/test_readme_first_paragraph.py
 tests/test_markdown_links.py tests/test_ascii_compliance.py` (126 passed).
-- Fixed auction AI walk direction (WP-2B1 post-review defect). A 30-game
+- Fixed auction AI walk direction (AI-strategies post-review defect). A 30-game
   headless balance sim found zero auction trades in every game; one cause
   was `src/ai/auction_ai.ts` walking buyer prices down toward the floor and
   seller prices up toward the ceiling, the inverse of the auction engine's
@@ -3047,8 +3033,7 @@ tests/test_markdown_links.py tests/test_ascii_compliance.py` (126 passed).
   clear-then-schedule discipline; `src/ui/main.ts` is now documented as a
   thin bootstrap (screen registration, New Game wiring, the `?demo=map`
   fixture). Added `tests/playwright/game_flow.spec.mjs` and
-  `tests/test_full_game.mjs` to the test-layout section. Removed stale
-  WP-2A2/WP-2B1 planning references from `src/engine/game_state.ts` and
+  `tests/test_full_game.mjs` to the test-layout section. Removed stale planning references from `src/engine/game_state.ts` and
   `src/engine/turn.ts` comments, describing current behavior instead
   (`auction.ts` owns tick-based matching; `end_auction` is dispatched by the
   UI driver; `Phase` payloads are the real per-phase shapes defined in
@@ -3130,7 +3115,7 @@ tests/test_markdown_links.py tests/test_ascii_compliance.py` (126 passed).
 
 ### Developer Tests and Notes
 
-- Patch 13: Playwright walkthrough specs (WP-4B1 Playwright portion). Added
+- Playwright walkthrough specs. Added
   `tests/playwright/game_flow.spec.mjs` (3 tests): load the title screen,
   start a game, and assert the land-grant map plus a 4-player HUD render;
   claim a plot, buy and outfit a M.U.L.E., place it, and assert a
@@ -3145,7 +3130,7 @@ tests/test_markdown_links.py tests/test_ascii_compliance.py` (126 passed).
   repeat runs of the new spec file; `./check_codebase.sh` passes all 5 steps
   (68/68 node tests). No `src/` changes were needed; the product surface
   matched the plan's selector contract exactly.
-- Patch 8 part 1: map/economy tests (WP-2C1 part 1). Added
+- Map/economy tests (part 1). Added
   `tests/test_map.mjs` (grid dimensions, river/town column placement,
   non-river columns never river or town, same-seed determinism, plots start
   unowned with no installed M.U.L.E.), `tests/test_economy.mjs`
@@ -3158,7 +3143,7 @@ tests/test_markdown_links.py tests/test_ascii_compliance.py` (126 passed).
   assertions pass; `./check_codebase.sh` passes all 5 steps with 26 total
   node tests. Part 2 (turn/auction/ai/full-game tests) is blocked on M2
   modules and is out of scope for this patch.
-- Patch 8 part 2: headless full-game sim (WP-2C1 part 2). Added
+- Headless full-game sim (part 2). Added
   `tests/test_full_game.mjs`: a watchdog-bounded (20000-step) driver plays a
   fixed-seed 4-AI game end to end, applying `decideLandGrantAction` in land
   grant, interleaving `decideDevelopAction` with ticks in develop, and
@@ -3171,17 +3156,17 @@ tests/test_markdown_links.py tests/test_ascii_compliance.py` (126 passed).
   (determinism). `node --import tsx --test tests/test_full_game.mjs`: 4/4
   pass. `node --import tsx --test tests/test_*.mjs`: 68/68 pass, no
   regressions. No engine or AI softlocks or invariant bugs were found.
-- Patch 10: store and placement screens (WP-3B1). Verified with `npx tsc
+- Store and placement screens. Verified with `npx tsc
 --noEmit`: no errors attributed to `src/ui/store_screen.ts` or
   `src/ui/input.ts`; the run's failures are all pre-existing, in other
   in-flight agents' files (`src/engine/turn.ts` auction payload/action
-  mismatches from WP-3B2, `src/ui/hud.ts`/`src/ui/map_render.ts` `.ts`
-  import-extension errors from WP-3A1). `./check_codebase.sh` fails at
+  mismatches from the auction-screen lane, `src/ui/hud.ts`/`src/ui/map_render.ts` `.ts`
+  import-extension errors from the sprites/map-render/HUD lane). `./check_codebase.sh` fails at
   `typecheck` for the same pre-existing reasons; no failure line names a
   file this patch touched. No permanent test added (out of scope; Playwright
-  coverage is WP-4B1's); verified via `npx tsc --noEmit` plus manual read of
+  coverage is the walkthrough-specs lane's); verified via `npx tsc --noEmit` plus manual read of
   the rendered DOM structure logic.
-- Patch 7: AI strategies (WP-2B1). Added `src/ai/land_ai.ts`
+- AI strategies. Added `src/ai/land_ai.ts`
   (`decideLandGrantAction(state, playerId)`: claims the unowned, non-town
   plot with the best single-resource base yield, passing when it is not the
   player's pick, no plot is claimable, or the game is not in `land_grant`),
