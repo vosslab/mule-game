@@ -1,0 +1,1237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+=====================================================================
+ARTIST 4. DESIGN HYPOTHESIS: "EIGHT LETTERS IN ONE ALPHABET"
+=====================================================================
+
+THE BET
+  The cast is not eight drawings, it is one ALPHABET. A player never sees a
+  species alone; they see it in a row of eight, at 18 px, next to seven rivals.
+  So the unit of design is not the creature, it is the SET, and the thing that
+  must be unique is not the face, the pose, or the charm. It is the LETTER: the
+  one black shape left when every detail is switched off.
+
+  I picked eight letters first, on paper, before drawing a single primitive,
+  and refused to let any creature take a letter another creature already had:
+
+    humanoid  I  a narrow rounded column, split at the bottom
+    gollumer  ?  a lopsided leaning mass, no legs, a two spike crown
+    mechtron  H  a WALKING CABINET: one tall slab body, V rods, claw brackets
+    packer    A  a broad trapezoid, wide at the shoulders, a dome on top
+    leggite   E  a thin wandering column with a horizontal leg fringe
+    bonzoid   o=o a dumbbell, two huge round mitts on a pinched body
+    spheroid  Q  a big circle trailing three splayed tentacles
+    flapper   V  a MOTH: curved lobed wings, twin trailing streamers
+
+  ALL EIGHT ARE ORIGINAL CREATURES. set_5 was read for STYLE only, meaning the
+  underprinting construction and the solid uniform double rim, and no geometry
+  from it is reused anywhere in this file. The two species where an artist is
+  most tempted to borrow are the two set_5 already drew, so I deliberately took
+  each of them somewhere else:
+
+  MECHTRON is not a little robot with a head, a body and two stick legs. It is
+  a VENDING MACHINE THAT WALKS: a single 100 wide cabinet slab running almost
+  the full height of the canvas, with no separate head at all, so the face is
+  printed on the cabinet the way the reference sheet's square aliens wear their
+  faces on the shape. Its two antennae are not ball knobs on straight stalks,
+  they are two angled RODS splayed into a V with square caps. Its arms are not
+  side posts, they are right angle BRACKET arms ending in blunt claw blocks,
+  parked at mid height so the outline steps outward at the shoulder. It has
+  short legs and wide tread feet. The letter is a fridge with a V on its head.
+
+  FLAPPER is not a bat with straight sided quad wings. It is a MOTH: every wing
+  edge is a bezier, the leading edge sweeps up and out and the outer edge is a
+  round blunt lobe rather than a corner, so the whole wing reads as a soft
+  curved paddle. Below it hang two long TRAILING STREAMERS, 96 units of tail,
+  forking 73 units apart at the tips, which is the widest notch in the cast.
+  The wings snap up into a curved vertical V in frame 2, the wingtip flying 75
+  units, which is the largest single extremity move of any species here.
+
+  Nothing in that list can be mistaken for anything else in that list as a
+  black shape. That was the acceptance test I designed against, and the
+  silhouette rows at the bottom of this sheet are where I want to be judged.
+
+THE ARITHMETIC THAT DECIDED EVERYTHING (read this one)
+  The halo stroke is 40 units wide, so it grows the union 20 units outward on
+  every side. Two facing edges therefore eat 40 units of any gap between them.
+  Now count the canvas. It is 200 units wide, and the halo needs 20 of them at
+  each margin, so the usable geometry band is x = 20 to 180: ONE HUNDRED AND
+  SIXTY UNITS. Try to give any creature a lateral air gap between an arm and
+  its torso:
+
+      arm 26 (limb floor) + gap 40 + torso 40 + gap 40 + arm 26  =  172 > 160
+
+  It does not fit. Not for a humanoid, not for a bonzoid, not for anything.
+  A 200 unit canvas with a 40 unit halo CANNOT hold a left to right sequence
+  of limb, air, body, air, limb. This is arithmetic, not taste, and it is the
+  single most load bearing fact I found. It is also why the exemplar welds
+  every arm to every torso and shows no armpit anywhere: set_5's mechtron arms
+  sit flush against its torso at x=50 and x=150, touching, on purpose.
+
+  So I stopped fighting it and made it the law of the cast:
+
+    VERTICAL NOTCHES ARE AFFORDABLE. LATERAL ONES ARE NOT.
+
+  A leg split is measured across a 40 unit gap but lives in a 320 unit column,
+  so it is cheap. The V between two antennae, the fork of a tail, the slot
+  between two crown spikes, the fan between two ripple phased legs: all cheap,
+  all vertical, all kept, all wider than 40. Every LATERAL appendage in this
+  cast is welded to its body by construction and earns its keep in the OUTLINE
+  PROFILE instead: as a knob, a lobe, a spike, a hump. That is exactly what
+  underprinting is good at, and it is why every creature here reads as one
+  clean union with a uniform double rim and no internal seam.
+
+MECHTRON VERSUS LEGGITE, THE FAILURE NOBODY SOLVED
+  The bake off collided these two in all five sets. They collided because both
+  were drawn as "a tall thing with stuff sticking out". I separated them on
+  FOUR axes at once, not one, so that losing any single axis still leaves three:
+
+  1. MASS. Mechtron torso is 100 units wide (contract floor 96), a single solid
+     rectangle. Leggite's core is a 54 unit column (contract ceiling 60). The
+     mechtron is nearly twice as thick. A wide block cannot be a narrow snake.
+  2. EDGE. Mechtron is rectilinear: square corners, rx 3 to 6, straight sides,
+     flat top. Leggite is a chain of circles: every contour is convex and round.
+     At 18 px the mechtron's corners survive as corners.
+  3. AXIS. Mechtron is mirror exact about x=100, dead vertical, planted on two
+     posts. Leggite is a standing S: its head sits at x=122 and its belly at
+     x=94, so its centre line visibly WANDERS. Nothing else in the cast wanders.
+  4. FRINGE. Leggite carries eight legs on four hips, every one 62 units long
+     (contract nominal 64, tolerance 4) and 26 thick, fanned across the 76 to
+     104 degree band off vertical, with EVERY adjacent tip gap measured at 40
+     to 46 units so the fringe reads as separate spikes and not as a skirt.
+     The mechtron has two posts and two antennae. Eight versus four.
+
+  Their outlines share no property. At 18 px one is a brick and the other is a
+  comb.
+
+SPHEROID, THE HARD ONE
+  A circle has no contour to remember, so the spheroid earns identity three
+  ways and would still survive losing two of them. (a) THE FRINGE: three
+  tentacles, 86 long, 28 thick, splayed 38 degrees, with a measured 44 unit gap
+  between adjacent tips, so the outline is circle plus trident and nothing else
+  in the cast is that. (b) THE ASPECT: the orb sits in the upper two thirds and
+  RISES 40 units between frames, the largest single body translation in the
+  set, so its motion is a lift off rather than a wobble. (c) THE EYE: one eye,
+  radius 36, the biggest shape on any face here. At 18 px the other seven
+  species are shapes; the spheroid is a shape with a visible pupil. It reads as
+  a creature LOOKING at you, which is the whole point of a cyclops.
+
+WHAT I SPENT THE COLOR BUDGET ON
+  Nothing. Four colors, exactly as specified, and every creature carries two
+  eyes (one for gollumer and spheroid), one wide smile, one gold accent, and
+  the one permitted 0.16 under shade. No panels, no rivets, no seams, no
+  feather bars. Every gold accent is placed INSIDE that species' head window on
+  purpose, because the contract requires the 18 px dock badge to show eyes,
+  mouth and accent, and an accent drawn on the shin cannot be in the badge.
+
+MOTION
+  Every frame 2 moves a silhouette extremity by more than 40 units, and I
+  logged which extremity does the work per species, because that is the one
+  thing an interior change can never fake:
+    humanoid  the marching leg lifts 40           gollumer  the crown drops 44
+    mechtron  the stepping foot clears 40         packer    the trudging leg 40
+    leggite   the head swings 44 across the S     bonzoid   the fists rise 62
+    spheroid  the orb lifts 40                    flapper   the wingtip flies 55
+
+TWO THINGS I LEARNED BY RENDERING, NOT BY REASONING
+  Both of these cost me a full revision pass, and both are worth carrying back
+  into the contract, so I am writing them down rather than just fixing them.
+
+  1. A 40 UNIT NOTCH IS NOT A NOTCH IN THE SILHOUETTE. The floor says 40 is the
+     minimum gap. That is true for the INK reading: at a 40 unit gap the halo
+     fills the slot white, the two ink rims eat 10 units each, and a 20 unit
+     WHITE slot survives between the parts. In full color that reads fine, and
+     it is why my first pass looked correct on the panel and on terrain. But it
+     is NOT a notch in the OUTER BOUNDARY: the halo has closed the gap, so the
+     union's outline is smooth across it. The moment the cast is judged as flat
+     black shapes, every 40 to 50 unit notch I had drawn vanished and four
+     species collapsed into the same rounded rectangle. Measured on my own
+     first draft: gollumer's 50 unit crown gap, the flapper's wing to tail bay,
+     and the spheroid's 44 unit tentacle gaps all disappeared.
+     THE WORKING RULE: a notch that must show in the SILHOUETTE needs about 40
+     units of halo plus the width you actually want to see. Everything in this
+     file that has to cut the outer boundary is now 48 to 74 units wide:
+     gollumer crown 68, flapper tail fork 74, humanoid leg split 56, mechtron
+     antenna gap 62 and leg split 48, packer leg split 48, bonzoid leg split 42
+     plus its open underarm bays. The 40 unit floor is a floor, not a target.
+
+  2. THE HEAD CROP AND THE RENDERER DISAGREE, AND THE RENDERER WINS.
+     devel/render_alien_sheet.mjs captures a symbol by setting the OUTER svg's
+     viewBox to that symbol's own viewBox and then placing the use at user
+     (0,0). For the frame symbols, whose viewBox origin is "0 0", that is
+     harmless. For a head crop written the way the contract's schema writes it,
+     as a window with a NON ZERO origin (the schema's own example is
+     viewBox="46 14 108 108"), the symbol content lands offset by minus minX
+     and minus minY and the face slides straight out of the badge. My first
+     render proved it: three of eight badges showed no eye at all.
+     I am not allowed to edit the tool, so every head symbol here states the
+     same square window in the form that is correct under BOTH the tool and a
+     browser: viewBox="0 0 W W" plus a translate of the frame 1 draw group.
+     Same crop, same art, no new geometry, and translate is an allowed
+     transform. Whoever owns the contract should either fix the capture path or
+     bless this form, because the schema as written cannot be rendered by the
+     repo's own tool.
+
+WHERE THE CONTRACT FOUGHT ME, STATED HONESTLY
+  Three archetype numbers are not reachable on this canvas and I did not
+  pretend otherwise. Flapper wingspan (asked 175 to 200) and bonzoid mid width
+  (asked 170 to 195) both exceed the 160 unit usable band; I drew both at the
+  full 160, which renders at 200 visible width once the halo lands, and I
+  believe the table's numbers are post halo for those two rows. The humanoid's
+  "gap between each arm and the torso" is the arithmetic above and is
+  impossible; its arms are welded and it carries the leg split (56 units) as
+  its notch instead. I chose rule 3, the geometry floor, over the archetype
+  table's cue, because rule 3 is listed as non negotiable and because a 20 unit
+  gap draws as nothing at all.
+=====================================================================
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1990" viewBox="0 0 1240 1990"
+	font-family="Helvetica, Arial, sans-serif">
+
+<defs>
+
+<!-- ================================================================= -->
+<!-- HUMANOID : narrow rounded column, leg split, walking              -->
+<!-- ================================================================= -->
+<g id="humanoid-f1-shapes">
+	<ellipse cx="100" cy="58" rx="38" ry="36"/>
+	<rect x="58" y="92" width="84" height="104" rx="26"/>
+	<rect x="-15" y="-14" width="30" height="78" rx="15" transform="translate(58,112) rotate(8)"/>
+	<rect x="-15" y="-14" width="30" height="78" rx="15" transform="translate(142,112) rotate(-8)"/>
+	<circle cx="49" cy="176" r="15"/>
+	<circle cx="151" cy="176" r="15"/>
+	<rect x="40" y="176" width="32" height="94" rx="16"/>
+	<rect x="128" y="176" width="32" height="94" rx="16"/>
+</g>
+<clipPath id="humanoid-f1-clip"><use href="#humanoid-f1-shapes"/></clipPath>
+<g id="humanoid-f1-face">
+	<circle cx="82" cy="52" r="15" fill="#ffffff"/>
+	<circle cx="118" cy="52" r="15" fill="#ffffff"/>
+	<circle cx="84" cy="55" r="8" fill="#141422"/>
+	<circle cx="116" cy="55" r="8" fill="#141422"/>
+	<path d="M76,72 Q100,96 124,72 L124,64 Q100,86 76,64 Z" fill="#141422"/>
+	<rect x="84" y="110" width="32" height="26" rx="5" fill="#ffd23f"/>
+</g>
+<g id="humanoid-f1-draw">
+	<use href="#humanoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#humanoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#humanoid-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#humanoid-f1-clip)">
+		<rect x="0" y="180" width="200" height="140" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#humanoid-f1-face"/>
+</g>
+
+<g id="humanoid-f2-shapes">
+	<ellipse cx="104" cy="60" rx="38" ry="36"/>
+	<rect x="62" y="94" width="84" height="104" rx="26"/>
+	<rect x="-15" y="-14" width="30" height="78" rx="15" transform="translate(62,96) rotate(6)"/>
+	<rect x="-15" y="-14" width="30" height="78" rx="15" transform="translate(146,116) rotate(-14)"/>
+	<circle cx="55" cy="160" r="15"/>
+	<circle cx="161" cy="178" r="15"/>
+	<rect x="40" y="136" width="32" height="94" rx="16"/>
+	<rect x="132" y="180" width="32" height="94" rx="16"/>
+</g>
+<clipPath id="humanoid-f2-clip"><use href="#humanoid-f2-shapes"/></clipPath>
+<g id="humanoid-f2-face">
+	<circle cx="86" cy="54" r="15" fill="#ffffff"/>
+	<circle cx="122" cy="54" r="15" fill="#ffffff"/>
+	<circle cx="88" cy="57" r="8" fill="#141422"/>
+	<circle cx="120" cy="57" r="8" fill="#141422"/>
+	<path d="M80,74 Q104,98 128,74 L128,66 Q104,88 80,66 Z" fill="#141422"/>
+	<rect x="88" y="112" width="32" height="26" rx="5" fill="#ffd23f"/>
+</g>
+<g id="humanoid-f2-draw">
+	<use href="#humanoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#humanoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#humanoid-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#humanoid-f2-clip)">
+		<rect x="0" y="184" width="200" height="136" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#humanoid-f2-face"/>
+</g>
+
+<symbol id="humanoid-frame1" viewBox="0 0 200 320"><use href="#humanoid-f1-draw"/></symbol>
+<symbol id="humanoid-frame2" viewBox="0 0 200 320"><use href="#humanoid-f2-draw"/></symbol>
+<symbol id="humanoid-head" viewBox="0 0 130 130">
+	<g transform="translate(-40,-14)"><use href="#humanoid-f1-draw"/></g>
+</symbol>
+<symbol id="humanoid-silhouette1" viewBox="0 0 200 320">
+	<use href="#humanoid-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="humanoid-silhouette2" viewBox="0 0 200 320">
+	<use href="#humanoid-f2-shapes" fill="#141422"/>
+</symbol>
+
+<!-- ================================================================= -->
+<!-- GOLLUMER : lopsided legless mass, two spike crown, one big eye    -->
+<!-- ================================================================= -->
+<g id="gollumer-f1-shapes">
+	<ellipse cx="104" cy="232" rx="68" ry="58"/>
+	<ellipse cx="92" cy="170" rx="54" ry="48"/>
+	<circle cx="84" cy="118" r="42"/>
+	<circle cx="144" cy="152" r="34"/>
+	<rect x="44" y="36" width="32" height="72" rx="16"/>
+	<rect x="144" y="54" width="32" height="78" rx="16"/>
+</g>
+<clipPath id="gollumer-f1-clip"><use href="#gollumer-f1-shapes"/></clipPath>
+<g id="gollumer-f1-face">
+	<circle cx="82" cy="116" r="34" fill="#ffffff"/>
+	<circle cx="90" cy="124" r="17" fill="#141422"/>
+	<path d="M57,168 Q86,196 115,168 L115,160 Q86,186 57,160 Z" fill="#141422"/>
+	<circle cx="136" cy="192" r="14" fill="#ffd23f"/>
+</g>
+<g id="gollumer-f1-draw">
+	<use href="#gollumer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#gollumer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#gollumer-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#gollumer-f1-clip)">
+		<rect x="0" y="204" width="200" height="116" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#gollumer-f1-face"/>
+</g>
+
+<g id="gollumer-f2-shapes">
+	<ellipse cx="108" cy="240" rx="72" ry="52"/>
+	<ellipse cx="96" cy="182" rx="58" ry="44"/>
+	<circle cx="88" cy="136" r="44"/>
+	<circle cx="146" cy="166" r="34"/>
+	<rect x="58" y="80" width="32" height="70" rx="16"/>
+	<rect x="146" y="94" width="32" height="76" rx="16"/>
+</g>
+<clipPath id="gollumer-f2-clip"><use href="#gollumer-f2-shapes"/></clipPath>
+<g id="gollumer-f2-face">
+	<circle cx="86" cy="134" r="34" fill="#ffffff"/>
+	<circle cx="78" cy="140" r="17" fill="#141422"/>
+	<path d="M61,186 Q90,214 119,186 L119,178 Q90,204 61,178 Z" fill="#141422"/>
+	<circle cx="140" cy="206" r="14" fill="#ffd23f"/>
+</g>
+<g id="gollumer-f2-draw">
+	<use href="#gollumer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#gollumer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#gollumer-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#gollumer-f2-clip)">
+		<rect x="0" y="220" width="200" height="100" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#gollumer-f2-face"/>
+</g>
+
+<symbol id="gollumer-frame1" viewBox="0 0 200 320"><use href="#gollumer-f1-draw"/></symbol>
+<symbol id="gollumer-frame2" viewBox="0 0 200 320"><use href="#gollumer-f2-draw"/></symbol>
+<symbol id="gollumer-head" viewBox="0 0 140 140">
+	<g transform="translate(-44,-68)"><use href="#gollumer-f1-draw"/></g>
+</symbol>
+<symbol id="gollumer-silhouette1" viewBox="0 0 200 320">
+	<use href="#gollumer-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="gollumer-silhouette2" viewBox="0 0 200 320">
+	<use href="#gollumer-f2-shapes" fill="#141422"/>
+</symbol>
+
+<!-- ================================================================= -->
+<!-- MECHTRON : hard block on two posts, torso 100 wide, two antennae  -->
+<!-- ================================================================= -->
+<g id="mechtron-f1-shapes">
+	<rect x="-13" y="-10" width="26" height="56" rx="2" transform="translate(70,66) rotate(160)"/>
+	<rect x="-13" y="-10" width="26" height="56" rx="2" transform="translate(130,66) rotate(-160)"/>
+	<rect x="44" y="22" width="28" height="20" rx="3"/>
+	<rect x="128" y="22" width="28" height="20" rx="3"/>
+	<rect x="50" y="60" width="100" height="170" rx="8"/>
+	<rect x="26" y="108" width="30" height="30" rx="3"/>
+	<rect x="144" y="108" width="30" height="30" rx="3"/>
+	<rect x="26" y="108" width="28" height="48" rx="3"/>
+	<rect x="146" y="108" width="28" height="48" rx="3"/>
+	<rect x="24" y="146" width="32" height="26" rx="3"/>
+	<rect x="144" y="146" width="32" height="26" rx="3"/>
+	<rect x="50" y="226" width="26" height="44" rx="2"/>
+	<rect x="124" y="226" width="26" height="44" rx="2"/>
+	<rect x="40" y="264" width="36" height="26" rx="4"/>
+	<rect x="124" y="264" width="36" height="26" rx="4"/>
+</g>
+<clipPath id="mechtron-f1-clip"><use href="#mechtron-f1-shapes"/></clipPath>
+<g id="mechtron-f1-face">
+	<rect x="66" y="84" width="30" height="26" rx="3" fill="#ffffff"/>
+	<rect x="104" y="84" width="30" height="26" rx="3" fill="#ffffff"/>
+	<rect x="74" y="90" width="14" height="14" rx="2" fill="#141422"/>
+	<rect x="112" y="90" width="14" height="14" rx="2" fill="#141422"/>
+	<path d="M68,120 Q100,144 132,120 L132,114 Q100,136 68,114 Z" fill="#141422"/>
+	<rect x="84" y="156" width="32" height="30" rx="4" fill="#ffd23f"/>
+</g>
+<g id="mechtron-f1-draw">
+	<use href="#mechtron-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#mechtron-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#mechtron-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#mechtron-f1-clip)">
+		<rect x="0" y="196" width="200" height="124" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#mechtron-f1-face"/>
+</g>
+
+<g id="mechtron-f2-shapes">
+	<rect x="-13" y="-10" width="26" height="50" rx="2" transform="translate(70,72) rotate(172)"/>
+	<rect x="-13" y="-10" width="26" height="60" rx="2" transform="translate(130,72) rotate(-150)"/>
+	<rect x="52" y="28" width="28" height="20" rx="3"/>
+	<rect x="142" y="24" width="28" height="20" rx="3"/>
+	<rect x="50" y="66" width="100" height="170" rx="8"/>
+	<rect x="26" y="88" width="30" height="30" rx="3"/>
+	<rect x="144" y="132" width="30" height="30" rx="3"/>
+	<rect x="26" y="88" width="28" height="42" rx="3"/>
+	<rect x="146" y="132" width="28" height="48" rx="3"/>
+	<rect x="24" y="120" width="32" height="26" rx="3"/>
+	<rect x="144" y="164" width="32" height="26" rx="3"/>
+	<rect x="50" y="188" width="26" height="44" rx="2"/>
+	<rect x="124" y="232" width="26" height="44" rx="2"/>
+	<rect x="40" y="224" width="36" height="26" rx="4"/>
+	<rect x="124" y="270" width="36" height="26" rx="4"/>
+</g>
+<clipPath id="mechtron-f2-clip"><use href="#mechtron-f2-shapes"/></clipPath>
+<g id="mechtron-f2-face">
+	<rect x="66" y="90" width="30" height="26" rx="3" fill="#ffffff"/>
+	<rect x="104" y="90" width="30" height="26" rx="3" fill="#ffffff"/>
+	<rect x="70" y="96" width="14" height="14" rx="2" fill="#141422"/>
+	<rect x="108" y="96" width="14" height="14" rx="2" fill="#141422"/>
+	<path d="M68,126 Q100,150 132,126 L132,120 Q100,142 68,120 Z" fill="#141422"/>
+	<rect x="84" y="162" width="32" height="30" rx="4" fill="#ffd23f"/>
+</g>
+<g id="mechtron-f2-draw">
+	<use href="#mechtron-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#mechtron-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#mechtron-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#mechtron-f2-clip)">
+		<rect x="0" y="204" width="200" height="116" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#mechtron-f2-face"/>
+</g>
+
+<symbol id="mechtron-frame1" viewBox="0 0 200 320"><use href="#mechtron-f1-draw"/></symbol>
+<symbol id="mechtron-frame2" viewBox="0 0 200 320"><use href="#mechtron-f2-draw"/></symbol>
+<symbol id="mechtron-head" viewBox="0 0 140 140">
+	<g transform="translate(-30,-50)"><use href="#mechtron-f1-draw"/></g>
+</symbol>
+<symbol id="mechtron-silhouette1" viewBox="0 0 200 320">
+	<use href="#mechtron-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="mechtron-silhouette2" viewBox="0 0 200 320">
+	<use href="#mechtron-f2-shapes" fill="#141422"/>
+</symbol>
+
+<!-- ================================================================= -->
+<!-- PACKER : broad trapezoid, big rounded load hump, top heavy        -->
+<!-- ================================================================= -->
+<g id="packer-f1-shapes">
+	<ellipse cx="100" cy="74" rx="50" ry="42"/>
+	<path d="M20,110 L180,110 L150,236 L50,236 Z"/>
+	<rect x="46" y="228" width="30" height="54" rx="10"/>
+	<rect x="124" y="228" width="30" height="54" rx="10"/>
+</g>
+<clipPath id="packer-f1-clip"><use href="#packer-f1-shapes"/></clipPath>
+<g id="packer-f1-face">
+	<circle cx="76" cy="150" r="17" fill="#ffffff"/>
+	<circle cx="124" cy="150" r="17" fill="#ffffff"/>
+	<circle cx="79" cy="154" r="9" fill="#141422"/>
+	<circle cx="121" cy="154" r="9" fill="#141422"/>
+	<path d="M68,174 Q100,198 132,174 L132,166 Q100,190 68,166 Z" fill="#141422"/>
+	<rect x="88" y="68" width="24" height="22" rx="4" fill="#ffd23f"/>
+</g>
+<g id="packer-f1-draw">
+	<use href="#packer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#packer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#packer-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#packer-f1-clip)">
+		<rect x="0" y="204" width="200" height="116" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#packer-f1-face"/>
+</g>
+
+<g id="packer-f2-shapes">
+	<ellipse cx="76" cy="82" rx="52" ry="36"/>
+	<path d="M22,114 L178,114 L152,240 L48,240 Z"/>
+	<rect x="46" y="188" width="30" height="54" rx="10"/>
+	<rect x="126" y="232" width="30" height="54" rx="10"/>
+</g>
+<clipPath id="packer-f2-clip"><use href="#packer-f2-shapes"/></clipPath>
+<g id="packer-f2-face">
+	<circle cx="74" cy="154" r="17" fill="#ffffff"/>
+	<circle cx="122" cy="154" r="17" fill="#ffffff"/>
+	<circle cx="70" cy="158" r="9" fill="#141422"/>
+	<circle cx="118" cy="158" r="9" fill="#141422"/>
+	<path d="M66,178 Q98,202 130,178 L130,170 Q98,194 66,170 Z" fill="#141422"/>
+	<rect x="66" y="76" width="24" height="22" rx="4" fill="#ffd23f"/>
+</g>
+<g id="packer-f2-draw">
+	<use href="#packer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#packer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#packer-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#packer-f2-clip)">
+		<rect x="0" y="208" width="200" height="112" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#packer-f2-face"/>
+</g>
+
+<symbol id="packer-frame1" viewBox="0 0 200 320"><use href="#packer-f1-draw"/></symbol>
+<symbol id="packer-frame2" viewBox="0 0 200 320"><use href="#packer-f2-draw"/></symbol>
+<symbol id="packer-head" viewBox="0 0 134 134">
+	<g transform="translate(-32,-60)"><use href="#packer-f1-draw"/></g>
+</symbol>
+<symbol id="packer-silhouette1" viewBox="0 0 200 320">
+	<use href="#packer-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="packer-silhouette2" viewBox="0 0 200 320">
+	<use href="#packer-f2-shapes" fill="#141422"/>
+</symbol>
+
+<!-- ================================================================= -->
+<!-- LEGGITE : standing S, core 54 wide, eight legs all 62 units long  -->
+<!-- ================================================================= -->
+<g id="leggite-f1-shapes">
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(94,96) rotate(104)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(110,96) rotate(-100)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(86,152) rotate(94)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(102,152) rotate(-90)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(88,208) rotate(84)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(104,208) rotate(-80)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(98,272) rotate(76)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(114,272) rotate(-78)"/>
+	<circle cx="122" cy="50" r="30"/>
+	<circle cx="108" cy="98" r="27"/>
+	<circle cx="98" cy="148" r="27"/>
+	<circle cx="94" cy="198" r="27"/>
+	<circle cx="100" cy="246" r="27"/>
+	<circle cx="110" cy="272" r="27"/>
+</g>
+<clipPath id="leggite-f1-clip"><use href="#leggite-f1-shapes"/></clipPath>
+<g id="leggite-f1-face">
+	<circle cx="112" cy="44" r="13" fill="#ffffff"/>
+	<circle cx="138" cy="44" r="13" fill="#ffffff"/>
+	<circle cx="114" cy="47" r="7" fill="#141422"/>
+	<circle cx="140" cy="47" r="7" fill="#141422"/>
+	<path d="M107,56 Q124,80 141,56 L141,50 Q124,72 107,50 Z" fill="#141422"/>
+	<rect x="100" y="88" width="22" height="20" rx="4" fill="#ffd23f"/>
+</g>
+<g id="leggite-f1-draw">
+	<use href="#leggite-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#leggite-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#leggite-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#leggite-f1-clip)">
+		<rect x="0" y="200" width="200" height="120" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#leggite-f1-face"/>
+</g>
+
+<g id="leggite-f2-shapes">
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(86,96) rotate(102)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(104,96) rotate(-104)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(94,152) rotate(92)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(112,152) rotate(-92)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(94,208) rotate(82)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(112,208) rotate(-82)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(98,272) rotate(78)"/>
+	<rect x="-13" y="-13" width="26" height="75" rx="13" transform="translate(114,272) rotate(-76)"/>
+	<circle cx="78" cy="58" r="30"/>
+	<circle cx="94" cy="102" r="27"/>
+	<circle cx="104" cy="150" r="27"/>
+	<circle cx="104" cy="198" r="27"/>
+	<circle cx="98" cy="244" r="27"/>
+	<circle cx="108" cy="272" r="27"/>
+</g>
+<clipPath id="leggite-f2-clip"><use href="#leggite-f2-shapes"/></clipPath>
+<g id="leggite-f2-face">
+	<circle cx="68" cy="52" r="13" fill="#ffffff"/>
+	<circle cx="94" cy="52" r="13" fill="#ffffff"/>
+	<circle cx="66" cy="55" r="7" fill="#141422"/>
+	<circle cx="92" cy="55" r="7" fill="#141422"/>
+	<path d="M63,64 Q80,88 97,64 L97,58 Q80,80 63,58 Z" fill="#141422"/>
+	<rect x="86" y="92" width="22" height="20" rx="4" fill="#ffd23f"/>
+</g>
+<g id="leggite-f2-draw">
+	<use href="#leggite-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#leggite-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#leggite-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#leggite-f2-clip)">
+		<rect x="0" y="204" width="200" height="116" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#leggite-f2-face"/>
+</g>
+
+<symbol id="leggite-frame1" viewBox="0 0 200 320"><use href="#leggite-f1-draw"/></symbol>
+<symbol id="leggite-frame2" viewBox="0 0 200 320"><use href="#leggite-f2-draw"/></symbol>
+<symbol id="leggite-head" viewBox="0 0 130 130">
+	<g transform="translate(-56,-4)"><use href="#leggite-f1-draw"/></g>
+</symbol>
+<symbol id="leggite-silhouette1" viewBox="0 0 200 320">
+	<use href="#leggite-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="leggite-silhouette2" viewBox="0 0 200 320">
+	<use href="#leggite-f2-shapes" fill="#141422"/>
+</symbol>
+
+<!-- ================================================================= -->
+<!-- BONZOID : pinched waist, two huge round mitts, arms flex to an M  -->
+<!-- ================================================================= -->
+<g id="bonzoid-f1-shapes">
+	<circle cx="100" cy="60" r="30"/>
+	<path d="M70,86 L130,86 L124,150 L116,180 L84,180 L76,150 Z"/>
+	<ellipse cx="100" cy="208" rx="42" ry="30"/>
+	<rect x="-16" y="-12" width="32" height="74" rx="16" transform="translate(78,216) rotate(14)"/>
+	<rect x="-16" y="-12" width="32" height="74" rx="16" transform="translate(122,216) rotate(-14)"/>
+	<rect x="-14" y="-14" width="28" height="48" rx="14" transform="translate(74,124) rotate(86)"/>
+	<rect x="-14" y="-14" width="28" height="48" rx="14" transform="translate(126,124) rotate(-86)"/>
+	<circle cx="48" cy="128" r="28"/>
+	<circle cx="152" cy="128" r="28"/>
+</g>
+<clipPath id="bonzoid-f1-clip"><use href="#bonzoid-f1-shapes"/></clipPath>
+<g id="bonzoid-f1-face">
+	<circle cx="86" cy="54" r="14" fill="#ffffff"/>
+	<circle cx="114" cy="54" r="14" fill="#ffffff"/>
+	<circle cx="88" cy="57" r="7.5" fill="#141422"/>
+	<circle cx="112" cy="57" r="7.5" fill="#141422"/>
+	<path d="M78,72 Q100,94 122,72 L122,66 Q100,86 78,66 Z" fill="#141422"/>
+	<rect x="86" y="100" width="28" height="26" rx="4" fill="#ffd23f"/>
+</g>
+<g id="bonzoid-f1-draw">
+	<use href="#bonzoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#bonzoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#bonzoid-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#bonzoid-f1-clip)">
+		<rect x="0" y="190" width="200" height="130" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#bonzoid-f1-face"/>
+</g>
+
+<g id="bonzoid-f2-shapes">
+	<circle cx="100" cy="64" r="30"/>
+	<path d="M70,90 L130,90 L124,154 L116,184 L84,184 L76,154 Z"/>
+	<ellipse cx="100" cy="212" rx="42" ry="30"/>
+	<rect x="-16" y="-12" width="32" height="74" rx="16" transform="translate(78,220) rotate(14)"/>
+	<rect x="-16" y="-12" width="32" height="74" rx="16" transform="translate(122,220) rotate(-14)"/>
+	<rect x="-14" y="-14" width="28" height="72" rx="14" transform="translate(74,128) rotate(158)"/>
+	<rect x="-14" y="-14" width="28" height="72" rx="14" transform="translate(126,128) rotate(-158)"/>
+	<circle cx="50" cy="66" r="28"/>
+	<circle cx="150" cy="66" r="28"/>
+</g>
+<clipPath id="bonzoid-f2-clip"><use href="#bonzoid-f2-shapes"/></clipPath>
+<g id="bonzoid-f2-face">
+	<circle cx="86" cy="58" r="14" fill="#ffffff"/>
+	<circle cx="114" cy="58" r="14" fill="#ffffff"/>
+	<circle cx="88" cy="61" r="7.5" fill="#141422"/>
+	<circle cx="112" cy="61" r="7.5" fill="#141422"/>
+	<path d="M78,76 Q100,98 122,76 L122,70 Q100,90 78,70 Z" fill="#141422"/>
+	<rect x="86" y="104" width="28" height="26" rx="4" fill="#ffd23f"/>
+</g>
+<g id="bonzoid-f2-draw">
+	<use href="#bonzoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#bonzoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#bonzoid-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#bonzoid-f2-clip)">
+		<rect x="0" y="194" width="200" height="126" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#bonzoid-f2-face"/>
+</g>
+
+<symbol id="bonzoid-frame1" viewBox="0 0 200 320"><use href="#bonzoid-f1-draw"/></symbol>
+<symbol id="bonzoid-frame2" viewBox="0 0 200 320"><use href="#bonzoid-f2-draw"/></symbol>
+<symbol id="bonzoid-head" viewBox="0 0 130 130">
+	<g transform="translate(-35,-12)"><use href="#bonzoid-f1-draw"/></g>
+</symbol>
+<symbol id="bonzoid-silhouette1" viewBox="0 0 200 320">
+	<use href="#bonzoid-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="bonzoid-silhouette2" viewBox="0 0 200 320">
+	<use href="#bonzoid-f2-shapes" fill="#141422"/>
+</symbol>
+
+<!-- ================================================================= -->
+<!-- SPHEROID : orb plus three splayed tentacles, one enormous eye     -->
+<!-- ================================================================= -->
+<g id="spheroid-f1-shapes">
+	<circle cx="100" cy="135" r="75"/>
+	<rect x="-13" y="-13" width="26" height="105" rx="13" transform="translate(86,180) rotate(36)"/>
+	<rect x="-13" y="-13" width="26" height="105" rx="13" transform="translate(100,190) rotate(0)"/>
+	<rect x="-13" y="-13" width="26" height="105" rx="13" transform="translate(114,180) rotate(-36)"/>
+</g>
+<clipPath id="spheroid-f1-clip"><use href="#spheroid-f1-shapes"/></clipPath>
+<g id="spheroid-f1-face">
+	<circle cx="100" cy="116" r="36" fill="#ffffff"/>
+	<circle cx="106" cy="122" r="18" fill="#141422"/>
+	<path d="M70,162 Q100,190 130,162 L130,154 Q100,180 70,154 Z" fill="#141422"/>
+	<circle cx="100" cy="76" r="14" fill="#ffd23f"/>
+</g>
+<g id="spheroid-f1-draw">
+	<use href="#spheroid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#spheroid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#spheroid-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#spheroid-f1-clip)">
+		<rect x="0" y="196" width="200" height="124" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#spheroid-f1-face"/>
+</g>
+
+<g id="spheroid-f2-shapes">
+	<circle cx="100" cy="95" r="75"/>
+	<rect x="-13" y="-13" width="26" height="105" rx="13" transform="translate(86,140) rotate(30)"/>
+	<rect x="-13" y="-13" width="26" height="105" rx="13" transform="translate(100,150) rotate(0)"/>
+	<rect x="-13" y="-13" width="26" height="105" rx="13" transform="translate(114,140) rotate(-30)"/>
+</g>
+<clipPath id="spheroid-f2-clip"><use href="#spheroid-f2-shapes"/></clipPath>
+<g id="spheroid-f2-face">
+	<circle cx="100" cy="76" r="36" fill="#ffffff"/>
+	<circle cx="94" cy="70" r="18" fill="#141422"/>
+	<path d="M70,122 Q100,150 130,122 L130,114 Q100,140 70,114 Z" fill="#141422"/>
+	<circle cx="100" cy="38" r="14" fill="#ffd23f"/>
+</g>
+<g id="spheroid-f2-draw">
+	<use href="#spheroid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#spheroid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#spheroid-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#spheroid-f2-clip)">
+		<rect x="0" y="156" width="200" height="164" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#spheroid-f2-face"/>
+</g>
+
+<symbol id="spheroid-frame1" viewBox="0 0 200 320"><use href="#spheroid-f1-draw"/></symbol>
+<symbol id="spheroid-frame2" viewBox="0 0 200 320"><use href="#spheroid-f2-draw"/></symbol>
+<symbol id="spheroid-head" viewBox="0 0 134 134">
+	<g transform="translate(-36,-56)"><use href="#spheroid-f1-draw"/></g>
+</symbol>
+<symbol id="spheroid-silhouette1" viewBox="0 0 200 320">
+	<use href="#spheroid-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="spheroid-silhouette2" viewBox="0 0 200 320">
+	<use href="#spheroid-f2-shapes" fill="#141422"/>
+</symbol>
+
+<!-- ================================================================= -->
+<!-- FLAPPER : wingspan, torso 58 wide, forked tail, wings snap up     -->
+<!-- ================================================================= -->
+<g id="flapper-f1-shapes">
+	<path d="M84,122 Q56,84 26,100 Q16,124 28,152 Q52,178 88,166 Z"/>
+	<path d="M116,122 Q144,84 174,100 Q184,124 172,152 Q148,178 112,166 Z"/>
+	<rect x="-13" y="-10" width="26" height="96" rx="13" transform="translate(88,196) rotate(26)"/>
+	<rect x="-13" y="-10" width="26" height="96" rx="13" transform="translate(112,196) rotate(-26)"/>
+	<ellipse cx="100" cy="152" rx="28" ry="52"/>
+	<circle cx="100" cy="72" r="32"/>
+</g>
+<clipPath id="flapper-f1-clip"><use href="#flapper-f1-shapes"/></clipPath>
+<g id="flapper-f1-face">
+	<circle cx="87" cy="62" r="14" fill="#ffffff"/>
+	<circle cx="113" cy="62" r="14" fill="#ffffff"/>
+	<circle cx="89" cy="65" r="7.5" fill="#141422"/>
+	<circle cx="111" cy="65" r="7.5" fill="#141422"/>
+	<path d="M89,80 L111,80 L100,98 Z" fill="#ffd23f"/>
+	<path d="M83,106 Q100,126 117,106 L117,100 Q100,118 83,100 Z" fill="#141422"/>
+</g>
+<g id="flapper-f1-draw">
+	<use href="#flapper-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#flapper-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#flapper-f1-shapes" fill="currentColor"/>
+	<g clip-path="url(#flapper-f1-clip)">
+		<rect x="0" y="132" width="200" height="188" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#flapper-f1-face"/>
+</g>
+
+<g id="flapper-f2-shapes">
+	<path d="M76,120 Q46,70 34,30 Q46,20 68,44 Q92,78 94,116 Z"/>
+	<path d="M124,120 Q154,70 166,30 Q154,20 132,44 Q108,78 106,116 Z"/>
+	<rect x="-13" y="-10" width="26" height="96" rx="13" transform="translate(88,206) rotate(26)"/>
+	<rect x="-13" y="-10" width="26" height="96" rx="13" transform="translate(112,206) rotate(-26)"/>
+	<ellipse cx="100" cy="168" rx="28" ry="50"/>
+	<circle cx="100" cy="96" r="30"/>
+</g>
+<clipPath id="flapper-f2-clip"><use href="#flapper-f2-shapes"/></clipPath>
+<g id="flapper-f2-face">
+	<circle cx="87" cy="86" r="14" fill="#ffffff"/>
+	<circle cx="113" cy="86" r="14" fill="#ffffff"/>
+	<circle cx="89" cy="89" r="7.5" fill="#141422"/>
+	<circle cx="111" cy="89" r="7.5" fill="#141422"/>
+	<path d="M89,104 L111,104 L100,122 Z" fill="#ffd23f"/>
+	<path d="M83,130 Q100,150 117,130 L117,124 Q100,142 83,124 Z" fill="#141422"/>
+</g>
+<g id="flapper-f2-draw">
+	<use href="#flapper-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#flapper-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+		stroke-linejoin="round" stroke-linecap="round"/>
+	<use href="#flapper-f2-shapes" fill="currentColor"/>
+	<g clip-path="url(#flapper-f2-clip)">
+		<rect x="0" y="156" width="200" height="164" fill="#141422" opacity="0.16"/>
+	</g>
+	<use href="#flapper-f2-face"/>
+</g>
+
+<symbol id="flapper-frame1" viewBox="0 0 200 320"><use href="#flapper-f1-draw"/></symbol>
+<symbol id="flapper-frame2" viewBox="0 0 200 320"><use href="#flapper-f2-draw"/></symbol>
+<symbol id="flapper-head" viewBox="0 0 124 124">
+	<g transform="translate(-38,-20)"><use href="#flapper-f1-draw"/></g>
+</symbol>
+<symbol id="flapper-silhouette1" viewBox="0 0 200 320">
+	<use href="#flapper-f1-shapes" fill="#141422"/>
+</symbol>
+<symbol id="flapper-silhouette2" viewBox="0 0 200 320">
+	<use href="#flapper-f2-shapes" fill="#141422"/>
+</symbol>
+
+</defs>
+
+<!-- =================================================================== -->
+<!-- PREVIEW SHEET. Page chrome only below this line.                    -->
+<!-- =================================================================== -->
+
+<rect x="0" y="0" width="1240" height="1990" fill="#11111c"/>
+
+<text x="30" y="34" fill="#ffffff" font-size="22" font-weight="bold">ARTIST 4 CAST. EIGHT LETTERS IN ONE ALPHABET</text>
+<text x="30" y="56" fill="#8f8fae" font-size="12">I / ? / H / A / E / o=o / Q / V. Vertical notches are affordable, lateral ones are not. Judge the silhouette rows at the bottom.</text>
+
+<!-- ================ SIZE LADDER ================ -->
+<text x="30" y="94" fill="#ffffff" font-size="14" font-weight="bold">SIZE LADDER. 18 / 32 / 44 / 64 px tall, frame 1 then frame 2. Game draws at 32, dock at 18.</text>
+
+<rect x="30" y="106" width="580" height="700" fill="#22223a"/>
+<rect x="630" y="106" width="580" height="700" fill="#7c9a4e"/>
+<text x="40" y="124" fill="#8f8fae" font-size="11">panel #22223a</text>
+<text x="640" y="124" fill="#2a3315" font-size="11">terrain #7c9a4e</text>
+
+<g style="color:#ff5a5f">
+	<text x="38" y="174" fill="#e8e8f0" font-size="10">humanoid</text>
+	<use href="#humanoid-frame1" x="92" y="158" width="11.25" height="18"/>
+	<use href="#humanoid-frame1" x="118" y="144" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="152" y="132" width="27.5" height="44"/>
+	<use href="#humanoid-frame1" x="198" y="112" width="40" height="64"/>
+	<use href="#humanoid-frame2" x="262" y="158" width="11.25" height="18"/>
+	<use href="#humanoid-frame2" x="288" y="144" width="20" height="32"/>
+	<use href="#humanoid-frame2" x="322" y="132" width="27.5" height="44"/>
+	<use href="#humanoid-frame2" x="368" y="112" width="40" height="64"/>
+	<text x="638" y="174" fill="#2a3315" font-size="10">humanoid</text>
+	<use href="#humanoid-frame1" x="692" y="158" width="11.25" height="18"/>
+	<use href="#humanoid-frame1" x="718" y="144" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="752" y="132" width="27.5" height="44"/>
+	<use href="#humanoid-frame1" x="798" y="112" width="40" height="64"/>
+	<use href="#humanoid-frame2" x="862" y="158" width="11.25" height="18"/>
+	<use href="#humanoid-frame2" x="888" y="144" width="20" height="32"/>
+	<use href="#humanoid-frame2" x="922" y="132" width="27.5" height="44"/>
+	<use href="#humanoid-frame2" x="968" y="112" width="40" height="64"/>
+</g>
+<g style="color:#4fd8ff">
+	<text x="38" y="256" fill="#e8e8f0" font-size="10">gollumer</text>
+	<use href="#gollumer-frame1" x="92" y="240" width="11.25" height="18"/>
+	<use href="#gollumer-frame1" x="118" y="226" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="152" y="214" width="27.5" height="44"/>
+	<use href="#gollumer-frame1" x="198" y="194" width="40" height="64"/>
+	<use href="#gollumer-frame2" x="262" y="240" width="11.25" height="18"/>
+	<use href="#gollumer-frame2" x="288" y="226" width="20" height="32"/>
+	<use href="#gollumer-frame2" x="322" y="214" width="27.5" height="44"/>
+	<use href="#gollumer-frame2" x="368" y="194" width="40" height="64"/>
+	<text x="638" y="256" fill="#2a3315" font-size="10">gollumer</text>
+	<use href="#gollumer-frame1" x="692" y="240" width="11.25" height="18"/>
+	<use href="#gollumer-frame1" x="718" y="226" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="752" y="214" width="27.5" height="44"/>
+	<use href="#gollumer-frame1" x="798" y="194" width="40" height="64"/>
+	<use href="#gollumer-frame2" x="862" y="240" width="11.25" height="18"/>
+	<use href="#gollumer-frame2" x="888" y="226" width="20" height="32"/>
+	<use href="#gollumer-frame2" x="922" y="214" width="27.5" height="44"/>
+	<use href="#gollumer-frame2" x="968" y="194" width="40" height="64"/>
+</g>
+<g style="color:#3aaa18">
+	<text x="38" y="338" fill="#e8e8f0" font-size="10">mechtron</text>
+	<use href="#mechtron-frame1" x="92" y="322" width="11.25" height="18"/>
+	<use href="#mechtron-frame1" x="118" y="308" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="152" y="296" width="27.5" height="44"/>
+	<use href="#mechtron-frame1" x="198" y="276" width="40" height="64"/>
+	<use href="#mechtron-frame2" x="262" y="322" width="11.25" height="18"/>
+	<use href="#mechtron-frame2" x="288" y="308" width="20" height="32"/>
+	<use href="#mechtron-frame2" x="322" y="296" width="27.5" height="44"/>
+	<use href="#mechtron-frame2" x="368" y="276" width="40" height="64"/>
+	<text x="638" y="338" fill="#2a3315" font-size="10">mechtron</text>
+	<use href="#mechtron-frame1" x="692" y="322" width="11.25" height="18"/>
+	<use href="#mechtron-frame1" x="718" y="308" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="752" y="296" width="27.5" height="44"/>
+	<use href="#mechtron-frame1" x="798" y="276" width="40" height="64"/>
+	<use href="#mechtron-frame2" x="862" y="322" width="11.25" height="18"/>
+	<use href="#mechtron-frame2" x="888" y="308" width="20" height="32"/>
+	<use href="#mechtron-frame2" x="922" y="296" width="27.5" height="44"/>
+	<use href="#mechtron-frame2" x="968" y="276" width="40" height="64"/>
+</g>
+<g style="color:#f872e8">
+	<text x="38" y="420" fill="#e8e8f0" font-size="10">packer</text>
+	<use href="#packer-frame1" x="92" y="404" width="11.25" height="18"/>
+	<use href="#packer-frame1" x="118" y="390" width="20" height="32"/>
+	<use href="#packer-frame1" x="152" y="378" width="27.5" height="44"/>
+	<use href="#packer-frame1" x="198" y="358" width="40" height="64"/>
+	<use href="#packer-frame2" x="262" y="404" width="11.25" height="18"/>
+	<use href="#packer-frame2" x="288" y="390" width="20" height="32"/>
+	<use href="#packer-frame2" x="322" y="378" width="27.5" height="44"/>
+	<use href="#packer-frame2" x="368" y="358" width="40" height="64"/>
+	<text x="638" y="420" fill="#2a3315" font-size="10">packer</text>
+	<use href="#packer-frame1" x="692" y="404" width="11.25" height="18"/>
+	<use href="#packer-frame1" x="718" y="390" width="20" height="32"/>
+	<use href="#packer-frame1" x="752" y="378" width="27.5" height="44"/>
+	<use href="#packer-frame1" x="798" y="358" width="40" height="64"/>
+	<use href="#packer-frame2" x="862" y="404" width="11.25" height="18"/>
+	<use href="#packer-frame2" x="888" y="390" width="20" height="32"/>
+	<use href="#packer-frame2" x="922" y="378" width="27.5" height="44"/>
+	<use href="#packer-frame2" x="968" y="358" width="40" height="64"/>
+</g>
+<g style="color:#ff5a5f">
+	<text x="38" y="502" fill="#e8e8f0" font-size="10">leggite</text>
+	<use href="#leggite-frame1" x="92" y="486" width="11.25" height="18"/>
+	<use href="#leggite-frame1" x="118" y="472" width="20" height="32"/>
+	<use href="#leggite-frame1" x="152" y="460" width="27.5" height="44"/>
+	<use href="#leggite-frame1" x="198" y="440" width="40" height="64"/>
+	<use href="#leggite-frame2" x="262" y="486" width="11.25" height="18"/>
+	<use href="#leggite-frame2" x="288" y="472" width="20" height="32"/>
+	<use href="#leggite-frame2" x="322" y="460" width="27.5" height="44"/>
+	<use href="#leggite-frame2" x="368" y="440" width="40" height="64"/>
+	<text x="638" y="502" fill="#2a3315" font-size="10">leggite</text>
+	<use href="#leggite-frame1" x="692" y="486" width="11.25" height="18"/>
+	<use href="#leggite-frame1" x="718" y="472" width="20" height="32"/>
+	<use href="#leggite-frame1" x="752" y="460" width="27.5" height="44"/>
+	<use href="#leggite-frame1" x="798" y="440" width="40" height="64"/>
+	<use href="#leggite-frame2" x="862" y="486" width="11.25" height="18"/>
+	<use href="#leggite-frame2" x="888" y="472" width="20" height="32"/>
+	<use href="#leggite-frame2" x="922" y="460" width="27.5" height="44"/>
+	<use href="#leggite-frame2" x="968" y="440" width="40" height="64"/>
+</g>
+<g style="color:#4fd8ff">
+	<text x="38" y="584" fill="#e8e8f0" font-size="10">bonzoid</text>
+	<use href="#bonzoid-frame1" x="92" y="568" width="11.25" height="18"/>
+	<use href="#bonzoid-frame1" x="118" y="554" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="152" y="542" width="27.5" height="44"/>
+	<use href="#bonzoid-frame1" x="198" y="522" width="40" height="64"/>
+	<use href="#bonzoid-frame2" x="262" y="568" width="11.25" height="18"/>
+	<use href="#bonzoid-frame2" x="288" y="554" width="20" height="32"/>
+	<use href="#bonzoid-frame2" x="322" y="542" width="27.5" height="44"/>
+	<use href="#bonzoid-frame2" x="368" y="522" width="40" height="64"/>
+	<text x="638" y="584" fill="#2a3315" font-size="10">bonzoid</text>
+	<use href="#bonzoid-frame1" x="692" y="568" width="11.25" height="18"/>
+	<use href="#bonzoid-frame1" x="718" y="554" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="752" y="542" width="27.5" height="44"/>
+	<use href="#bonzoid-frame1" x="798" y="522" width="40" height="64"/>
+	<use href="#bonzoid-frame2" x="862" y="568" width="11.25" height="18"/>
+	<use href="#bonzoid-frame2" x="888" y="554" width="20" height="32"/>
+	<use href="#bonzoid-frame2" x="922" y="542" width="27.5" height="44"/>
+	<use href="#bonzoid-frame2" x="968" y="522" width="40" height="64"/>
+</g>
+<g style="color:#3aaa18">
+	<text x="38" y="666" fill="#e8e8f0" font-size="10">spheroid</text>
+	<use href="#spheroid-frame1" x="92" y="650" width="11.25" height="18"/>
+	<use href="#spheroid-frame1" x="118" y="636" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="152" y="624" width="27.5" height="44"/>
+	<use href="#spheroid-frame1" x="198" y="604" width="40" height="64"/>
+	<use href="#spheroid-frame2" x="262" y="650" width="11.25" height="18"/>
+	<use href="#spheroid-frame2" x="288" y="636" width="20" height="32"/>
+	<use href="#spheroid-frame2" x="322" y="624" width="27.5" height="44"/>
+	<use href="#spheroid-frame2" x="368" y="604" width="40" height="64"/>
+	<text x="638" y="666" fill="#2a3315" font-size="10">spheroid</text>
+	<use href="#spheroid-frame1" x="692" y="650" width="11.25" height="18"/>
+	<use href="#spheroid-frame1" x="718" y="636" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="752" y="624" width="27.5" height="44"/>
+	<use href="#spheroid-frame1" x="798" y="604" width="40" height="64"/>
+	<use href="#spheroid-frame2" x="862" y="650" width="11.25" height="18"/>
+	<use href="#spheroid-frame2" x="888" y="636" width="20" height="32"/>
+	<use href="#spheroid-frame2" x="922" y="624" width="27.5" height="44"/>
+	<use href="#spheroid-frame2" x="968" y="604" width="40" height="64"/>
+</g>
+<g style="color:#f872e8">
+	<text x="38" y="748" fill="#e8e8f0" font-size="10">flapper</text>
+	<use href="#flapper-frame1" x="92" y="732" width="11.25" height="18"/>
+	<use href="#flapper-frame1" x="118" y="718" width="20" height="32"/>
+	<use href="#flapper-frame1" x="152" y="706" width="27.5" height="44"/>
+	<use href="#flapper-frame1" x="198" y="686" width="40" height="64"/>
+	<use href="#flapper-frame2" x="262" y="732" width="11.25" height="18"/>
+	<use href="#flapper-frame2" x="288" y="718" width="20" height="32"/>
+	<use href="#flapper-frame2" x="322" y="706" width="27.5" height="44"/>
+	<use href="#flapper-frame2" x="368" y="686" width="40" height="64"/>
+	<text x="638" y="748" fill="#2a3315" font-size="10">flapper</text>
+	<use href="#flapper-frame1" x="692" y="732" width="11.25" height="18"/>
+	<use href="#flapper-frame1" x="718" y="718" width="20" height="32"/>
+	<use href="#flapper-frame1" x="752" y="706" width="27.5" height="44"/>
+	<use href="#flapper-frame1" x="798" y="686" width="40" height="64"/>
+	<use href="#flapper-frame2" x="862" y="732" width="11.25" height="18"/>
+	<use href="#flapper-frame2" x="888" y="718" width="20" height="32"/>
+	<use href="#flapper-frame2" x="922" y="706" width="27.5" height="44"/>
+	<use href="#flapper-frame2" x="968" y="686" width="40" height="64"/>
+</g>
+
+<!-- ================ 4x INSPECTION ================ -->
+<text x="30" y="834" fill="#ffffff" font-size="14" font-weight="bold">4x INSPECTION. Editing only. No creature here was approved from this row.</text>
+<rect x="30" y="846" width="1180" height="330" fill="#1a1a2e"/>
+<g style="color:#ff5a5f">
+	<use href="#humanoid-frame1" x="60" y="858" width="80" height="128"/>
+	<use href="#humanoid-frame2" x="60" y="1012" width="80" height="128"/>
+	<use href="#gollumer-frame1" x="205" y="858" width="80" height="128"/>
+	<use href="#gollumer-frame2" x="205" y="1012" width="80" height="128"/>
+</g>
+<g style="color:#4fd8ff">
+	<use href="#mechtron-frame1" x="350" y="858" width="80" height="128"/>
+	<use href="#mechtron-frame2" x="350" y="1012" width="80" height="128"/>
+	<use href="#packer-frame1" x="495" y="858" width="80" height="128"/>
+	<use href="#packer-frame2" x="495" y="1012" width="80" height="128"/>
+</g>
+<g style="color:#3aaa18">
+	<use href="#leggite-frame1" x="640" y="858" width="80" height="128"/>
+	<use href="#leggite-frame2" x="640" y="1012" width="80" height="128"/>
+	<use href="#bonzoid-frame1" x="785" y="858" width="80" height="128"/>
+	<use href="#bonzoid-frame2" x="785" y="1012" width="80" height="128"/>
+</g>
+<g style="color:#f872e8">
+	<use href="#spheroid-frame1" x="930" y="858" width="80" height="128"/>
+	<use href="#spheroid-frame2" x="930" y="1012" width="80" height="128"/>
+	<use href="#flapper-frame1" x="1075" y="858" width="80" height="128"/>
+	<use href="#flapper-frame2" x="1075" y="1012" width="80" height="128"/>
+</g>
+
+<!-- ================ COLOR x BACKGROUND GRID AT 32 ================ -->
+<text x="30" y="1204" fill="#ffffff" font-size="14" font-weight="bold">FOUR PLAYER COLORS x THREE BACKGROUNDS, ALL EIGHT SPECIES, ALL AT 32 px. True game size.</text>
+<text x="30" y="1222" fill="#8f8fae" font-size="11">Hard case: green #3aaa18 on green terrain, middle block, third column. The white halo carries it.</text>
+
+<rect x="30" y="1232" width="380" height="360" fill="#1a1a2e"/>
+<rect x="430" y="1232" width="380" height="360" fill="#7c9a4e"/>
+<rect x="830" y="1232" width="380" height="360" fill="#22223a"/>
+<text x="38" y="1248" fill="#8f8fae" font-size="10">deep #1a1a2e</text>
+<text x="438" y="1248" fill="#2a3315" font-size="10">terrain #7c9a4e</text>
+<text x="838" y="1248" fill="#8f8fae" font-size="10">panel #22223a</text>
+
+<g style="color:#ff5a5f">
+	<use href="#humanoid-frame1" x="60" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="60" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="60" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="60" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="60" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="60" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="60" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="60" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="460" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="460" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="460" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="460" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="460" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="460" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="460" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="460" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="860" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="860" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="860" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="860" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="860" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="860" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="860" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="860" y="1536" width="20" height="32"/>
+</g>
+<g style="color:#4fd8ff">
+	<use href="#humanoid-frame1" x="150" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="150" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="150" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="150" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="150" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="150" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="150" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="150" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="550" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="550" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="550" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="550" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="550" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="550" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="550" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="550" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="950" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="950" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="950" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="950" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="950" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="950" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="950" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="950" y="1536" width="20" height="32"/>
+</g>
+<g style="color:#3aaa18">
+	<use href="#humanoid-frame1" x="240" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="240" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="240" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="240" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="240" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="240" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="240" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="240" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="640" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="640" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="640" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="640" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="640" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="640" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="640" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="640" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="1040" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="1040" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="1040" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="1040" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="1040" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="1040" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="1040" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="1040" y="1536" width="20" height="32"/>
+</g>
+<g style="color:#f872e8">
+	<use href="#humanoid-frame1" x="330" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="330" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="330" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="330" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="330" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="330" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="330" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="330" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="730" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="730" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="730" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="730" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="730" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="730" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="730" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="730" y="1536" width="20" height="32"/>
+	<use href="#humanoid-frame1" x="1130" y="1256" width="20" height="32"/>
+	<use href="#gollumer-frame1" x="1130" y="1296" width="20" height="32"/>
+	<use href="#mechtron-frame1" x="1130" y="1336" width="20" height="32"/>
+	<use href="#packer-frame1" x="1130" y="1376" width="20" height="32"/>
+	<use href="#leggite-frame1" x="1130" y="1416" width="20" height="32"/>
+	<use href="#bonzoid-frame1" x="1130" y="1456" width="20" height="32"/>
+	<use href="#spheroid-frame1" x="1130" y="1496" width="20" height="32"/>
+	<use href="#flapper-frame1" x="1130" y="1536" width="20" height="32"/>
+</g>
+
+<!-- ================ 18 px DOCK BADGE ROW (head crops) ================ -->
+<text x="30" y="1620" fill="#ffffff" font-size="14" font-weight="bold">DOCK BADGE ROW. The head crop symbols at 18 px, the size the auction dock actually draws.</text>
+<rect x="30" y="1632" width="1180" height="64" fill="#22223a"/>
+<g style="color:#ff5a5f">
+	<use href="#humanoid-head" x="60" y="1656" width="18" height="18"/>
+	<use href="#gollumer-head" x="95" y="1656" width="18" height="18"/>
+	<use href="#mechtron-head" x="130" y="1656" width="18" height="18"/>
+	<use href="#packer-head" x="165" y="1656" width="18" height="18"/>
+	<use href="#leggite-head" x="200" y="1656" width="18" height="18"/>
+	<use href="#bonzoid-head" x="235" y="1656" width="18" height="18"/>
+	<use href="#spheroid-head" x="270" y="1656" width="18" height="18"/>
+	<use href="#flapper-head" x="305" y="1656" width="18" height="18"/>
+</g>
+<g style="color:#4fd8ff">
+	<use href="#humanoid-head" x="360" y="1656" width="18" height="18"/>
+	<use href="#gollumer-head" x="395" y="1656" width="18" height="18"/>
+	<use href="#mechtron-head" x="430" y="1656" width="18" height="18"/>
+	<use href="#packer-head" x="465" y="1656" width="18" height="18"/>
+	<use href="#leggite-head" x="500" y="1656" width="18" height="18"/>
+	<use href="#bonzoid-head" x="535" y="1656" width="18" height="18"/>
+	<use href="#spheroid-head" x="570" y="1656" width="18" height="18"/>
+	<use href="#flapper-head" x="605" y="1656" width="18" height="18"/>
+</g>
+<g style="color:#3aaa18">
+	<use href="#humanoid-head" x="660" y="1656" width="18" height="18"/>
+	<use href="#gollumer-head" x="695" y="1656" width="18" height="18"/>
+	<use href="#mechtron-head" x="730" y="1656" width="18" height="18"/>
+	<use href="#packer-head" x="765" y="1656" width="18" height="18"/>
+	<use href="#leggite-head" x="800" y="1656" width="18" height="18"/>
+	<use href="#bonzoid-head" x="835" y="1656" width="18" height="18"/>
+	<use href="#spheroid-head" x="870" y="1656" width="18" height="18"/>
+	<use href="#flapper-head" x="905" y="1656" width="18" height="18"/>
+</g>
+<g style="color:#f872e8">
+	<use href="#humanoid-head" x="960" y="1656" width="18" height="18"/>
+	<use href="#gollumer-head" x="995" y="1656" width="18" height="18"/>
+	<use href="#mechtron-head" x="1030" y="1656" width="18" height="18"/>
+	<use href="#packer-head" x="1065" y="1656" width="18" height="18"/>
+	<use href="#leggite-head" x="1100" y="1656" width="18" height="18"/>
+	<use href="#bonzoid-head" x="1135" y="1656" width="18" height="18"/>
+	<use href="#spheroid-head" x="1170" y="1656" width="18" height="18"/>
+	<use href="#flapper-head" x="1188" y="1656" width="18" height="18"/>
+</g>
+
+<!-- ================ ALL EIGHT SILHOUETTES ================ -->
+<text x="30" y="1722" fill="#ffffff" font-size="14" font-weight="bold">THE ACCEPTANCE TEST. All eight as pure black shapes. Order: humanoid gollumer mechtron packer leggite bonzoid spheroid flapper.</text>
+<rect x="30" y="1734" width="1180" height="244" fill="#e8e8f0"/>
+
+<text x="46" y="1758" fill="#4a4a5e" font-size="11">frame 1 at 32 px</text>
+<use href="#humanoid-silhouette1" x="46" y="1766" width="20" height="32"/>
+<use href="#gollumer-silhouette1" x="106" y="1766" width="20" height="32"/>
+<use href="#mechtron-silhouette1" x="166" y="1766" width="20" height="32"/>
+<use href="#packer-silhouette1" x="226" y="1766" width="20" height="32"/>
+<use href="#leggite-silhouette1" x="286" y="1766" width="20" height="32"/>
+<use href="#bonzoid-silhouette1" x="346" y="1766" width="20" height="32"/>
+<use href="#spheroid-silhouette1" x="406" y="1766" width="20" height="32"/>
+<use href="#flapper-silhouette1" x="466" y="1766" width="20" height="32"/>
+
+<text x="646" y="1758" fill="#4a4a5e" font-size="11">frame 2 at 32 px</text>
+<use href="#humanoid-silhouette2" x="646" y="1766" width="20" height="32"/>
+<use href="#gollumer-silhouette2" x="706" y="1766" width="20" height="32"/>
+<use href="#mechtron-silhouette2" x="766" y="1766" width="20" height="32"/>
+<use href="#packer-silhouette2" x="826" y="1766" width="20" height="32"/>
+<use href="#leggite-silhouette2" x="886" y="1766" width="20" height="32"/>
+<use href="#bonzoid-silhouette2" x="946" y="1766" width="20" height="32"/>
+<use href="#spheroid-silhouette2" x="1006" y="1766" width="20" height="32"/>
+<use href="#flapper-silhouette2" x="1066" y="1766" width="20" height="32"/>
+
+<text x="46" y="1830" fill="#4a4a5e" font-size="11">frame 1 at 18 px. This row is the gate.</text>
+<use href="#humanoid-silhouette1" x="46" y="1838" width="11.25" height="18"/>
+<use href="#gollumer-silhouette1" x="106" y="1838" width="11.25" height="18"/>
+<use href="#mechtron-silhouette1" x="166" y="1838" width="11.25" height="18"/>
+<use href="#packer-silhouette1" x="226" y="1838" width="11.25" height="18"/>
+<use href="#leggite-silhouette1" x="286" y="1838" width="11.25" height="18"/>
+<use href="#bonzoid-silhouette1" x="346" y="1838" width="11.25" height="18"/>
+<use href="#spheroid-silhouette1" x="406" y="1838" width="11.25" height="18"/>
+<use href="#flapper-silhouette1" x="466" y="1838" width="11.25" height="18"/>
+
+<text x="646" y="1830" fill="#4a4a5e" font-size="11">frame 2 at 18 px</text>
+<use href="#humanoid-silhouette2" x="646" y="1838" width="11.25" height="18"/>
+<use href="#gollumer-silhouette2" x="706" y="1838" width="11.25" height="18"/>
+<use href="#mechtron-silhouette2" x="766" y="1838" width="11.25" height="18"/>
+<use href="#packer-silhouette2" x="826" y="1838" width="11.25" height="18"/>
+<use href="#leggite-silhouette2" x="886" y="1838" width="11.25" height="18"/>
+<use href="#bonzoid-silhouette2" x="946" y="1838" width="11.25" height="18"/>
+<use href="#spheroid-silhouette2" x="1006" y="1838" width="11.25" height="18"/>
+<use href="#flapper-silhouette2" x="1066" y="1838" width="11.25" height="18"/>
+
+<text x="46" y="1900" fill="#4a4a5e" font-size="11">frame 1 at 64 px, for reading the letter shapes</text>
+<use href="#humanoid-silhouette1" x="46" y="1908" width="40" height="64"/>
+<use href="#gollumer-silhouette1" x="106" y="1908" width="40" height="64"/>
+<use href="#mechtron-silhouette1" x="166" y="1908" width="40" height="64"/>
+<use href="#packer-silhouette1" x="226" y="1908" width="40" height="64"/>
+<use href="#leggite-silhouette1" x="286" y="1908" width="40" height="64"/>
+<use href="#bonzoid-silhouette1" x="346" y="1908" width="40" height="64"/>
+<use href="#spheroid-silhouette1" x="406" y="1908" width="40" height="64"/>
+<use href="#flapper-silhouette1" x="466" y="1908" width="40" height="64"/>
+
+<text x="646" y="1900" fill="#4a4a5e" font-size="11">frame 2 at 64 px</text>
+<use href="#humanoid-silhouette2" x="646" y="1908" width="40" height="64"/>
+<use href="#gollumer-silhouette2" x="706" y="1908" width="40" height="64"/>
+<use href="#mechtron-silhouette2" x="766" y="1908" width="40" height="64"/>
+<use href="#packer-silhouette2" x="826" y="1908" width="40" height="64"/>
+<use href="#leggite-silhouette2" x="886" y="1908" width="40" height="64"/>
+<use href="#bonzoid-silhouette2" x="946" y="1908" width="40" height="64"/>
+<use href="#spheroid-silhouette2" x="1006" y="1908" width="40" height="64"/>
+<use href="#flapper-silhouette2" x="1066" y="1908" width="40" height="64"/>
+
+</svg>

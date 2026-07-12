@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+=======================================================================
+ SET 4 - DESIGN HYPOTHESIS  ("bone rim, one hue, hard mass")
+=======================================================================
+
+ CONSTRUCTION: each creature is ONE part-group drawn three times, back to
+   front. This is the whole trick and it is worth stating plainly:
+     pass 1  BONE halo  fill+stroke #f6f1e3, stroke-width 38 (19 outward)
+     pass 2  INK body   fill+stroke #161a2e, stroke-width 20 (10 outward)
+     pass 3  COLOR body fill currentColor,   stroke #161a2e width 7
+   Passes 1 and 2 are expanded copies hiding BEHIND pass 3, so the ink and
+   bone survive only where they stick out past the color: as a rim on the
+   OUTER CONTOUR of the union of parts. Interior ink is covered by the color
+   fill on top of it.
+   WHY THIS AND NOT A STROKE ON EVERY PART: I built it that way first. Stroking
+   each part directly means every limb, bead and panel carries its own ring, the
+   rings pile up wherever parts sit close, and the inside of the creature floods
+   with ink. Measured on the first leggite, the player color had lost the
+   majority of the sprite to its own outline. Stroke-behind fixes that at the
+   source instead of by thinning the line.
+
+ OUTLINE WEIGHT: uniform. Ink rim 10 grid units, bone rim 9 outside it
+   (1.0 px and 0.9 px at 32-tall). One weight everywhere keeps the read
+   cartoon-flat like the reference art; a tapered line would dissolve
+   unevenly at 18 px. The 7-unit stroke in pass 3 is the internal seam
+   (0.7 px at 32-tall) that separates overlapping parts.
+
+ LIMB FLOOR: no part is narrower than about 26 grid units. A limb thinner than
+   twice the ink rim has no color left in the middle of it and renders as a
+   solid dark stick. This is the constraint that set the leg, antenna and
+   foot dimensions. It is a real floor, not a preference.
+
+ VISIBILITY DEVICE: the bone halo. It is achromatic and it belongs to the
+   creature, not the background, so the creature carries its own separation
+   everywhere. The ink line is deliberately near-identical to deep space
+   (#161a2e vs #1a1a2e) so on space the ink vanishes and the bone ring alone
+   draws the edge; on terrain and panel the ink returns and reads as the bold
+   cartoon outline. One device, three backgrounds, no per-background art.
+   WHY: contrast that is a property of the sprite cannot be defeated by a
+   background or a player color.
+
+ GREEN ON GREEN: solved structurally, not chromatically. Player green
+   (#3aaa18) against terrain (#7c9a4e) is a weak ~1.5:1 pair, so I never ask
+   the body hue to do the separating. The bone ring (~7:1 against terrain)
+   plus the ink line inside it fences every edge, and the cream eyes give a
+   second bright anchor inside the mass. I changed no hue and added no
+   background-specific rule.
+
+ COLOR STRATEGY: ONE currentColor region per creature, at full opacity. The
+   entire silhouette (body, limbs, wings, segments, antennae) is a single
+   flat fill, so the player hue owns the clear majority of visible area. Volume
+   comes from two hue-neutral washes ON TOP of it: an ink shade at 0.18 and a
+   bone sheen at 0.22. Because both are neutral overlays, they read as
+   light and shadow in every one of the four player colors instead of being a
+   second hue I would have to re-pick per player.
+   WHY: two flat hues would halve the player's ownership of the sprite.
+
+ INTERNAL FEATURES: mechtron 7 (2 eyes, mouth, chest seam, shade, sheen,
+   amber lamp pair), flapper 6 (2 eyes, beak, smile, shade, sheen; the crest is
+   silhouette, not detail), leggite 4 (2 eyes, mouth, sheen, amber crest) plus
+   its SEGMENT SEAMS, which are free: the five body beads overlap, so the pass-3
+   seam stroke draws the segmentation without any extra ink.
+   WHY: every feature I kept is >= 0.7 px at 32-tall. Eye highlight dots and
+   mouth grille bars were drawn, measured at 0.35 px, and cut.
+
+ AMBER (#ffc63f) is the family signature, one small spot each: mechtron's
+   antenna lamps, flapper's beak, leggite's crest.
+
+ SYMMETRY: mechtron and flapper are exactly mirrored about x=100 in frame 1.
+   Leggite is an S and never symmetric. Frame 2 breaks symmetry in all three:
+   mechtron takes a step (left leg up, right planted, arms counter-pumping,
+   antennae telescoping to different heights); flapper drives a full down-beat
+   (wings swept down and in, whole body lifted 8 units, feet tucked); leggite
+   runs a wave up the S (each bead swings across the centre line and the legs
+   scissor: left legs 1 and 3 lift while their opposite numbers stay planted,
+   so it never looks like it is levitating).
+
+ 18 PX ANSWER: the full creature survives, no head-crop needed, because each
+   species is carried by a distinct OUTER MASS rather than by detail.
+   Mechtron is a hard narrow rectangle, flapper is a wide horizontal wingspan
+   that fills the full 200-unit width, leggite is a tall thin wobble. At 18 px
+   those three read apart on outline alone. The bone rim keeps the mass from
+   melting into the dock plate. Faces reduce to two bright eye dots, which is
+   exactly what should be left.
+
+ EVERY FILL INSIDE THE SIX SYMBOLS IS: currentColor, none, #f6f1e3 (bone),
+   #161a2e (ink), or #ffc63f (amber). Nothing else. The other hexes in this
+   file belong to the demo sheet only, never to a creature: #0d0d16 (page),
+   #8b8ba7 (labels), and the three canonical backgrounds #1a1a2e, #7c9a4e,
+   #22223a.
+=======================================================================
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1040" height="1210" viewBox="0 0 1040 1210" font-family="monospace">
+
+  <defs>
+
+    <!-- ============ MECHTRON frame 1 : silhouette ============ -->
+    <g id="m1-sil">
+      <rect x="58" y="36" width="26" height="48"/>
+      <circle cx="71" cy="32" r="17"/>
+      <rect x="116" y="36" width="26" height="48"/>
+      <circle cx="129" cy="32" r="17"/>
+      <rect x="20" y="102" width="40" height="32"/>
+      <rect x="20" y="124" width="34" height="66"/>
+      <polygon points="16,182 58,182 58,216 44,216 44,198 30,198 30,216 16,216"/>
+      <rect x="140" y="102" width="40" height="32"/>
+      <rect x="146" y="124" width="34" height="66"/>
+      <polygon points="142,182 184,182 184,216 170,216 170,198 156,198 156,216 142,216"/>
+      <rect x="54" y="232" width="32" height="52"/>
+      <rect x="114" y="232" width="32" height="52"/>
+      <rect x="42" y="278" width="54" height="24" rx="5"/>
+      <rect x="104" y="278" width="54" height="24" rx="5"/>
+      <path d="M58,54 L142,54 L164,76 L164,230 L142,252 L58,252 L36,230 L36,76 Z"/>
+    </g>
+    <!-- ============ MECHTRON frame 1 : detail ============ -->
+    <g id="m1-det">
+      <circle cx="71" cy="32" r="9" fill="#ffc63f"/>
+      <circle cx="129" cy="32" r="9" fill="#ffc63f"/>
+      <path d="M36,206 L164,206 L164,230 L142,252 L58,252 L36,230 Z" fill="#161a2e" opacity="0.18"/>
+      <rect x="48" y="72" width="16" height="64" rx="8" fill="#f6f1e3" opacity="0.22"/>
+      <line x1="38" y1="206" x2="162" y2="206" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="74" cy="112" r="22" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="126" cy="112" r="22" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="74" cy="116" r="10" fill="#161a2e"/>
+      <circle cx="126" cy="116" r="10" fill="#161a2e"/>
+      <path d="M64,164 Q100,194 136,164" fill="none" stroke="#161a2e" stroke-width="14" stroke-linecap="round"/>
+    </g>
+
+    <!-- ============ MECHTRON frame 2 : silhouette (step) ============ -->
+    <g id="m2-sil">
+      <rect x="58" y="46" width="26" height="46"/>
+      <circle cx="71" cy="44" r="17"/>
+      <rect x="116" y="32" width="26" height="60"/>
+      <circle cx="129" cy="30" r="17"/>
+      <rect x="20" y="90" width="40" height="32"/>
+      <rect x="20" y="112" width="34" height="62"/>
+      <polygon points="16,166 58,166 58,200 44,200 44,182 30,182 30,200 16,200"/>
+      <rect x="140" y="116" width="40" height="32"/>
+      <rect x="146" y="138" width="34" height="62"/>
+      <polygon points="142,194 184,194 184,228 170,228 170,210 156,210 156,228 142,228"/>
+      <rect x="54" y="238" width="32" height="38"/>
+      <rect x="114" y="238" width="32" height="46"/>
+      <rect x="46" y="266" width="50" height="22" rx="5"/>
+      <rect x="104" y="280" width="54" height="22" rx="5"/>
+      <path d="M58,59 L142,59 L164,81 L164,235 L142,257 L58,257 L36,235 L36,81 Z"/>
+    </g>
+    <!-- ============ MECHTRON frame 2 : detail ============ -->
+    <g id="m2-det">
+      <circle cx="71" cy="44" r="9" fill="#ffc63f"/>
+      <circle cx="129" cy="30" r="9" fill="#ffc63f"/>
+      <path d="M36,211 L164,211 L164,235 L142,257 L58,257 L36,235 Z" fill="#161a2e" opacity="0.18"/>
+      <rect x="48" y="77" width="16" height="64" rx="8" fill="#f6f1e3" opacity="0.22"/>
+      <line x1="38" y1="211" x2="162" y2="211" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="74" cy="117" r="22" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="126" cy="117" r="22" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="78" cy="121" r="10" fill="#161a2e"/>
+      <circle cx="130" cy="121" r="10" fill="#161a2e"/>
+      <path d="M64,169 Q100,199 136,169" fill="none" stroke="#161a2e" stroke-width="14" stroke-linecap="round"/>
+    </g>
+
+    <!-- ============ FLAPPER frame 1 : silhouette (wings open) ============ -->
+    <g id="f1-sil">
+      <polygon points="100,20 118,52 82,52"/>
+      <polygon points="100,84 58,52 22,62 26,94 18,126 50,152 78,146 98,140"/>
+      <polygon points="100,84 142,52 178,62 174,94 182,126 150,152 122,146 102,140"/>
+      <rect x="72" y="212" width="26" height="40"/>
+      <rect x="102" y="212" width="26" height="40"/>
+      <ellipse cx="80" cy="256" rx="20" ry="12"/>
+      <ellipse cx="120" cy="256" rx="20" ry="12"/>
+      <path d="M100,46 C121,46 134,80 134,126 C134,178 118,226 100,242 C82,226 66,178 66,126 C66,80 79,46 100,46 Z"/>
+    </g>
+    <!-- ============ FLAPPER frame 1 : detail ============ -->
+    <g id="f1-det">
+      <polygon points="100,32 112,52 88,52" fill="#ffc63f"/>
+      <path d="M70,172 C78,206 89,230 100,242 C111,230 122,206 130,172 Z" fill="#161a2e" opacity="0.18"/>
+      <ellipse cx="82" cy="84" rx="10" ry="18" transform="rotate(-18 82 84)" fill="#f6f1e3" opacity="0.22"/>
+      <circle cx="84" cy="116" r="16" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="116" cy="116" r="16" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="86" cy="120" r="7.5" fill="#161a2e"/>
+      <circle cx="118" cy="120" r="7.5" fill="#161a2e"/>
+      <polygon points="89,140 111,140 100,160" fill="#ffc63f" stroke="#161a2e" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M85,176 Q100,190 115,176" fill="none" stroke="#161a2e" stroke-width="11" stroke-linecap="round"/>
+    </g>
+
+    <!-- ============ FLAPPER frame 2 : silhouette (down-beat) ============ -->
+    <g id="f2-sil">
+      <polygon points="100,12 118,44 82,44"/>
+      <polygon points="102,100 72,86 44,100 54,126 34,152 44,182 76,176 100,150"/>
+      <polygon points="98,100 128,86 156,100 146,126 166,152 156,182 124,176 100,150"/>
+      <rect x="74" y="204" width="26" height="26"/>
+      <rect x="100" y="204" width="26" height="26"/>
+      <ellipse cx="82" cy="236" rx="19" ry="12"/>
+      <ellipse cx="118" cy="236" rx="19" ry="12"/>
+      <path d="M100,38 C121,38 134,72 134,118 C134,170 118,218 100,234 C82,218 66,170 66,118 C66,72 79,38 100,38 Z"/>
+    </g>
+    <!-- ============ FLAPPER frame 2 : detail ============ -->
+    <g id="f2-det">
+      <polygon points="100,24 112,44 88,44" fill="#ffc63f"/>
+      <path d="M70,164 C78,198 89,222 100,234 C111,222 122,198 130,164 Z" fill="#161a2e" opacity="0.18"/>
+      <ellipse cx="82" cy="76" rx="10" ry="18" transform="rotate(-18 82 76)" fill="#f6f1e3" opacity="0.22"/>
+      <circle cx="84" cy="108" r="16" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="116" cy="108" r="16" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="84" cy="104" r="7.5" fill="#161a2e"/>
+      <circle cx="116" cy="104" r="7.5" fill="#161a2e"/>
+      <polygon points="89,132 111,132 100,152" fill="#ffc63f" stroke="#161a2e" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M85,168 Q100,182 115,168" fill="none" stroke="#161a2e" stroke-width="11" stroke-linecap="round"/>
+    </g>
+
+    <!-- ============ LEGGITE frame 1 : silhouette (standing S) ============ -->
+    <g id="l1-sil">
+      <polygon points="72,272 43,295 29,281 52,252"/>
+      <ellipse cx="36" cy="288" rx="12" ry="9"/>
+      <polygon points="85,273 122,296 134,280 103,251"/>
+      <ellipse cx="128" cy="288" rx="12" ry="9"/>
+      <polygon points="80,237 36,253 28,235 68,211"/>
+      <ellipse cx="32" cy="244" rx="12" ry="9"/>
+      <polygon points="101,237 146,251 154,233 111,211"/>
+      <ellipse cx="150" cy="242" rx="12" ry="9"/>
+      <polygon points="95,200 46,208 42,188 89,172"/>
+      <ellipse cx="44" cy="198" rx="12" ry="9"/>
+      <polygon points="121,200 166,206 170,186 127,172"/>
+      <ellipse cx="168" cy="196" rx="10" ry="9"/>
+      <polygon points="103,162 57,162 55,142 101,134"/>
+      <ellipse cx="56" cy="152" rx="12" ry="9"/>
+      <polygon points="133,162 167,160 169,140 135,134"/>
+      <ellipse cx="168" cy="150" rx="10" ry="9"/>
+      <ellipse cx="78" cy="258" rx="32" ry="32"/>
+      <ellipse cx="90" cy="220" rx="32" ry="32"/>
+      <ellipse cx="108" cy="182" rx="32" ry="32"/>
+      <ellipse cx="118" cy="144" rx="32" ry="32"/>
+      <ellipse cx="104" cy="110" rx="30" ry="28"/>
+      <polygon points="68,44 88,22 108,44"/>
+      <ellipse cx="88" cy="68" rx="36" ry="32"/>
+    </g>
+    <!-- ============ LEGGITE frame 1 : detail ============ -->
+    <g id="l1-det">
+      <polygon points="76,44 88,28 100,44" fill="#ffc63f"/>
+      <ellipse cx="66" cy="52" rx="9" ry="12" transform="rotate(-20 66 52)" fill="#f6f1e3" opacity="0.22"/>
+      <circle cx="74" cy="64" r="14" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="102" cy="64" r="14" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="77" cy="67" r="6.5" fill="#161a2e"/>
+      <circle cx="105" cy="67" r="6.5" fill="#161a2e"/>
+      <path d="M74,88 Q88,99 104,90" fill="none" stroke="#161a2e" stroke-width="10" stroke-linecap="round"/>
+    </g>
+
+    <!-- ============ LEGGITE frame 2 : silhouette (wave) ============ -->
+    <g id="l2-sil">
+      <polygon points="77,274 49,287 39,269 63,250"/>
+      <ellipse cx="44" cy="278" rx="12" ry="9"/>
+      <polygon points="93,273 128,296 140,280 111,251"/>
+      <ellipse cx="134" cy="288" rx="12" ry="9"/>
+      <polygon points="71,238 39,255 29,237 57,214"/>
+      <ellipse cx="34" cy="246" rx="12" ry="9"/>
+      <polygon points="94,240 139,242 141,222 98,212"/>
+      <ellipse cx="140" cy="232" rx="12" ry="9"/>
+      <polygon points="85,202 40,200 40,180 83,174"/>
+      <ellipse cx="40" cy="190" rx="12" ry="9"/>
+      <polygon points="112,202 160,210 164,190 120,174"/>
+      <ellipse cx="162" cy="200" rx="10" ry="9"/>
+      <polygon points="108,164 60,168 56,148 104,136"/>
+      <ellipse cx="58" cy="158" rx="12" ry="9"/>
+      <polygon points="142,164 171,152 165,132 134,136"/>
+      <ellipse cx="168" cy="142" rx="10" ry="9"/>
+      <ellipse cx="86" cy="260" rx="32" ry="32"/>
+      <ellipse cx="80" cy="222" rx="32" ry="32"/>
+      <ellipse cx="100" cy="184" rx="32" ry="32"/>
+      <ellipse cx="122" cy="146" rx="32" ry="32"/>
+      <ellipse cx="112" cy="112" rx="30" ry="28"/>
+      <polygon points="76,46 96,24 116,46"/>
+      <ellipse cx="96" cy="70" rx="36" ry="32"/>
+    </g>
+    <!-- ============ LEGGITE frame 2 : detail ============ -->
+    <g id="l2-det">
+      <polygon points="84,46 96,30 108,46" fill="#ffc63f"/>
+      <ellipse cx="74" cy="54" rx="9" ry="12" transform="rotate(-20 74 54)" fill="#f6f1e3" opacity="0.22"/>
+      <circle cx="82" cy="66" r="14" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="110" cy="66" r="14" fill="#f6f1e3" stroke="#161a2e" stroke-width="8"/>
+      <circle cx="85" cy="69" r="6.5" fill="#161a2e"/>
+      <circle cx="113" cy="69" r="6.5" fill="#161a2e"/>
+      <path d="M82,90 Q96,101 112,92" fill="none" stroke="#161a2e" stroke-width="10" stroke-linecap="round"/>
+    </g>
+
+    <!-- ================= THE SIX SHIPPING SYMBOLS ================= -->
+    <symbol id="mechtron-frame1" viewBox="0 0 200 320">
+      <use xlink:href="#m1-sil" fill="#f6f1e3" stroke="#f6f1e3" stroke-width="38" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#m1-sil" fill="#161a2e" stroke="#161a2e" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#m1-sil" fill="currentColor" stroke="#161a2e" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#m1-det"/>
+    </symbol>
+    <symbol id="mechtron-frame2" viewBox="0 0 200 320">
+      <use xlink:href="#m2-sil" fill="#f6f1e3" stroke="#f6f1e3" stroke-width="38" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#m2-sil" fill="#161a2e" stroke="#161a2e" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#m2-sil" fill="currentColor" stroke="#161a2e" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#m2-det"/>
+    </symbol>
+    <symbol id="flapper-frame1" viewBox="0 0 200 320">
+      <use xlink:href="#f1-sil" fill="#f6f1e3" stroke="#f6f1e3" stroke-width="38" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#f1-sil" fill="#161a2e" stroke="#161a2e" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#f1-sil" fill="currentColor" stroke="#161a2e" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#f1-det"/>
+    </symbol>
+    <symbol id="flapper-frame2" viewBox="0 0 200 320">
+      <use xlink:href="#f2-sil" fill="#f6f1e3" stroke="#f6f1e3" stroke-width="38" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#f2-sil" fill="#161a2e" stroke="#161a2e" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#f2-sil" fill="currentColor" stroke="#161a2e" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#f2-det"/>
+    </symbol>
+    <symbol id="leggite-frame1" viewBox="0 0 200 320">
+      <use xlink:href="#l1-sil" fill="#f6f1e3" stroke="#f6f1e3" stroke-width="38" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#l1-sil" fill="#161a2e" stroke="#161a2e" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#l1-sil" fill="currentColor" stroke="#161a2e" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#l1-det"/>
+    </symbol>
+    <symbol id="leggite-frame2" viewBox="0 0 200 320">
+      <use xlink:href="#l2-sil" fill="#f6f1e3" stroke="#f6f1e3" stroke-width="38" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#l2-sil" fill="#161a2e" stroke="#161a2e" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#l2-sil" fill="currentColor" stroke="#161a2e" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+      <use xlink:href="#l2-det"/>
+    </symbol>
+
+  </defs>
+
+  <!-- ================= DEMO SHEET ================= -->
+  <rect x="0" y="0" width="1040" height="1210" fill="#0d0d16"/>
+  <text x="24" y="28" fill="#f6f1e3" font-size="16">SET 4 -- bone rim / one hue / hard mass</text>
+  <text x="24" y="46" fill="#8b8ba7" font-size="11">grid 200x320, drawn at 20x32. stroke-behind rim: 10u ink + 9u bone, on the outer contour only. one currentColor region per creature.</text>
+
+  <!-- ==== A. size ladder on deep space ==== -->
+  <text x="24" y="76" fill="#f6f1e3" font-size="12">A. SIZE LADDER on deep space #1a1a2e -- frame 1 (left) and frame 2 (right) at 18 / 32 / 44 / 64 tall</text>
+  <rect x="24" y="86" width="992" height="292" fill="#1a1a2e"/>
+
+  <g style="color:#ff5a5f">
+    <text x="36" y="118" fill="#8b8ba7" font-size="10">mechtron</text>
+    <use xlink:href="#mechtron-frame1" x="130" y="132" width="11.25" height="18"/>
+    <use xlink:href="#mechtron-frame1" x="170" y="118" width="20" height="32"/>
+    <use xlink:href="#mechtron-frame1" x="220" y="106" width="27.5" height="44"/>
+    <use xlink:href="#mechtron-frame1" x="280" y="86" width="40" height="64"/>
+    <use xlink:href="#mechtron-frame2" x="400" y="132" width="11.25" height="18"/>
+    <use xlink:href="#mechtron-frame2" x="440" y="118" width="20" height="32"/>
+    <use xlink:href="#mechtron-frame2" x="490" y="106" width="27.5" height="44"/>
+    <use xlink:href="#mechtron-frame2" x="550" y="86" width="40" height="64"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <text x="36" y="212" fill="#8b8ba7" font-size="10">flapper</text>
+    <use xlink:href="#flapper-frame1" x="130" y="226" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="170" y="212" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="220" y="200" width="27.5" height="44"/>
+    <use xlink:href="#flapper-frame1" x="280" y="180" width="40" height="64"/>
+    <use xlink:href="#flapper-frame2" x="400" y="226" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame2" x="440" y="212" width="20" height="32"/>
+    <use xlink:href="#flapper-frame2" x="490" y="200" width="27.5" height="44"/>
+    <use xlink:href="#flapper-frame2" x="550" y="180" width="40" height="64"/>
+  </g>
+  <g style="color:#3aaa18">
+    <text x="36" y="306" fill="#8b8ba7" font-size="10">leggite</text>
+    <use xlink:href="#leggite-frame1" x="130" y="320" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="170" y="306" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="220" y="294" width="27.5" height="44"/>
+    <use xlink:href="#leggite-frame1" x="280" y="274" width="40" height="64"/>
+    <use xlink:href="#leggite-frame2" x="400" y="320" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame2" x="440" y="306" width="20" height="32"/>
+    <use xlink:href="#leggite-frame2" x="490" y="294" width="27.5" height="44"/>
+    <use xlink:href="#leggite-frame2" x="550" y="274" width="40" height="64"/>
+  </g>
+  <text x="660" y="120" fill="#8b8ba7" font-size="10">18 = auction dock badge</text>
+  <text x="660" y="140" fill="#8b8ba7" font-size="10">32 = map / normal play</text>
+  <text x="660" y="160" fill="#8b8ba7" font-size="10">44 / 64 = large UI</text>
+
+  <!-- ==== B. 4x inspection ==== -->
+  <text x="24" y="404" fill="#f6f1e3" font-size="12">B. 4x INSPECTION (128 tall) on panel #22223a -- f1, f2 per species</text>
+  <rect x="24" y="414" width="992" height="196" fill="#22223a"/>
+  <g style="color:#ff5a5f">
+    <use xlink:href="#mechtron-frame1" x="70" y="446" width="80" height="128"/>
+    <use xlink:href="#mechtron-frame2" x="190" y="446" width="80" height="128"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <use xlink:href="#flapper-frame1" x="390" y="446" width="80" height="128"/>
+    <use xlink:href="#flapper-frame2" x="510" y="446" width="80" height="128"/>
+  </g>
+  <g style="color:#3aaa18">
+    <use xlink:href="#leggite-frame1" x="710" y="446" width="80" height="128"/>
+    <use xlink:href="#leggite-frame2" x="830" y="446" width="80" height="128"/>
+  </g>
+  <text x="90" y="592" fill="#8b8ba7" font-size="10">mechtron</text>
+  <text x="410" y="592" fill="#8b8ba7" font-size="10">flapper</text>
+  <text x="730" y="592" fill="#8b8ba7" font-size="10">leggite</text>
+
+  <!-- ==== C. species x color x background at 32 tall ==== -->
+  <text x="24" y="638" fill="#f6f1e3" font-size="12">C. 3 SPECIES x 4 PLAYER COLORS x 3 BACKGROUNDS, all at 32 tall (true play size)</text>
+
+  <!-- block 1 : deep space -->
+  <text x="40" y="662" fill="#8b8ba7" font-size="10">deep space #1a1a2e</text>
+  <rect x="34" y="670" width="290" height="200" fill="#1a1a2e"/>
+  <g style="color:#ff5a5f">
+    <use xlink:href="#mechtron-frame1" x="56" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="56" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="56" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <use xlink:href="#mechtron-frame1" x="126" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="126" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="126" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#3aaa18">
+    <use xlink:href="#mechtron-frame1" x="196" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="196" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="196" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#f872e8">
+    <use xlink:href="#mechtron-frame1" x="266" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="266" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="266" y="814" width="20" height="32"/>
+  </g>
+
+  <!-- block 2 : terrain -->
+  <text x="378" y="662" fill="#8b8ba7" font-size="10">terrain #7c9a4e (green-on-green case)</text>
+  <rect x="372" y="670" width="290" height="200" fill="#7c9a4e"/>
+  <g style="color:#ff5a5f">
+    <use xlink:href="#mechtron-frame1" x="394" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="394" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="394" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <use xlink:href="#mechtron-frame1" x="464" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="464" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="464" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#3aaa18">
+    <use xlink:href="#mechtron-frame1" x="534" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="534" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="534" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#f872e8">
+    <use xlink:href="#mechtron-frame1" x="604" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="604" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="604" y="814" width="20" height="32"/>
+  </g>
+
+  <!-- block 3 : panel -->
+  <text x="716" y="662" fill="#8b8ba7" font-size="10">panel #22223a</text>
+  <rect x="710" y="670" width="290" height="200" fill="#22223a"/>
+  <g style="color:#ff5a5f">
+    <use xlink:href="#mechtron-frame1" x="732" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="732" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="732" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <use xlink:href="#mechtron-frame1" x="802" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="802" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="802" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#3aaa18">
+    <use xlink:href="#mechtron-frame1" x="872" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="872" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="872" y="814" width="20" height="32"/>
+  </g>
+  <g style="color:#f872e8">
+    <use xlink:href="#mechtron-frame1" x="942" y="686" width="20" height="32"/>
+    <use xlink:href="#flapper-frame1" x="942" y="750" width="20" height="32"/>
+    <use xlink:href="#leggite-frame1" x="942" y="814" width="20" height="32"/>
+  </g>
+
+  <!-- ==== D. the 18px rung ==== -->
+  <text x="24" y="906" fill="#f6f1e3" font-size="12">D. THE 18 PX RUNG -- auction dock badge, full creature (no head crop), 4 colors on all 3 backgrounds</text>
+
+  <text x="40" y="932" fill="#8b8ba7" font-size="10">deep space</text>
+  <rect x="34" y="940" width="290" height="120" fill="#1a1a2e"/>
+  <g style="color:#ff5a5f">
+    <use xlink:href="#mechtron-frame1" x="60" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="60" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="60" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <use xlink:href="#mechtron-frame1" x="130" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="130" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="130" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#3aaa18">
+    <use xlink:href="#mechtron-frame1" x="200" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="200" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="200" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#f872e8">
+    <use xlink:href="#mechtron-frame1" x="270" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="270" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="270" y="1024" width="11.25" height="18"/>
+  </g>
+
+  <text x="378" y="932" fill="#8b8ba7" font-size="10">terrain</text>
+  <rect x="372" y="940" width="290" height="120" fill="#7c9a4e"/>
+  <g style="color:#ff5a5f">
+    <use xlink:href="#mechtron-frame1" x="398" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="398" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="398" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <use xlink:href="#mechtron-frame1" x="468" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="468" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="468" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#3aaa18">
+    <use xlink:href="#mechtron-frame1" x="538" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="538" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="538" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#f872e8">
+    <use xlink:href="#mechtron-frame1" x="608" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="608" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="608" y="1024" width="11.25" height="18"/>
+  </g>
+
+  <text x="716" y="932" fill="#8b8ba7" font-size="10">panel</text>
+  <rect x="710" y="940" width="290" height="120" fill="#22223a"/>
+  <g style="color:#ff5a5f">
+    <use xlink:href="#mechtron-frame1" x="736" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="736" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="736" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#4fd8ff">
+    <use xlink:href="#mechtron-frame1" x="806" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="806" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="806" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#3aaa18">
+    <use xlink:href="#mechtron-frame1" x="876" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="876" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="876" y="1024" width="11.25" height="18"/>
+  </g>
+  <g style="color:#f872e8">
+    <use xlink:href="#mechtron-frame1" x="946" y="956" width="11.25" height="18"/>
+    <use xlink:href="#flapper-frame1" x="946" y="990" width="11.25" height="18"/>
+    <use xlink:href="#leggite-frame1" x="946" y="1024" width="11.25" height="18"/>
+  </g>
+
+  <text x="24" y="1090" fill="#8b8ba7" font-size="11">Silhouette test: mechtron = narrow hard rectangle. flapper = wide horizontal wingspan. leggite = tall thin wobble on a leg fringe.</text>
+  <text x="24" y="1110" fill="#8b8ba7" font-size="11">Those three outer masses are distinguishable at 18 px with the faces switched off, which is the whole design.</text>
+
+</svg>

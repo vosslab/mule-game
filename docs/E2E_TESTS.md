@@ -69,6 +69,23 @@ The driver imports `playwright-core`, not `playwright` or `@playwright/test`,
 which is what lets it live under `tests/e2e/` without tripping the
 "Playwright imports belong under `tests/playwright/`" rule below.
 
+- `tests/e2e/e2e_alien_contact_sheet.mjs` -- renders every species SVG under
+  `art/aliens/` through `devel/render_alien_sheet.mjs` (one species per
+  invocation, so single-file mode stays active and species names are never
+  bake-off-anonymized), then assembles the result into two kinds of contact
+  sheet: an all-species silhouette overview at 18 px and 32 px side by side
+  (the standing check against the bake-off's unsolved mechtron-vs-leggite
+  confusion), and one per-species sheet showing both frames and the head crop
+  across all four player colors and all three backgrounds at 32 px (game
+  size). Writes PNGs into `output_smoke/aliens_cast/sheets/`, with the copied
+  per-species renders backing them in `output_smoke/aliens_cast/renders/`.
+  Works on however many of the eight species are currently drawn and reports
+  which are missing.
+
+```bash
+node --import tsx tests/e2e/e2e_alien_contact_sheet.mjs
+```
+
 ## Test layout overview
 
 This repo organizes tests in four tiers, all under the `tests/` umbrella:

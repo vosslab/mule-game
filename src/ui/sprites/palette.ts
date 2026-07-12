@@ -42,6 +42,15 @@ export const PALETTE = {
   // where player2's tinted body-fill alone does not (1.05:1).
   keylineLight: "#ffffff",
 
+  // Ink keyline (docs/ALIEN_ART_CONTRACT.md): the dark keyline stroke drawn
+  // under every species sprite's white halo, between the halo and the flat
+  // `currentColor` body. Measured 5.72:1 against terrainPlain but only
+  // 1.07:1 against bgDeep, while keylineLight measures 17.06:1 against
+  // bgDeep but only 3.19:1 against terrainPlain. The two strokes are a
+  // COMPLEMENTARY PAIR: neither one alone clears every background the
+  // sprite can sit on, so neither may be dropped.
+  inkKeyline: "#141422",
+
   // Town street surfaces (facade street): registers the town scene's
   // paved-street colors so the palette-conformance gate (tests/playwright/
   // visual_render.spec.mjs) recognizes them. Both sit past the 20-deltaE

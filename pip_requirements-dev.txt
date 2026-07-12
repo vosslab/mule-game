@@ -1,6 +1,8 @@
 # Development dependencies
 bandit  # security linting for Python code
+numpy  # Pixel-array math for devel/measure_alien_art.py's raster diagnostics
 packaging  # version parsing/comparison helpers used by tooling/tests
+pillow  # PNG decoding for devel/measure_alien_art.py's raster diagnostics
 pyflakes  # static analysis lint checks
 pytest  # automated test runner
 rich  # formatted terminal output in developer tools

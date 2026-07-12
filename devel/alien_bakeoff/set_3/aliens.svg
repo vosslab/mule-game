@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ALIEN BAKE-OFF, SET 3 - DESIGN HYPOTHESIS
+  All numbers are grid units on the 200x320 editing canvas.
+  The game draws at 20x32, so divide every number below by ten to get screen pixels.
+
+  OUTLINE WEIGHT: 12 units of ink (#14142a), uniform, on every silhouette edge.
+    Why: 1.2px at game size is the thinnest line that still survives a 2x downscale;
+    a varying-weight outline reads as sloppy antialiasing once the creature is 32 tall.
+
+  VISIBILITY DEVICE: the STICKER KEYLINE. Every creature is drawn three times from the
+    same geometry - a cream halo (#f6f1e4), then the ink outline, then the flat body.
+    The rendered result is a 9-unit cream rim sitting outside a 12-unit ink rim.
+    Why: a single dark outline vanishes on deep space (#1a1a2e), and a single light
+    outline vanishes on terrain (#7c9a4e). A light-over-dark pair always presents one
+    high-contrast edge to any background, so the silhouette can never melt away.
+
+  GREEN ON GREEN: player green (#3aaa18) and plain terrain (#7c9a4e) have almost
+    identical relative luminance (~0.27 both) - contrast ratio about 1.02:1. They are
+    invisible to each other by value and differ only in hue, so no amount of tinting the
+    body fixes it. The cream rim solves it by force: it inserts a luminance-1.0 band
+    between the body and the ground, so the creature is cut out of the terrain like a
+    sticker regardless of what the body color is doing.
+
+  COLOR STRATEGY: ONE currentColor region per creature at full opacity (the whole body,
+    limbs and wings included), plus ONE belly-shade pass - the same geometry redrawn in
+    ink at 0.22 group opacity, clipped to a horizontal band across the lower body.
+    Group opacity, not per-shape opacity, so overlapping limbs cannot double-darken.
+    Why: the player color carries roughly 80 percent of the visible area, which is the
+    point of the whole system; the shade is the only concession to volume and it costs
+    zero extra area. No fixed neutral panels - they steal identity area from the player.
+
+  INTERNAL FEATURES: exactly three per creature - two eyes, one mouth, one belly shade.
+    Nothing else. Panel lines, claw prongs, mouth grilles and eye highlights were all
+    drawn and then cut: at 32 tall they are sub-pixel, so they buy nothing and cost area.
+    Eyes are cream with an ink pupil (the strongest possible value triad, and it does not
+    consume player color). Mechtron gets square eyes, flapper and leggite get round ones,
+    which is a second identity cue after the silhouette.
+
+  SYMMETRY: mechtron and flapper are exactly mirror-symmetric about x=100 in frame 1
+    (mirrored halves are generated from one path, so they cannot drift). Frame 2 breaks
+    symmetry on purpose: mechtron pumps one arm up and one down mid-step; the leggite is
+    asymmetric in both frames because an S-curve cannot be mirrored.
+
+  MOTION: mechtron STEPS - left leg telescopes up and short, right leg extends to the
+    ground, torso drops 8, arms counter-pump, pupils track the step. Flapper BEATS - the
+    wings go from full horizontal spread to fully vertical, which is the largest
+    silhouette change in the set and is the one motion still legible at 18 tall.
+    Leggite UNDULATES - the S shifts phase and alternate legs swing forward, so a wave
+    travels down the fringe.
+
+  THE 18px ANSWER: full creatures, not head crops. The claim is that the silhouette does
+    the work, so the badge only needs the silhouette to be strong. At 18 tall you get:
+    mechtron = a hard box on two posts; flapper = a wide horizontal wingspan (the only
+    wide creature); leggite = a tall leaning S with a lumpy fringe (the only tall one).
+    Those three read as box / wide / tall, which is a distinction that survives to about
+    12 tall. The eyes go to roughly 2px and become a face-ish smudge rather than eyes -
+    that is accepted, because a head crop would throw away the one cue that still works.
+
+  FIXED COLORS USED ANYWHERE IN A CREATURE: #14142a (ink outline, pupils, mouth, shade)
+    and #f6f1e4 (cream rim, eye whites). Everything else is currentColor or none.
+    Page chrome only (never inside a creature): #101018, #e8e8f0, #9a9ab4, plus the four
+    player colors and the three canonical backgrounds.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 1000" width="1200" height="1000">
+<rect x="0" y="0" width="1200" height="1000" fill="#101018"/>
+<defs>
+	<clipPath id="belly-mechtron"><rect x="0" y="192" width="200" height="128"/></clipPath>
+	<clipPath id="belly-flapper"><rect x="0" y="176" width="200" height="144"/></clipPath>
+	<clipPath id="belly-leggite"><rect x="0" y="186" width="200" height="134"/></clipPath>
+	<symbol id="mechtron-frame1" viewBox="0 0 200 320" overflow="visible">
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="68" y="50" width="12" height="46"/>
+			<circle fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" cx="74" cy="46" r="13"/>
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="120" y="50" width="12" height="46"/>
+			<circle fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" cx="126" cy="46" r="13"/>
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="30" y="136" width="26" height="62" rx="4"/>
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="144" y="136" width="26" height="62" rx="4"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 52 232 L 78 232 L 78 274 L 80 274 L 80 294 L 42 294 L 42 274 L 52 274 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 148 232 L 122 232 L 122 274 L 120 274 L 120 294 L 158 294 L 158 274 L 148 274 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 52 110 L 70 90 L 130 90 L 148 110 L 148 240 L 52 240 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="68" y="50" width="12" height="46"/>
+			<circle fill="#14142a" stroke="#14142a" stroke-width="24" cx="74" cy="46" r="13"/>
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="120" y="50" width="12" height="46"/>
+			<circle fill="#14142a" stroke="#14142a" stroke-width="24" cx="126" cy="46" r="13"/>
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="30" y="136" width="26" height="62" rx="4"/>
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="144" y="136" width="26" height="62" rx="4"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 52 232 L 78 232 L 78 274 L 80 274 L 80 294 L 42 294 L 42 274 L 52 274 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 148 232 L 122 232 L 122 274 L 120 274 L 120 294 L 158 294 L 158 274 L 148 274 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 52 110 L 70 90 L 130 90 L 148 110 L 148 240 L 52 240 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="currentColor" x="68" y="50" width="12" height="46"/>
+			<circle fill="currentColor" cx="74" cy="46" r="13"/>
+			<rect fill="currentColor" x="120" y="50" width="12" height="46"/>
+			<circle fill="currentColor" cx="126" cy="46" r="13"/>
+			<rect fill="currentColor" x="30" y="136" width="26" height="62" rx="4"/>
+			<rect fill="currentColor" x="144" y="136" width="26" height="62" rx="4"/>
+			<path fill="currentColor" d="M 52 232 L 78 232 L 78 274 L 80 274 L 80 294 L 42 294 L 42 274 L 52 274 Z"/>
+			<path fill="currentColor" d="M 148 232 L 122 232 L 122 274 L 120 274 L 120 294 L 158 294 L 158 274 L 148 274 Z"/>
+			<path fill="currentColor" d="M 52 110 L 70 90 L 130 90 L 148 110 L 148 240 L 52 240 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round" opacity="0.22" clip-path="url(#belly-mechtron)">
+			<rect fill="#14142a" x="68" y="50" width="12" height="46"/>
+			<circle fill="#14142a" cx="74" cy="46" r="13"/>
+			<rect fill="#14142a" x="120" y="50" width="12" height="46"/>
+			<circle fill="#14142a" cx="126" cy="46" r="13"/>
+			<rect fill="#14142a" x="30" y="136" width="26" height="62" rx="4"/>
+			<rect fill="#14142a" x="144" y="136" width="26" height="62" rx="4"/>
+			<path fill="#14142a" d="M 52 232 L 78 232 L 78 274 L 80 274 L 80 294 L 42 294 L 42 274 L 52 274 Z"/>
+			<path fill="#14142a" d="M 148 232 L 122 232 L 122 274 L 120 274 L 120 294 L 158 294 L 158 274 L 148 274 Z"/>
+			<path fill="#14142a" d="M 52 110 L 70 90 L 130 90 L 148 110 L 148 240 L 52 240 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="#f6f1e4" stroke="#14142a" stroke-width="8" rx="5" x="62" y="122" width="30" height="26"/>
+			<rect fill="#f6f1e4" stroke="#14142a" stroke-width="8" rx="5" x="108" y="122" width="30" height="26"/>
+			<rect fill="#14142a" rx="2" x="70" y="130" width="14" height="14"/>
+			<rect fill="#14142a" rx="2" x="116" y="130" width="14" height="14"/>
+			<path fill="#14142a" d="M 68 172 Q 100 204 132 172 L 132 158 Q 100 186 68 158 Z"/>
+		</g>
+	</symbol>
+	<symbol id="mechtron-frame2" viewBox="0 0 200 320" overflow="visible">
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="66" y="60" width="12" height="46"/>
+			<circle fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" cx="72" cy="56" r="13"/>
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="122" y="52" width="12" height="46"/>
+			<circle fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" cx="128" cy="48" r="13"/>
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="30" y="126" width="26" height="62" rx="4"/>
+			<rect fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" x="144" y="154" width="26" height="62" rx="4"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 52 244 L 78 244 L 78 256 L 80 256 L 80 276 L 42 276 L 42 256 L 52 256 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 148 244 L 122 244 L 122 276 L 120 276 L 120 296 L 158 296 L 158 276 L 148 276 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 52 118 L 70 98 L 130 98 L 148 118 L 148 248 L 52 248 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="66" y="60" width="12" height="46"/>
+			<circle fill="#14142a" stroke="#14142a" stroke-width="24" cx="72" cy="56" r="13"/>
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="122" y="52" width="12" height="46"/>
+			<circle fill="#14142a" stroke="#14142a" stroke-width="24" cx="128" cy="48" r="13"/>
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="30" y="126" width="26" height="62" rx="4"/>
+			<rect fill="#14142a" stroke="#14142a" stroke-width="24" x="144" y="154" width="26" height="62" rx="4"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 52 244 L 78 244 L 78 256 L 80 256 L 80 276 L 42 276 L 42 256 L 52 256 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 148 244 L 122 244 L 122 276 L 120 276 L 120 296 L 158 296 L 158 276 L 148 276 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 52 118 L 70 98 L 130 98 L 148 118 L 148 248 L 52 248 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="currentColor" x="66" y="60" width="12" height="46"/>
+			<circle fill="currentColor" cx="72" cy="56" r="13"/>
+			<rect fill="currentColor" x="122" y="52" width="12" height="46"/>
+			<circle fill="currentColor" cx="128" cy="48" r="13"/>
+			<rect fill="currentColor" x="30" y="126" width="26" height="62" rx="4"/>
+			<rect fill="currentColor" x="144" y="154" width="26" height="62" rx="4"/>
+			<path fill="currentColor" d="M 52 244 L 78 244 L 78 256 L 80 256 L 80 276 L 42 276 L 42 256 L 52 256 Z"/>
+			<path fill="currentColor" d="M 148 244 L 122 244 L 122 276 L 120 276 L 120 296 L 158 296 L 158 276 L 148 276 Z"/>
+			<path fill="currentColor" d="M 52 118 L 70 98 L 130 98 L 148 118 L 148 248 L 52 248 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round" opacity="0.22" clip-path="url(#belly-mechtron)">
+			<rect fill="#14142a" x="66" y="60" width="12" height="46"/>
+			<circle fill="#14142a" cx="72" cy="56" r="13"/>
+			<rect fill="#14142a" x="122" y="52" width="12" height="46"/>
+			<circle fill="#14142a" cx="128" cy="48" r="13"/>
+			<rect fill="#14142a" x="30" y="126" width="26" height="62" rx="4"/>
+			<rect fill="#14142a" x="144" y="154" width="26" height="62" rx="4"/>
+			<path fill="#14142a" d="M 52 244 L 78 244 L 78 256 L 80 256 L 80 276 L 42 276 L 42 256 L 52 256 Z"/>
+			<path fill="#14142a" d="M 148 244 L 122 244 L 122 276 L 120 276 L 120 296 L 158 296 L 158 276 L 148 276 Z"/>
+			<path fill="#14142a" d="M 52 118 L 70 98 L 130 98 L 148 118 L 148 248 L 52 248 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<rect fill="#f6f1e4" stroke="#14142a" stroke-width="8" rx="5" x="62" y="130" width="30" height="26"/>
+			<rect fill="#f6f1e4" stroke="#14142a" stroke-width="8" rx="5" x="108" y="130" width="30" height="26"/>
+			<rect fill="#14142a" rx="2" x="74" y="138" width="14" height="14"/>
+			<rect fill="#14142a" rx="2" x="120" y="138" width="14" height="14"/>
+			<path fill="#14142a" d="M 68 180 Q 100 212 132 180 L 132 166 Q 100 194 68 166 Z"/>
+		</g>
+	</symbol>
+	<symbol id="flapper-frame1" viewBox="0 0 200 320" overflow="visible">
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 124 92 C 148 96 168 110 178 132 C 152 142 134 152 126 174 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 76 92 C 52 96 32 110 22 132 C 48 142 66 152 74 174 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 100 48 C 122 48 132 70 132 96 L 124 240 L 100 288 L 76 240 L 68 96 C 68 70 78 48 100 48 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 124 92 C 148 96 168 110 178 132 C 152 142 134 152 126 174 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 76 92 C 52 96 32 110 22 132 C 48 142 66 152 74 174 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 100 48 C 122 48 132 70 132 96 L 124 240 L 100 288 L 76 240 L 68 96 C 68 70 78 48 100 48 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="currentColor" d="M 124 92 C 148 96 168 110 178 132 C 152 142 134 152 126 174 Z"/>
+			<path fill="currentColor" d="M 76 92 C 52 96 32 110 22 132 C 48 142 66 152 74 174 Z"/>
+			<path fill="currentColor" d="M 100 48 C 122 48 132 70 132 96 L 124 240 L 100 288 L 76 240 L 68 96 C 68 70 78 48 100 48 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round" opacity="0.22" clip-path="url(#belly-flapper)">
+			<path fill="#14142a" d="M 124 92 C 148 96 168 110 178 132 C 152 142 134 152 126 174 Z"/>
+			<path fill="#14142a" d="M 76 92 C 52 96 32 110 22 132 C 48 142 66 152 74 174 Z"/>
+			<path fill="#14142a" d="M 100 48 C 122 48 132 70 132 96 L 124 240 L 100 288 L 76 240 L 68 96 C 68 70 78 48 100 48 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="84" cy="96" rx="14" ry="13"/>
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="116" cy="96" rx="14" ry="13"/>
+			<circle fill="#14142a" cx="86" cy="99" r="7"/>
+			<circle fill="#14142a" cx="114" cy="99" r="7"/>
+			<path fill="#14142a" d="M 82 132 Q 100 156 118 132 L 118 120 Q 100 144 82 120 Z"/>
+		</g>
+	</symbol>
+	<symbol id="flapper-frame2" viewBox="0 0 200 320" overflow="visible">
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 126 106 C 138 78 150 52 160 26 C 158 66 150 106 138 148 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 74 106 C 62 78 50 52 40 26 C 42 66 50 106 62 148 Z"/>
+			<path fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" d="M 100 56 C 122 56 132 78 132 104 L 124 248 L 100 296 L 76 248 L 68 104 C 68 78 78 56 100 56 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 126 106 C 138 78 150 52 160 26 C 158 66 150 106 138 148 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 74 106 C 62 78 50 52 40 26 C 42 66 50 106 62 148 Z"/>
+			<path fill="#14142a" stroke="#14142a" stroke-width="24" d="M 100 56 C 122 56 132 78 132 104 L 124 248 L 100 296 L 76 248 L 68 104 C 68 78 78 56 100 56 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="currentColor" d="M 126 106 C 138 78 150 52 160 26 C 158 66 150 106 138 148 Z"/>
+			<path fill="currentColor" d="M 74 106 C 62 78 50 52 40 26 C 42 66 50 106 62 148 Z"/>
+			<path fill="currentColor" d="M 100 56 C 122 56 132 78 132 104 L 124 248 L 100 296 L 76 248 L 68 104 C 68 78 78 56 100 56 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round" opacity="0.22" clip-path="url(#belly-flapper)">
+			<path fill="#14142a" d="M 126 106 C 138 78 150 52 160 26 C 158 66 150 106 138 148 Z"/>
+			<path fill="#14142a" d="M 74 106 C 62 78 50 52 40 26 C 42 66 50 106 62 148 Z"/>
+			<path fill="#14142a" d="M 100 56 C 122 56 132 78 132 104 L 124 248 L 100 296 L 76 248 L 68 104 C 68 78 78 56 100 56 Z"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="84" cy="104" rx="14" ry="13"/>
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="116" cy="104" rx="14" ry="13"/>
+			<circle fill="#14142a" cx="86" cy="107" r="7"/>
+			<circle fill="#14142a" cx="114" cy="107" r="7"/>
+			<path fill="#14142a" d="M 82 140 Q 100 164 118 140 L 118 128 Q 100 152 82 128 Z"/>
+		</g>
+	</symbol>
+	<symbol id="leggite-frame1" viewBox="0 0 200 320" overflow="visible">
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 126 107 L 154 121 L 160 151"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 134 131 L 162 145 L 168 175"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 125 155 L 153 169 L 159 199"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 75 196 L 47 210 L 41 240"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 66 219 L 38 233 L 32 263"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 74 241 L 46 255 L 40 285"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 100 256 L 126 268 L 132 288"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 100 256 L 74 268 L 68 288"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="86" d="M 100 86 C 146 110 145 152 100 176 C 55 200 54 240 100 258"/>
+			<circle fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" cx="100" cy="64" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 126 107 L 154 121 L 160 151"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 134 131 L 162 145 L 168 175"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 125 155 L 153 169 L 159 199"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 75 196 L 47 210 L 41 240"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 66 219 L 38 233 L 32 263"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 74 241 L 46 255 L 40 285"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 100 256 L 126 268 L 132 288"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 100 256 L 74 268 L 68 288"/>
+			<path fill="none" stroke="#14142a" stroke-width="68" d="M 100 86 C 146 110 145 152 100 176 C 55 200 54 240 100 258"/>
+			<circle fill="#14142a" stroke="#14142a" stroke-width="24" cx="100" cy="64" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 126 107 L 154 121 L 160 151"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 134 131 L 162 145 L 168 175"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 125 155 L 153 169 L 159 199"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 75 196 L 47 210 L 41 240"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 66 219 L 38 233 L 32 263"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 74 241 L 46 255 L 40 285"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 100 256 L 126 268 L 132 288"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 100 256 L 74 268 L 68 288"/>
+			<path fill="none" stroke="currentColor" stroke-width="44" d="M 100 86 C 146 110 145 152 100 176 C 55 200 54 240 100 258"/>
+			<circle fill="currentColor" cx="100" cy="64" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round" opacity="0.22" clip-path="url(#belly-leggite)">
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 126 107 L 154 121 L 160 151"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 134 131 L 162 145 L 168 175"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 125 155 L 153 169 L 159 199"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 75 196 L 47 210 L 41 240"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 66 219 L 38 233 L 32 263"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 74 241 L 46 255 L 40 285"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 100 256 L 126 268 L 132 288"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 100 256 L 74 268 L 68 288"/>
+			<path fill="none" stroke="#14142a" stroke-width="44" d="M 100 86 C 146 110 145 152 100 176 C 55 200 54 240 100 258"/>
+			<circle fill="#14142a" cx="100" cy="64" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="86" cy="60" rx="13" ry="14"/>
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="114" cy="60" rx="13" ry="14"/>
+			<circle fill="#14142a" cx="88" cy="63" r="6.5"/>
+			<circle fill="#14142a" cx="112" cy="63" r="6.5"/>
+			<path fill="#14142a" d="M 84 78 Q 100 96 116 78 L 116 70 Q 100 84 84 70 Z"/>
+		</g>
+	</symbol>
+	<symbol id="leggite-frame2" viewBox="0 0 200 320" overflow="visible">
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 130 113 L 162 121 L 168 143"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 138 137 L 160 159 L 164 189"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 129 161 L 161 169 L 167 191"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 79 200 L 57 222 L 53 252"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 70 223 L 38 231 L 32 253"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 78 245 L 56 267 L 52 297"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 100 260 L 130 270 L 134 292"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="60" d="M 100 260 L 78 272 L 84 288"/>
+			<path fill="none" stroke="#f6f1e4" stroke-width="86" d="M 104 92 C 150 114 144 156 98 180 C 52 204 58 244 100 262"/>
+			<circle fill="#f6f1e4" stroke="#f6f1e4" stroke-width="42" cx="106" cy="68" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 130 113 L 162 121 L 168 143"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 138 137 L 160 159 L 164 189"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 129 161 L 161 169 L 167 191"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 79 200 L 57 222 L 53 252"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 70 223 L 38 231 L 32 253"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 78 245 L 56 267 L 52 297"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 100 260 L 130 270 L 134 292"/>
+			<path fill="none" stroke="#14142a" stroke-width="42" d="M 100 260 L 78 272 L 84 288"/>
+			<path fill="none" stroke="#14142a" stroke-width="68" d="M 104 92 C 150 114 144 156 98 180 C 52 204 58 244 100 262"/>
+			<circle fill="#14142a" stroke="#14142a" stroke-width="24" cx="106" cy="68" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 130 113 L 162 121 L 168 143"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 138 137 L 160 159 L 164 189"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 129 161 L 161 169 L 167 191"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 79 200 L 57 222 L 53 252"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 70 223 L 38 231 L 32 253"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 78 245 L 56 267 L 52 297"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 100 260 L 130 270 L 134 292"/>
+			<path fill="none" stroke="currentColor" stroke-width="18" d="M 100 260 L 78 272 L 84 288"/>
+			<path fill="none" stroke="currentColor" stroke-width="44" d="M 104 92 C 150 114 144 156 98 180 C 52 204 58 244 100 262"/>
+			<circle fill="currentColor" cx="106" cy="68" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round" opacity="0.22" clip-path="url(#belly-leggite)">
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 130 113 L 162 121 L 168 143"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 138 137 L 160 159 L 164 189"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 129 161 L 161 169 L 167 191"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 79 200 L 57 222 L 53 252"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 70 223 L 38 231 L 32 253"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 78 245 L 56 267 L 52 297"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 100 260 L 130 270 L 134 292"/>
+			<path fill="none" stroke="#14142a" stroke-width="18" d="M 100 260 L 78 272 L 84 288"/>
+			<path fill="none" stroke="#14142a" stroke-width="44" d="M 104 92 C 150 114 144 156 98 180 C 52 204 58 244 100 262"/>
+			<circle fill="#14142a" cx="106" cy="68" r="34"/>
+		</g>
+		<g stroke-linejoin="round" stroke-linecap="round">
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="92" cy="64" rx="13" ry="14"/>
+			<ellipse fill="#f6f1e4" stroke="#14142a" stroke-width="8" cx="120" cy="64" rx="13" ry="14"/>
+			<circle fill="#14142a" cx="95" cy="67" r="6.5"/>
+			<circle fill="#14142a" cx="119" cy="67" r="6.5"/>
+			<path fill="#14142a" d="M 90 82 Q 106 100 122 82 L 122 74 Q 106 88 90 74 Z"/>
+		</g>
+	</symbol>
+</defs>
+<text x="24" y="32" font-family="sans-serif" font-size="20" fill="#e8e8f0">ALIEN BAKE-OFF SET 3 -- sticker keyline</text>
+<text x="24" y="50" font-family="sans-serif" font-size="12" fill="#9a9ab4">cream rim over ink outline over flat player color</text>
+<text x="24" y="76" font-family="sans-serif" font-size="14" fill="#e8e8f0">SIZE LADDER -- 18 / 32 / 44 / 64 px tall (game draws at 32)</text>
+<rect x="24" y="90" width="672" height="560" fill="#1a1a2e" rx="6"/>
+<text x="36" y="144" font-family="sans-serif" font-size="11" fill="#9a9ab4">mechtron-frame1</text>
+<use href="#mechtron-frame1" x="150" y="160" width="11.25" height="18" style="color:#4fd8ff"/>
+<text x="150" y="186" font-family="sans-serif" font-size="9" fill="#9a9ab4">18</text>
+<use href="#mechtron-frame1" x="280" y="146" width="20" height="32" style="color:#4fd8ff"/>
+<text x="280" y="186" font-family="sans-serif" font-size="9" fill="#9a9ab4">32</text>
+<use href="#mechtron-frame1" x="410" y="134" width="27.5" height="44" style="color:#4fd8ff"/>
+<text x="410" y="186" font-family="sans-serif" font-size="9" fill="#9a9ab4">44</text>
+<use href="#mechtron-frame1" x="540" y="114" width="40" height="64" style="color:#4fd8ff"/>
+<text x="540" y="186" font-family="sans-serif" font-size="9" fill="#9a9ab4">64</text>
+<text x="36" y="236" font-family="sans-serif" font-size="11" fill="#9a9ab4">mechtron-frame2</text>
+<use href="#mechtron-frame2" x="150" y="252" width="11.25" height="18" style="color:#4fd8ff"/>
+<text x="150" y="278" font-family="sans-serif" font-size="9" fill="#9a9ab4">18</text>
+<use href="#mechtron-frame2" x="280" y="238" width="20" height="32" style="color:#4fd8ff"/>
+<text x="280" y="278" font-family="sans-serif" font-size="9" fill="#9a9ab4">32</text>
+<use href="#mechtron-frame2" x="410" y="226" width="27.5" height="44" style="color:#4fd8ff"/>
+<text x="410" y="278" font-family="sans-serif" font-size="9" fill="#9a9ab4">44</text>
+<use href="#mechtron-frame2" x="540" y="206" width="40" height="64" style="color:#4fd8ff"/>
+<text x="540" y="278" font-family="sans-serif" font-size="9" fill="#9a9ab4">64</text>
+<text x="36" y="328" font-family="sans-serif" font-size="11" fill="#9a9ab4">flapper-frame1</text>
+<use href="#flapper-frame1" x="150" y="344" width="11.25" height="18" style="color:#4fd8ff"/>
+<text x="150" y="370" font-family="sans-serif" font-size="9" fill="#9a9ab4">18</text>
+<use href="#flapper-frame1" x="280" y="330" width="20" height="32" style="color:#4fd8ff"/>
+<text x="280" y="370" font-family="sans-serif" font-size="9" fill="#9a9ab4">32</text>
+<use href="#flapper-frame1" x="410" y="318" width="27.5" height="44" style="color:#4fd8ff"/>
+<text x="410" y="370" font-family="sans-serif" font-size="9" fill="#9a9ab4">44</text>
+<use href="#flapper-frame1" x="540" y="298" width="40" height="64" style="color:#4fd8ff"/>
+<text x="540" y="370" font-family="sans-serif" font-size="9" fill="#9a9ab4">64</text>
+<text x="36" y="420" font-family="sans-serif" font-size="11" fill="#9a9ab4">flapper-frame2</text>
+<use href="#flapper-frame2" x="150" y="436" width="11.25" height="18" style="color:#4fd8ff"/>
+<text x="150" y="462" font-family="sans-serif" font-size="9" fill="#9a9ab4">18</text>
+<use href="#flapper-frame2" x="280" y="422" width="20" height="32" style="color:#4fd8ff"/>
+<text x="280" y="462" font-family="sans-serif" font-size="9" fill="#9a9ab4">32</text>
+<use href="#flapper-frame2" x="410" y="410" width="27.5" height="44" style="color:#4fd8ff"/>
+<text x="410" y="462" font-family="sans-serif" font-size="9" fill="#9a9ab4">44</text>
+<use href="#flapper-frame2" x="540" y="390" width="40" height="64" style="color:#4fd8ff"/>
+<text x="540" y="462" font-family="sans-serif" font-size="9" fill="#9a9ab4">64</text>
+<text x="36" y="512" font-family="sans-serif" font-size="11" fill="#9a9ab4">leggite-frame1</text>
+<use href="#leggite-frame1" x="150" y="528" width="11.25" height="18" style="color:#4fd8ff"/>
+<text x="150" y="554" font-family="sans-serif" font-size="9" fill="#9a9ab4">18</text>
+<use href="#leggite-frame1" x="280" y="514" width="20" height="32" style="color:#4fd8ff"/>
+<text x="280" y="554" font-family="sans-serif" font-size="9" fill="#9a9ab4">32</text>
+<use href="#leggite-frame1" x="410" y="502" width="27.5" height="44" style="color:#4fd8ff"/>
+<text x="410" y="554" font-family="sans-serif" font-size="9" fill="#9a9ab4">44</text>
+<use href="#leggite-frame1" x="540" y="482" width="40" height="64" style="color:#4fd8ff"/>
+<text x="540" y="554" font-family="sans-serif" font-size="9" fill="#9a9ab4">64</text>
+<text x="36" y="604" font-family="sans-serif" font-size="11" fill="#9a9ab4">leggite-frame2</text>
+<use href="#leggite-frame2" x="150" y="620" width="11.25" height="18" style="color:#4fd8ff"/>
+<text x="150" y="646" font-family="sans-serif" font-size="9" fill="#9a9ab4">18</text>
+<use href="#leggite-frame2" x="280" y="606" width="20" height="32" style="color:#4fd8ff"/>
+<text x="280" y="646" font-family="sans-serif" font-size="9" fill="#9a9ab4">32</text>
+<use href="#leggite-frame2" x="410" y="594" width="27.5" height="44" style="color:#4fd8ff"/>
+<text x="410" y="646" font-family="sans-serif" font-size="9" fill="#9a9ab4">44</text>
+<use href="#leggite-frame2" x="540" y="574" width="40" height="64" style="color:#4fd8ff"/>
+<text x="540" y="646" font-family="sans-serif" font-size="9" fill="#9a9ab4">64</text>
+<text x="744" y="76" font-family="sans-serif" font-size="14" fill="#e8e8f0">4x INSPECTION (128 tall)</text>
+<rect x="744" y="90" width="432" height="316" fill="#22223a" rx="6"/>
+<use href="#mechtron-frame1" x="760" y="106" width="80" height="128" style="color:#ff5a5f"/>
+<text x="760" y="250" font-family="sans-serif" font-size="9" fill="#9a9ab4">mechtron f1</text>
+<use href="#mechtron-frame2" x="900" y="106" width="80" height="128" style="color:#ff5a5f"/>
+<text x="900" y="250" font-family="sans-serif" font-size="9" fill="#9a9ab4">mechtron f2</text>
+<use href="#flapper-frame1" x="1040" y="106" width="80" height="128" style="color:#ff5a5f"/>
+<text x="1040" y="250" font-family="sans-serif" font-size="9" fill="#9a9ab4">flapper f1</text>
+<use href="#flapper-frame2" x="760" y="258" width="80" height="128" style="color:#f872e8"/>
+<text x="760" y="402" font-family="sans-serif" font-size="9" fill="#9a9ab4">flapper f2</text>
+<use href="#leggite-frame1" x="900" y="258" width="80" height="128" style="color:#f872e8"/>
+<text x="900" y="402" font-family="sans-serif" font-size="9" fill="#9a9ab4">leggite f1</text>
+<use href="#leggite-frame2" x="1040" y="258" width="80" height="128" style="color:#f872e8"/>
+<text x="1040" y="402" font-family="sans-serif" font-size="9" fill="#9a9ab4">leggite f2</text>
+<text x="744" y="426" font-family="sans-serif" font-size="14" fill="#e8e8f0">3 SPECIES x 4 COLORS x 3 BACKGROUNDS at 32 tall</text>
+<text x="744" y="452" font-family="sans-serif" font-size="10" fill="#9a9ab4">deep space #1a1a2e</text>
+<rect x="744" y="460" width="136" height="152" fill="#1a1a2e" rx="6"/>
+<use href="#mechtron-frame1" x="754" y="470" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#flapper-frame1" x="754" y="518" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#leggite-frame1" x="754" y="566" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#mechtron-frame1" x="784" y="470" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#flapper-frame1" x="784" y="518" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#leggite-frame1" x="784" y="566" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#mechtron-frame1" x="814" y="470" width="20" height="32" style="color:#3aaa18"/>
+<use href="#flapper-frame1" x="814" y="518" width="20" height="32" style="color:#3aaa18"/>
+<use href="#leggite-frame1" x="814" y="566" width="20" height="32" style="color:#3aaa18"/>
+<use href="#mechtron-frame1" x="844" y="470" width="20" height="32" style="color:#f872e8"/>
+<use href="#flapper-frame1" x="844" y="518" width="20" height="32" style="color:#f872e8"/>
+<use href="#leggite-frame1" x="844" y="566" width="20" height="32" style="color:#f872e8"/>
+<text x="892" y="452" font-family="sans-serif" font-size="10" fill="#9a9ab4">plain terrain #7c9a4e</text>
+<rect x="892" y="460" width="136" height="152" fill="#7c9a4e" rx="6"/>
+<use href="#mechtron-frame1" x="902" y="470" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#flapper-frame1" x="902" y="518" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#leggite-frame1" x="902" y="566" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#mechtron-frame1" x="932" y="470" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#flapper-frame1" x="932" y="518" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#leggite-frame1" x="932" y="566" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#mechtron-frame1" x="962" y="470" width="20" height="32" style="color:#3aaa18"/>
+<use href="#flapper-frame1" x="962" y="518" width="20" height="32" style="color:#3aaa18"/>
+<use href="#leggite-frame1" x="962" y="566" width="20" height="32" style="color:#3aaa18"/>
+<use href="#mechtron-frame1" x="992" y="470" width="20" height="32" style="color:#f872e8"/>
+<use href="#flapper-frame1" x="992" y="518" width="20" height="32" style="color:#f872e8"/>
+<use href="#leggite-frame1" x="992" y="566" width="20" height="32" style="color:#f872e8"/>
+<text x="1040" y="452" font-family="sans-serif" font-size="10" fill="#9a9ab4">panel #22223a</text>
+<rect x="1040" y="460" width="136" height="152" fill="#22223a" rx="6"/>
+<use href="#mechtron-frame1" x="1050" y="470" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#flapper-frame1" x="1050" y="518" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#leggite-frame1" x="1050" y="566" width="20" height="32" style="color:#ff5a5f"/>
+<use href="#mechtron-frame1" x="1080" y="470" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#flapper-frame1" x="1080" y="518" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#leggite-frame1" x="1080" y="566" width="20" height="32" style="color:#4fd8ff"/>
+<use href="#mechtron-frame1" x="1110" y="470" width="20" height="32" style="color:#3aaa18"/>
+<use href="#flapper-frame1" x="1110" y="518" width="20" height="32" style="color:#3aaa18"/>
+<use href="#leggite-frame1" x="1110" y="566" width="20" height="32" style="color:#3aaa18"/>
+<use href="#mechtron-frame1" x="1140" y="470" width="20" height="32" style="color:#f872e8"/>
+<use href="#flapper-frame1" x="1140" y="518" width="20" height="32" style="color:#f872e8"/>
+<use href="#leggite-frame1" x="1140" y="566" width="20" height="32" style="color:#f872e8"/>
+<text x="744" y="700" font-family="sans-serif" font-size="12" fill="#9a9ab4">The three silhouettes at game size: BOX / WIDE / TALL.</text>
+</svg>

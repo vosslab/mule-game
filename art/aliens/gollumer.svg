@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+		GOLLUMER: hunched lopsided legless mass, bottom heavy.
+		Resting silhouette width 146 units (band 130 to 160) taken
+		across the low bulges. No leg split anywhere, so the bottom
+		edge is one broad seated slab: nothing else in the cast has
+		that base.
+		Asymmetry is the character and it is load bearing: frame 1
+		carries a tall crown lump leaning off to the RIGHT and a fat
+		bulge on the LEFT hip, so the left and right outlines never
+		agree. It is bottom heavy, which keeps it clear of the
+		spheroid's centered orb.
+		One large eye, set off center, carrying a solid gold iris:
+		the gold is the single warm accent shape and it survives 18
+		px as a colored dot inside the eye.
+		Frame 2 is a squash: the mass compresses and spreads, the
+		crown flops from the right over to the left, and the low
+		bulge swaps sides. The crown apex travels about 62 units.
+		========================================================== -->
+
+	<!-- geometry: silhouette primitives only, no fill and no stroke -->
+	<g id="gollumer-f1-shapes">
+		<rect x="36" y="236" width="132" height="52" rx="24"/>
+		<ellipse cx="100" cy="226" rx="68" ry="54"/>
+		<ellipse cx="52" cy="238" rx="26" ry="34"/>
+		<ellipse cx="145" cy="248" rx="27" ry="32"/>
+		<ellipse cx="88" cy="162" rx="54" ry="48"/>
+		<ellipse cx="116" cy="112" rx="46" ry="44"/>
+		<ellipse cx="140" cy="60" rx="26" ry="36"/>
+		<circle cx="102" cy="74" r="22"/>
+		<circle cx="72" cy="94" r="24"/>
+	</g>
+
+	<!-- face: one big eye with a gold iris, one wide smile -->
+	<g id="gollumer-f1-face">
+		<circle cx="112" cy="112" r="32" fill="#ffffff"/>
+		<circle cx="116" cy="115" r="19" fill="#ffd23f"/>
+		<circle cx="118" cy="117" r="10" fill="#141422"/>
+		<path d="M68,166 Q104,210 140,166 Q104,172 68,166 Z" fill="#141422"/>
+	</g>
+
+	<g id="gollumer-f1-draw">
+		<use href="#gollumer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="currentColor"/>
+		<use href="#gollumer-f1-face"/>
+	</g>
+
+	<!-- frame 2: the squash. Crown flops left and down, the body
+		widens and settles, the fat bulge moves to the right hip. -->
+	<g id="gollumer-f2-shapes">
+		<rect x="28" y="228" width="148" height="60" rx="26"/>
+		<ellipse cx="100" cy="228" rx="74" ry="54"/>
+		<ellipse cx="50" cy="240" rx="26" ry="34"/>
+		<ellipse cx="146" cy="246" rx="28" ry="34"/>
+		<ellipse cx="94" cy="176" rx="60" ry="44"/>
+		<ellipse cx="102" cy="138" rx="52" ry="38"/>
+		<ellipse cx="84" cy="100" rx="32" ry="28"/>
+		<circle cx="140" cy="112" r="24"/>
+	</g>
+
+	<g id="gollumer-f2-face">
+		<circle cx="102" cy="140" r="32" fill="#ffffff"/>
+		<circle cx="106" cy="143" r="19" fill="#ffd23f"/>
+		<circle cx="108" cy="145" r="10" fill="#141422"/>
+		<path d="M62,188 Q98,232 134,188 Q98,194 62,188 Z" fill="#141422"/>
+	</g>
+
+	<g id="gollumer-f2-draw">
+		<use href="#gollumer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="40"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="currentColor"/>
+		<use href="#gollumer-f2-face"/>
+	</g>
+
+	<symbol id="gollumer-frame1" viewBox="0 0 200 320">
+		<use href="#gollumer-f1-draw"/>
+	</symbol>
+	<symbol id="gollumer-frame2" viewBox="0 0 200 320">
+		<use href="#gollumer-f2-draw"/>
+	</symbol>
+	<symbol id="gollumer-head" viewBox="47 74 120 120">
+		<use href="#gollumer-f1-draw"/>
+	</symbol>
+	<symbol id="gollumer-silhouette1" viewBox="0 0 200 320">
+		<use href="#gollumer-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="gollumer-silhouette2" viewBox="0 0 200 320">
+		<use href="#gollumer-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+
+<!-- PREVIEW: everything below this line is ignored by the generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<rect x="0" y="110" width="200" height="100" fill="#7c9a4e"/>
+<rect x="0" y="210" width="200" height="110" fill="#22223a"/>
+
+<use href="#gollumer-frame1" width="20" height="32" x="14" y="30" style="color:#ff5a5f"/>
+<use href="#gollumer-frame2" width="20" height="32" x="44" y="30" style="color:#ff5a5f"/>
+<use href="#gollumer-head" width="18" height="18" x="76" y="44" style="color:#ff5a5f"/>
+<use href="#gollumer-frame1" width="11" height="18" x="104" y="44" style="color:#ff5a5f"/>
+<use href="#gollumer-frame2" width="11" height="18" x="122" y="44" style="color:#ff5a5f"/>
+
+<use href="#gollumer-frame1" width="20" height="32" x="14" y="130" style="color:#4fd8ff"/>
+<use href="#gollumer-frame2" width="20" height="32" x="44" y="130" style="color:#4fd8ff"/>
+<use href="#gollumer-head" width="18" height="18" x="76" y="144" style="color:#4fd8ff"/>
+<use href="#gollumer-frame1" width="11" height="18" x="104" y="144" style="color:#4fd8ff"/>
+<use href="#gollumer-frame2" width="11" height="18" x="122" y="144" style="color:#4fd8ff"/>
+
+<use href="#gollumer-frame1" width="20" height="32" x="14" y="230" style="color:#3aaa18"/>
+<use href="#gollumer-frame2" width="20" height="32" x="44" y="230" style="color:#3aaa18"/>
+<use href="#gollumer-head" width="18" height="18" x="76" y="244" style="color:#3aaa18"/>
+<use href="#gollumer-frame1" width="11" height="18" x="104" y="244" style="color:#f872e8"/>
+<use href="#gollumer-frame2" width="11" height="18" x="122" y="244" style="color:#f872e8"/>
+</svg>

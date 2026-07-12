@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="study-title study-description">
+  <title id="study-title">Candidate D: wide 48 by 30 alien SVG study</title>
+  <desc id="study-description">An editable vector study with two wide 48 by 30 animation frames for Mechtron, Bonzoid, and Flapper. Every major outer body uses currentColor, with four player-color previews for each species.</desc>
+  <style>
+    .page { fill: #f7e9a7; }
+    .card { fill: #fffdf4; stroke: #1a1a2e; stroke-width: 4; }
+    .frame { fill: #1a1a2e; stroke: #4a4a68; stroke-width: 3; }
+    .frame-terrain { fill: #7c9a4e; stroke: #4a4a68; stroke-width: 3; }
+    .header { fill: #1a1a2e; font-family: "Arial Rounded MT Bold", "Arial", sans-serif; font-size: 46px; font-weight: 800; letter-spacing: 1px; }
+    .subtitle { fill: #4a4a68; font-family: "Arial", sans-serif; font-size: 18px; }
+    .species-title { fill: #1a1a2e; font-family: "Arial Rounded MT Bold", "Arial", sans-serif; font-size: 29px; font-weight: 800; letter-spacing: 1px; }
+    .species-subtitle { fill: #4a4a68; font-family: "Arial", sans-serif; font-size: 15px; font-weight: 700; }
+    .frame-label { fill: #fffdf4; font-family: "Arial", sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 1.2px; text-anchor: middle; }
+    .strip-label { fill: #4a4a68; font-family: "Arial", sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 1px; }
+    .swatch-label { fill: #fffdf4; font-family: "Arial", sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-anchor: middle; }
+    .note { fill: #1a1a2e; font-family: "Arial", sans-serif; font-size: 14px; }
+    .note-strong { fill: #1a1a2e; font-family: "Arial", sans-serif; font-size: 14px; font-weight: 800; }
+    .footer { fill: #4a4a68; font-family: "Arial", sans-serif; font-size: 15px; font-weight: 700; text-anchor: middle; }
+
+    /* Each species starts with one closed currentColor silhouette. */
+    .outer { fill: currentColor; stroke: #1a1a2e; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; }
+    .shade { fill: currentColor; fill-opacity: 0.52; }
+    .panel { fill: #4fd8ff; stroke: #1a1a2e; stroke-width: 0.82; stroke-linecap: round; stroke-linejoin: round; }
+    .plate { fill: #e6e6e6; stroke: #1a1a2e; stroke-width: 0.82; stroke-linecap: round; stroke-linejoin: round; }
+    .eye { fill: #1a1a2e; }
+    .glint { fill: #e6e6e6; }
+    .accent { fill: #ffd23f; stroke: #1a1a2e; stroke-width: 0.72; stroke-linecap: round; stroke-linejoin: round; }
+    .detail-line { fill: none; stroke: #1a1a2e; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+    .wing-mark { fill: none; stroke: #e6e6e6; stroke-width: 1.05; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+
+  <defs>
+    <!--
+      MECHTRON
+      A mechanically distinct, centered panel robot. Antenna nubs, shoulder
+      pods, treads, and feet are all part of the single closed outer path.
+    -->
+    <symbol id="mechtron-frame-1" viewBox="0 0 48 30">
+      <path class="outer" fill="currentColor" d="M8 7 L11 4 L14 7 H18 L20 2 L24 1 L28 2 L30 7 H34 L37 4 L40 7 H42 Q45 7 45 10 V18 Q45 21 42 21 H39 V25 Q39 27 36 27 H32 V24 H28 V27 H20 V24 H16 V27 H12 Q9 27 9 24 V21 H6 Q3 21 3 18 V10 Q3 7 6 7 Z"/>
+      <path class="shade" fill="currentColor" d="M7 18 H41 V20 H38 V24 H34 V22 H30 V25 H18 V22 H14 V24 H10 V20 H7 Z"/>
+      <path class="panel" d="M12 10 Q24 7 36 10 V16 Q24 19 12 16 Z"/>
+      <rect class="eye" x="15" y="12" width="5" height="2.7" rx="1.2"/>
+      <rect class="eye" x="28" y="12" width="5" height="2.7" rx="1.2"/>
+      <rect class="glint" x="16.1" y="12.55" width="1.25" height="0.75" rx="0.3"/>
+      <rect class="glint" x="29.1" y="12.55" width="1.25" height="0.75" rx="0.3"/>
+      <path class="accent" d="M21 20 H27 V23 H21 Z"/>
+      <path class="detail-line" d="M15 20 V22 M33 20 V22"/>
+    </symbol>
+
+    <symbol id="mechtron-frame-2" viewBox="0 0 48 30">
+      <path class="outer" fill="currentColor" d="M8 7 L11 4 L14 7 H18 L20 2 L24 1 L28 2 L30 7 H34 L37 4 L40 7 H42 Q45 7 45 10 V17 Q45 20 42 20 H39 V24 Q39 26 36 26 H32 V23 H28 V26 H20 V23 H16 V26 H12 Q9 26 9 23 V20 H6 Q3 20 3 17 V10 Q3 7 6 7 Z"/>
+      <path class="shade" fill="currentColor" d="M7 17 H41 V19 H38 V23 H34 V21 H30 V24 H18 V21 H14 V23 H10 V19 H7 Z"/>
+      <path class="panel" d="M12 9 Q24 6 36 9 V15 Q24 18 12 15 Z"/>
+      <rect class="eye" x="15" y="11" width="5" height="2.7" rx="1.2"/>
+      <rect class="eye" x="28" y="11" width="5" height="2.7" rx="1.2"/>
+      <rect class="glint" x="16.1" y="11.55" width="1.25" height="0.75" rx="0.3"/>
+      <rect class="glint" x="29.1" y="11.55" width="1.25" height="0.75" rx="0.3"/>
+      <path class="accent" d="M21 19 H27 V22 H21 Z"/>
+      <path class="detail-line" d="M15 19 V21 M33 19 V21"/>
+    </symbol>
+
+    <!--
+      BONZOID
+      A low, fin-backed diamond beast. The broad shoulder fins and central
+      body form one centered silhouette, giving it a profile far from the
+      rectangular Mechtron.
+    -->
+    <symbol id="bonzoid-frame-1" viewBox="0 0 48 30">
+      <path class="outer" fill="currentColor" d="M24 3 L18 7 H12 L6 11 L3 15 L6 20 L12 18 L14 25 Q15 28 19 28 H29 Q33 28 34 25 L36 18 L42 20 L45 15 L42 11 L36 7 H30 Z"/>
+      <path class="shade" fill="currentColor" d="M14 18 Q24 22 34 18 L32 25 Q31 27 29 27 H19 Q17 27 16 25 Z"/>
+      <path class="plate" d="M14 10 Q24 6.8 34 10 V15 Q24 18 14 15 Z"/>
+      <ellipse class="eye" cx="19" cy="13.2" rx="1.65" ry="1.9"/>
+      <ellipse class="eye" cx="29" cy="13.2" rx="1.65" ry="1.9"/>
+      <circle class="glint" cx="19.45" cy="12.65" r="0.48"/>
+      <circle class="glint" cx="29.45" cy="12.65" r="0.48"/>
+      <path class="detail-line" d="M20 17 Q24 18.7 28 17"/>
+      <path class="panel" d="M18 20 H30 L29 25 H19 Z"/>
+      <circle class="accent" cx="10.5" cy="13.5" r="1.2"/>
+      <circle class="accent" cx="37.5" cy="13.5" r="1.2"/>
+    </symbol>
+
+    <symbol id="bonzoid-frame-2" viewBox="0 0 48 30">
+      <path class="outer" fill="currentColor" d="M24 3 L18 7 L11 6 L7 2 L3 4 L6 12 L12 17 L14 25 Q15 28 19 28 H29 Q33 28 34 25 L36 17 L42 12 L45 4 L41 2 L37 6 L30 7 Z"/>
+      <path class="shade" fill="currentColor" d="M14 18 Q24 22 34 18 L32 25 Q31 27 29 27 H19 Q17 27 16 25 Z"/>
+      <path class="plate" d="M14 10 Q24 6.8 34 10 V15 Q24 18 14 15 Z"/>
+      <ellipse class="eye" cx="19" cy="13.2" rx="1.65" ry="1.9"/>
+      <ellipse class="eye" cx="29" cy="13.2" rx="1.65" ry="1.9"/>
+      <circle class="glint" cx="19.45" cy="12.65" r="0.48"/>
+      <circle class="glint" cx="29.45" cy="12.65" r="0.48"/>
+      <path class="detail-line" d="M20 17 Q24 15.6 28 17"/>
+      <path class="panel" d="M18 20 H30 L29 25 H19 Z"/>
+      <circle class="accent" cx="10.4" cy="9.3" r="1.2"/>
+      <circle class="accent" cx="37.6" cy="9.3" r="1.2"/>
+    </symbol>
+
+    <!--
+      FLAPPER
+      A kite-moth flyer. Frame 1 places its integrated wings low and wide;
+      frame 2 raises the same paired wings high above the face.
+    -->
+    <symbol id="flapper-frame-1" viewBox="0 0 48 30">
+      <path class="outer" fill="currentColor" d="M24 3 C28 3 31 5 32 9 L43 17 L45 23 L40 26 L31 20 C30 25 28 28 24 28 C20 28 18 25 17 20 L8 26 L3 23 L5 17 L16 9 C17 5 20 3 24 3 Z"/>
+      <path class="shade" fill="currentColor" d="M17 20 Q24 24 31 20 C30 25 28 27 24 27 C20 27 18 25 17 20 Z"/>
+      <path class="plate" d="M17 11 Q24 8 31 11 V16 Q24 19 17 16 Z"/>
+      <ellipse class="eye" cx="21" cy="13.6" rx="1.45" ry="1.85"/>
+      <ellipse class="eye" cx="27" cy="13.6" rx="1.45" ry="1.85"/>
+      <circle class="glint" cx="21.45" cy="13.05" r="0.45"/>
+      <circle class="glint" cx="27.45" cy="13.05" r="0.45"/>
+      <path class="detail-line" d="M21 18 Q24 19.6 27 18"/>
+      <path class="wing-mark" d="M8 20 Q12 19 15 17 M40 20 Q36 19 33 17"/>
+      <circle class="accent" cx="11.5" cy="22.5" r="1.05"/>
+      <circle class="accent" cx="36.5" cy="22.5" r="1.05"/>
+      <circle class="accent" cx="24" cy="23" r="1.45"/>
+    </symbol>
+
+    <symbol id="flapper-frame-2" viewBox="0 0 48 30">
+      <path class="outer" fill="currentColor" d="M24 3 C28 3 31 5 32 9 L41 2 L45 5 L42 13 L31 19 C30 25 28 28 24 28 C20 28 18 25 17 19 L6 13 L3 5 L7 2 L16 9 C17 5 20 3 24 3 Z"/>
+      <path class="shade" fill="currentColor" d="M17 20 Q24 24 31 20 C30 25 28 27 24 27 C20 27 18 25 17 20 Z"/>
+      <path class="plate" d="M17 11 Q24 8 31 11 V16 Q24 19 17 16 Z"/>
+      <ellipse class="eye" cx="21" cy="13.6" rx="1.45" ry="1.85"/>
+      <ellipse class="eye" cx="27" cy="13.6" rx="1.45" ry="1.85"/>
+      <circle class="glint" cx="21.45" cy="13.05" r="0.45"/>
+      <circle class="glint" cx="27.45" cy="13.05" r="0.45"/>
+      <path class="detail-line" d="M21 18 Q24 16.5 27 18"/>
+      <path class="wing-mark" d="M8 7 Q11 10 15 14 M40 7 Q37 10 33 14"/>
+      <circle class="accent" cx="10.5" cy="8.5" r="1.05"/>
+      <circle class="accent" cx="37.5" cy="8.5" r="1.05"/>
+      <circle class="accent" cx="24" cy="23" r="1.45"/>
+    </symbol>
+  </defs>
+
+  <rect class="page" width="1600" height="900"/>
+  <text class="header" x="48" y="58">CANDIDATE D — WIDE 48×30 ALIEN STUDY</text>
+  <text class="subtitle" x="48" y="88">Editable wide-vector sprites inspired by the playful 2D-shape references and the landscape proportions of local M.U.L.E. character screens.</text>
+  <text class="subtitle" x="48" y="112">Each pose uses one centered, closed currentColor silhouette; neutral panels and small gold accents stay secondary to player ownership color.</text>
+
+  <g id="mechtron-card" transform="translate(40 140)">
+    <rect class="card" width="500" height="670" rx="22"/>
+    <text class="species-title" x="20" y="42">MECHTRON</text>
+    <text class="species-subtitle" x="20" y="66">centered panel robot · paired nubs and treads</text>
+
+    <rect class="frame" x="20" y="90" width="220" height="160" rx="14"/>
+    <rect class="frame-terrain" x="260" y="90" width="220" height="160" rx="14"/>
+    <text class="frame-label" x="130" y="115">FRAME 1 · TREADS DOWN</text>
+    <text class="frame-label" x="370" y="115">FRAME 2 · CENTER BOB</text>
+    <g style="color: #ff5a5f"><use href="#mechtron-frame-1" x="34" y="127" width="192" height="120"/></g>
+    <g style="color: #ff5a5f"><use href="#mechtron-frame-2" x="274" y="127" width="192" height="120"/></g>
+
+    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS · NATIVE 48×30 PREVIEW</text>
+    <g transform="translate(20 293)">
+      <rect class="frame" width="106" height="76" rx="12"/>
+      <g style="color: #ff5a5f"><use href="#mechtron-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">CORAL</text>
+    </g>
+    <g transform="translate(133 293)">
+      <rect class="frame-terrain" width="106" height="76" rx="12"/>
+      <g style="color: #4fd8ff"><use href="#mechtron-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">CYAN</text>
+    </g>
+    <g transform="translate(246 293)">
+      <rect class="frame" width="106" height="76" rx="12"/>
+      <g style="color: #3aaa18"><use href="#mechtron-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">GREEN</text>
+    </g>
+    <g transform="translate(359 293)">
+      <rect class="frame-terrain" width="106" height="76" rx="12"/>
+      <g style="color: #f872e8"><use href="#mechtron-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">ORCHID</text>
+    </g>
+
+    <path d="M20 395 H480" stroke="#4a4a68" stroke-width="2"/>
+    <text class="note-strong" x="20" y="425">SHAPE LOGIC</text>
+    <text class="note" x="20" y="450">A broad chassis, shoulder pods, antenna nubs, and two paired tread feet</text>
+    <text class="note" x="20" y="471">grow from one closed outline. The face panel sits entirely inside the shell.</text>
+    <text class="note-strong" x="20" y="515">READ AT A GLANCE</text>
+    <text class="note" x="20" y="540">Mechanical symmetry, squared display eyes, and a bright central chest plate.</text>
+    <rect x="20" y="580" width="460" height="62" rx="12" fill="#e8eef0"/>
+    <text class="note-strong" x="34" y="607">COLOR CONTRACT</text>
+    <text class="note" x="34" y="629">Outer chassis + lower shade inherit currentColor.</text>
+  </g>
+
+  <g id="bonzoid-card" transform="translate(550 140)">
+    <rect class="card" width="500" height="670" rx="22"/>
+    <text class="species-title" x="20" y="42">BONZOID</text>
+    <text class="species-subtitle" x="20" y="66">low diamond beast · broad integrated shoulder fins</text>
+
+    <rect class="frame" x="20" y="90" width="220" height="160" rx="14"/>
+    <rect class="frame-terrain" x="260" y="90" width="220" height="160" rx="14"/>
+    <text class="frame-label" x="130" y="115">FRAME 1 · FINS LOW</text>
+    <text class="frame-label" x="370" y="115">FRAME 2 · FINS RAISED</text>
+    <g style="color: #ff5a5f"><use href="#bonzoid-frame-1" x="34" y="127" width="192" height="120"/></g>
+    <g style="color: #ff5a5f"><use href="#bonzoid-frame-2" x="274" y="127" width="192" height="120"/></g>
+
+    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS · NATIVE 48×30 PREVIEW</text>
+    <g transform="translate(20 293)">
+      <rect class="frame" width="106" height="76" rx="12"/>
+      <g style="color: #ff5a5f"><use href="#bonzoid-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">CORAL</text>
+    </g>
+    <g transform="translate(133 293)">
+      <rect class="frame-terrain" width="106" height="76" rx="12"/>
+      <g style="color: #4fd8ff"><use href="#bonzoid-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">CYAN</text>
+    </g>
+    <g transform="translate(246 293)">
+      <rect class="frame" width="106" height="76" rx="12"/>
+      <g style="color: #3aaa18"><use href="#bonzoid-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">GREEN</text>
+    </g>
+    <g transform="translate(359 293)">
+      <rect class="frame-terrain" width="106" height="76" rx="12"/>
+      <g style="color: #f872e8"><use href="#bonzoid-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">ORCHID</text>
+    </g>
+
+    <path d="M20 395 H480" stroke="#4a4a68" stroke-width="2"/>
+    <text class="note-strong" x="20" y="425">SHAPE LOGIC</text>
+    <text class="note" x="20" y="450">The outline is a wide, low diamond with paired fins grown into the body,</text>
+    <text class="note" x="20" y="471">a plated face, and a centered belly wedge. Every edge has a clean join.</text>
+    <text class="note-strong" x="20" y="515">READ AT A GLANCE</text>
+    <text class="note" x="20" y="540">Low, broad, and animal-like — a deliberately different silhouette family.</text>
+    <rect x="20" y="580" width="460" height="62" rx="12" fill="#e8eef0"/>
+    <text class="note-strong" x="34" y="607">COLOR CONTRACT</text>
+    <text class="note" x="34" y="629">Body diamond + fin span inherit currentColor.</text>
+  </g>
+
+  <g id="flapper-card" transform="translate(1060 140)">
+    <rect class="card" width="500" height="670" rx="22"/>
+    <text class="species-title" x="20" y="42">FLAPPER</text>
+    <text class="species-subtitle" x="20" y="66">kite-moth flyer · unmistakable paired wingbeat</text>
+
+    <rect class="frame" x="20" y="90" width="220" height="160" rx="14"/>
+    <rect class="frame-terrain" x="260" y="90" width="220" height="160" rx="14"/>
+    <text class="frame-label" x="130" y="115">FRAME 1 · WINGS DOWN</text>
+    <text class="frame-label" x="370" y="115">FRAME 2 · WINGS RAISED</text>
+    <g style="color: #ff5a5f"><use href="#flapper-frame-1" x="34" y="127" width="192" height="120"/></g>
+    <g style="color: #ff5a5f"><use href="#flapper-frame-2" x="274" y="127" width="192" height="120"/></g>
+
+    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS · NATIVE 48×30 PREVIEW</text>
+    <g transform="translate(20 293)">
+      <rect class="frame" width="106" height="76" rx="12"/>
+      <g style="color: #ff5a5f"><use href="#flapper-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">CORAL</text>
+    </g>
+    <g transform="translate(133 293)">
+      <rect class="frame-terrain" width="106" height="76" rx="12"/>
+      <g style="color: #4fd8ff"><use href="#flapper-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">CYAN</text>
+    </g>
+    <g transform="translate(246 293)">
+      <rect class="frame" width="106" height="76" rx="12"/>
+      <g style="color: #3aaa18"><use href="#flapper-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">GREEN</text>
+    </g>
+    <g transform="translate(359 293)">
+      <rect class="frame-terrain" width="106" height="76" rx="12"/>
+      <g style="color: #f872e8"><use href="#flapper-frame-1" x="29" y="9" width="48" height="30"/></g>
+      <text class="swatch-label" x="53" y="63">ORCHID</text>
+    </g>
+
+    <path d="M20 395 H480" stroke="#4a4a68" stroke-width="2"/>
+    <text class="note-strong" x="20" y="425">SHAPE LOGIC</text>
+    <text class="note" x="20" y="450">Frame 1 sweeps the integrated wings low; frame 2 raises the same pair</text>
+    <text class="note" x="20" y="471">above the face. The motion reads through silhouette, not loose linework.</text>
+    <text class="note-strong" x="20" y="515">READ AT A GLANCE</text>
+    <text class="note" x="20" y="540">A friendly moth-kite profile with a full, visible flap at gameplay scale.</text>
+    <rect x="20" y="580" width="460" height="62" rx="12" fill="#e8eef0"/>
+    <text class="note-strong" x="34" y="607">COLOR CONTRACT</text>
+    <text class="note" x="34" y="629">Body and the full wing span inherit currentColor.</text>
+  </g>
+
+  <text class="footer" x="800" y="852">CANDIDATE D · six editable &lt;symbol&gt; definitions · 48×30 wide viewBox · currentColor ownership region · clean closed silhouettes</text>
+</svg>

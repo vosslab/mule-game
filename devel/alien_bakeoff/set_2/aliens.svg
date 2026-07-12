@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+=============================================================================
+SET 2 - DESIGN HYPOTHESIS
+=============================================================================
+NAME: "Ink and Cream" - a two-tone rim sandwich.
+
+OUTLINE WEIGHT: 12 grid units of ink (#14141f), uniform, on every silhouette
+  edge (= 1.2 px at the 20x32 game size). Under it, a 34-unit cream (#f6f0dd)
+  stroke on the SAME geometry leaves an 11-unit cream rim outside the ink
+  (= 1.1 px at 32 tall, 0.6 px at 18 tall). WHY: a single dark outline dies on
+  deep space (#1a1a2e); a single light outline is not the reference look. The
+  sandwich gives me a bold dark contour AND a light rim, so the creature owns
+  both a dark edge and a light edge and can never lose its background.
+
+INTERNAL FEATURES: exactly three per creature, all in fixed colors, all placed
+  in the upper half where the eye lands first.
+  - mechtron: cream visor + 2 ink pupils, ink mouth slot, cream power core with
+    two ink seam lines.
+  - flapper:  2 cream eyes + ink pupils, ink beak, 2 ink ribs per wing.
+  - leggite:  2 cream eyes + ink pupils, ink mouth slot, ink segment seams (free
+    - they fall out of the overlapping segment rects in the ink layer).
+  WHY: at 32 tall a feature smaller than ~2 px is a smudge. Three is what fits.
+
+COLOR STRATEGY: ONE currentColor region per creature, flat, 100% opacity, no
+  shading, no tint layers. It is the entire body, arms, wings, legs, and
+  segments - roughly 90% of the visible area. Fixed color is spent only on the
+  rim, the ink line work, and the three features. WHY: shading at 20x32 is one
+  ambiguous pixel; the rim already carries the separation, so every unit of area
+  I do not spend on shading is a unit the player color gets to keep.
+
+VISIBILITY DEVICE: the cream rim. Named choice: GREEN-ON-GREEN IS SOLVED BY THE
+  RIM, NOT BY THE FILL. All three canonical backgrounds (#1a1a2e, #7c9a4e,
+  #22223a) are dark-to-mid, so a near-white rim contrasts with all of them, and
+  it contrasts with all four player colors, which are all mid-chroma and darker
+  than cream. Green player (#3aaa18) on green terrain (#7c9a4e) reads because a
+  1.1 px cream band separates them, and the ink contour keeps the silhouette
+  crisp on top of that. The body fill never has to fight the background.
+
+SYMMETRY: mechtron and flapper are exactly mirror-symmetric about x=100 in frame
+  1 - one half is authored and the other is a mirrored <use>, so they cannot
+  drift. Leggite is an S: six rounded segments whose centers walk right, left,
+  right (x = 130, 112, 93, 85, 103, 125), deliberately unbalanced. Frame 2
+  breaks symmetry everywhere: that is where the motion is.
+
+MOTION (frame 2): mechtron pumps - left arm up, right arm down, one leg lifted
+  and forward, body compressed 8 units, antennae flicked out. Flapper beats -
+  wings swing from spread-horizontal to raised-overhead and the body drops 10
+  units, so the wing angle changes by ~60 degrees, the largest silhouette delta
+  in the set. Leggite steps - a wave runs through the legs (alternating pairs
+  swing forward and back) and the S flexes. WHY: at 20x32 motion must be a
+  SILHOUETTE change, not an internal one; nothing inside the outline animates.
+
+18 PX ANSWER: the full creature survives; no head crop, no badge pose. Each
+  species is identified by outer silhouette alone - a hard rectangle with a
+  notch of legs, a wide horizontal wingspan, a tall narrow S with a leg fringe -
+  and none of them need an internal feature to be told apart. At 18 tall the
+  face collapses to two light dots, which is enough. See the BADGE ROW at the
+  bottom: the same symbols, unmodified, at 18 px on panel and on terrain.
+
+PALETTE (every fill in this file is one of these, or currentColor, or none):
+  ART:      ink #14141f, cream #f6f0dd, and currentColor. Nothing else.
+  PLAYERS:  #ff5a5f #4fd8ff #3aaa18 #f872e8 (set via CSS color, never as a fill)
+  SCAFFOLD (the demo page only, not the art): backgrounds #1a1a2e #7c9a4e
+  #22223a, page backdrop #0e0e18, label text #9aa3c0 and #f6f0dd
+=============================================================================
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1180" viewBox="0 0 1180 1180" font-family="ui-monospace, Menlo, monospace">
+
+	<defs>
+
+		<!-- =====================================================
+		     PARTS GROUPS. These carry geometry only, no paint.
+		     Each symbol renders its parts group twice: once as a
+		     fat cream stroke (the rim), once as fill=currentColor
+		     with a 12-unit ink stroke (the contour). Draw order
+		     inside a parts group is back-to-front: limbs first,
+		     main mass last, so joints resolve cleanly and no
+		     stroke overhangs the shape it belongs to.
+		     ===================================================== -->
+
+		<!-- ========== MECHTRON ========== -->
+
+		<g id="m1-arm">
+			<rect x="26" y="124" width="34" height="20" rx="6"/>
+			<rect x="26" y="124" width="20" height="76" rx="6"/>
+			<path d="M18,192 L54,192 L54,224 L44,224 L44,208 L28,208 L28,224 L18,224 Z"/>
+		</g>
+		<g id="m1-leg">
+			<rect x="62" y="242" width="28" height="38" rx="4"/>
+			<rect x="52" y="272" width="46" height="22" rx="6"/>
+		</g>
+		<g id="m1p">
+			<rect x="66" y="46" width="12" height="60" rx="6"/>
+			<circle cx="72" cy="42" r="15"/>
+			<rect x="122" y="46" width="12" height="60" rx="6"/>
+			<circle cx="128" cy="42" r="15"/>
+			<use href="#m1-arm"/>
+			<use href="#m1-arm" transform="matrix(-1 0 0 1 200 0)"/>
+			<use href="#m1-leg"/>
+			<use href="#m1-leg" transform="matrix(-1 0 0 1 200 0)"/>
+			<rect x="52" y="96" width="96" height="152" rx="10"/>
+		</g>
+		<g id="m1f">
+			<rect x="66" y="120" width="68" height="40" rx="10" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="86" cy="140" r="9" fill="#14141f"/>
+			<circle cx="114" cy="140" r="9" fill="#14141f"/>
+			<rect x="74" y="176" width="52" height="18" rx="9" fill="#14141f"/>
+			<path d="M58,216 H84 M116,216 H142" fill="none" stroke="#14141f" stroke-width="8" stroke-linecap="round"/>
+			<circle cx="100" cy="216" r="13" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+		</g>
+
+		<g id="m2p">
+			<g transform="rotate(-16 72 108)">
+				<rect x="66" y="50" width="12" height="60" rx="6"/>
+				<circle cx="72" cy="46" r="15"/>
+			</g>
+			<g transform="rotate(16 128 108)">
+				<rect x="122" y="50" width="12" height="60" rx="6"/>
+				<circle cx="128" cy="46" r="15"/>
+			</g>
+			<!-- left arm punched up -->
+			<rect x="26" y="112" width="34" height="20" rx="6"/>
+			<rect x="26" y="112" width="20" height="60" rx="6"/>
+			<path d="M18,166 L54,166 L54,198 L44,198 L44,182 L28,182 L28,198 L18,198 Z"/>
+			<!-- right arm driven down -->
+			<rect x="140" y="150" width="34" height="20" rx="6"/>
+			<rect x="150" y="150" width="20" height="74" rx="6"/>
+			<path d="M142,218 L178,218 L178,250 L168,250 L168,234 L152,234 L152,250 L142,250 Z"/>
+			<!-- left leg lifted and forward -->
+			<rect x="58" y="244" width="28" height="26" rx="4"/>
+			<rect x="46" y="262" width="46" height="22" rx="6"/>
+			<!-- right leg planted -->
+			<rect x="112" y="244" width="28" height="42" rx="4"/>
+			<rect x="102" y="278" width="46" height="22" rx="6"/>
+			<rect x="52" y="104" width="96" height="146" rx="10"/>
+		</g>
+		<g id="m2f">
+			<rect x="66" y="128" width="68" height="40" rx="10" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="90" cy="148" r="9" fill="#14141f"/>
+			<circle cx="118" cy="148" r="9" fill="#14141f"/>
+			<rect x="74" y="184" width="52" height="18" rx="9" fill="#14141f"/>
+			<path d="M58,224 H84 M116,224 H142" fill="none" stroke="#14141f" stroke-width="8" stroke-linecap="round"/>
+			<circle cx="100" cy="224" r="13" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+		</g>
+
+		<!-- ========== FLAPPER ========== -->
+
+		<!-- The torso is deliberately SLIM (68 wide at the head, tapering to a
+		     tail). The flapper's identity is its wingspan, so the body must not
+		     compete with it: wings span 18 to 182, the head only 66 to 134. A
+		     fat torso turns this creature into an arrowhead at 32 tall. -->
+		<g id="fl-body">
+			<path d="M100,58 C122,58 134,74 132,96 C138,124 128,172 114,200 L100,226 L86,200 C72,172 62,124 68,96 C66,74 78,58 100,58 Z"/>
+		</g>
+
+		<!-- Rising leading edge + concave trailing edge = a spread wing. Those
+		     two curves are the only wing cues that survive 18 px; everything
+		     else on this creature is there to stay out of their way. -->
+		<g id="f1-wing">
+			<path d="M72,100 C50,78 26,86 20,118 C42,130 48,158 84,170 Z"/>
+		</g>
+		<g id="f1p">
+			<use href="#f1-wing"/>
+			<use href="#f1-wing" transform="matrix(-1 0 0 1 200 0)"/>
+			<path d="M86,206 L100,240 L114,206 Z"/>
+			<use href="#fl-body"/>
+		</g>
+		<g id="f1-rib">
+			<path d="M68,110 L36,114 M72,132 L46,148" fill="none" stroke="#14141f" stroke-width="8" stroke-linecap="round"/>
+		</g>
+		<g id="f1f">
+			<use href="#f1-rib"/>
+			<use href="#f1-rib" transform="matrix(-1 0 0 1 200 0)"/>
+			<circle cx="86" cy="88" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="114" cy="88" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="88" cy="91" r="7" fill="#14141f"/>
+			<circle cx="112" cy="91" r="7" fill="#14141f"/>
+			<path d="M90,108 L110,108 L100,126 Z" fill="#14141f"/>
+		</g>
+
+		<g id="f2-wing">
+			<path d="M68,104 C56,66 32,44 20,58 C26,90 38,112 80,138 Z"/>
+		</g>
+		<g id="f2p">
+			<use href="#f2-wing"/>
+			<use href="#f2-wing" transform="matrix(-1 0 0 1 200 0)"/>
+			<path d="M86,216 L100,250 L114,216 Z"/>
+			<g transform="translate(0 10)">
+				<use href="#fl-body"/>
+			</g>
+		</g>
+		<g id="f2-rib">
+			<path d="M66,112 L38,82 M72,128 L48,108" fill="none" stroke="#14141f" stroke-width="8" stroke-linecap="round"/>
+		</g>
+		<g id="f2f">
+			<use href="#f2-rib"/>
+			<use href="#f2-rib" transform="matrix(-1 0 0 1 200 0)"/>
+			<circle cx="86" cy="98" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="114" cy="98" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="88" cy="101" r="7" fill="#14141f"/>
+			<circle cx="112" cy="101" r="7" fill="#14141f"/>
+			<path d="M90,118 L110,118 L100,136 Z" fill="#14141f"/>
+		</g>
+
+		<!-- ========== LEGGITE ==========
+		     Six rounded segments whose centers walk right-left-right make the
+		     standing S. Five LARGE leg pairs, not twenty small ones: at 20 px
+		     wide, a leg thinner than 20 grid units is sub-pixel and turns to
+		     fuzz. Segments are drawn bottom-up so the ink layer leaves a seam
+		     arc under each one - segmentation for free, no extra line work. -->
+
+		<g id="lg-leg">
+			<rect x="-11" y="-10" width="22" height="52" rx="11"/>
+		</g>
+		<g id="l1p">
+			<use href="#lg-leg" transform="translate(79 120) rotate(36)"/>
+			<use href="#lg-leg" transform="translate(129 120) rotate(-36)"/>
+			<use href="#lg-leg" transform="translate(63 160) rotate(34)"/>
+			<use href="#lg-leg" transform="translate(113 160) rotate(-34)"/>
+			<use href="#lg-leg" transform="translate(57 200) rotate(30)"/>
+			<use href="#lg-leg" transform="translate(107 200) rotate(-30)"/>
+			<use href="#lg-leg" transform="translate(71 240) rotate(32)"/>
+			<use href="#lg-leg" transform="translate(121 240) rotate(-32)"/>
+			<use href="#lg-leg" transform="translate(89 276) rotate(14) scale(1 0.66)"/>
+			<use href="#lg-leg" transform="translate(139 276) rotate(-14) scale(1 0.66)"/>
+			<rect x="87" y="252" width="54" height="44" rx="20"/>
+			<rect x="69" y="216" width="54" height="46" rx="20"/>
+			<rect x="55" y="176" width="54" height="46" rx="20"/>
+			<rect x="61" y="136" width="54" height="46" rx="20"/>
+			<rect x="77" y="96" width="54" height="46" rx="20"/>
+			<rect x="81" y="34" width="74" height="70" rx="22"/>
+		</g>
+		<g id="l1f">
+			<circle cx="104" cy="64" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="136" cy="64" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="107" cy="67" r="6" fill="#14141f"/>
+			<circle cx="139" cy="67" r="6" fill="#14141f"/>
+			<rect x="102" y="86" width="36" height="11" rx="5" fill="#14141f"/>
+		</g>
+
+		<!-- frame 2: a wave runs through the legs (alternating pairs swing
+		     forward and back), the S flexes, and the head cranes forward. -->
+		<g id="l2p">
+			<use href="#lg-leg" transform="translate(81 122) rotate(56)"/>
+			<use href="#lg-leg" transform="translate(131 122) rotate(-14)"/>
+			<use href="#lg-leg" transform="translate(61 162) rotate(14)"/>
+			<use href="#lg-leg" transform="translate(111 162) rotate(-54)"/>
+			<use href="#lg-leg" transform="translate(59 202) rotate(50)"/>
+			<use href="#lg-leg" transform="translate(109 202) rotate(-10)"/>
+			<use href="#lg-leg" transform="translate(69 242) rotate(12)"/>
+			<use href="#lg-leg" transform="translate(119 242) rotate(-52)"/>
+			<use href="#lg-leg" transform="translate(91 276) rotate(30) scale(1 0.66)"/>
+			<use href="#lg-leg" transform="translate(141 276) rotate(-2) scale(1 0.66)"/>
+			<rect x="89" y="252" width="54" height="44" rx="20"/>
+			<rect x="67" y="218" width="54" height="46" rx="20"/>
+			<rect x="59" y="178" width="54" height="46" rx="20"/>
+			<rect x="65" y="138" width="54" height="46" rx="20"/>
+			<rect x="83" y="100" width="54" height="46" rx="20"/>
+			<rect x="89" y="40" width="74" height="70" rx="22"/>
+		</g>
+		<g id="l2f">
+			<circle cx="112" cy="70" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="144" cy="70" r="14" fill="#f6f0dd" stroke="#14141f" stroke-width="8"/>
+			<circle cx="116" cy="72" r="6" fill="#14141f"/>
+			<circle cx="148" cy="72" r="6" fill="#14141f"/>
+			<rect x="110" y="92" width="36" height="11" rx="5" fill="#14141f"/>
+		</g>
+
+		<!-- =====================================================
+		     THE SIX SYMBOLS
+		     ===================================================== -->
+
+		<symbol id="mechtron-frame1" viewBox="0 0 200 320">
+			<use href="#m1p" fill="#f6f0dd" stroke="#f6f0dd" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#m1p" fill="currentColor" stroke="#14141f" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#m1f"/>
+		</symbol>
+		<symbol id="mechtron-frame2" viewBox="0 0 200 320">
+			<use href="#m2p" fill="#f6f0dd" stroke="#f6f0dd" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#m2p" fill="currentColor" stroke="#14141f" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#m2f"/>
+		</symbol>
+		<symbol id="flapper-frame1" viewBox="0 0 200 320">
+			<use href="#f1p" fill="#f6f0dd" stroke="#f6f0dd" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#f1p" fill="currentColor" stroke="#14141f" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#f1f"/>
+		</symbol>
+		<symbol id="flapper-frame2" viewBox="0 0 200 320">
+			<use href="#f2p" fill="#f6f0dd" stroke="#f6f0dd" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#f2p" fill="currentColor" stroke="#14141f" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#f2f"/>
+		</symbol>
+		<symbol id="leggite-frame1" viewBox="0 0 200 320">
+			<use href="#l1p" fill="#f6f0dd" stroke="#f6f0dd" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#l1p" fill="currentColor" stroke="#14141f" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#l1f"/>
+		</symbol>
+		<symbol id="leggite-frame2" viewBox="0 0 200 320">
+			<use href="#l2p" fill="#f6f0dd" stroke="#f6f0dd" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#l2p" fill="currentColor" stroke="#14141f" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+			<use href="#l2f"/>
+		</symbol>
+
+	</defs>
+
+	<!-- =========================================================
+	     SCAFFOLD BELOW THIS LINE. Nothing here is part of the art
+	     contract; it exists so the six symbols can be judged at
+	     the sizes the game actually draws them.
+	     ========================================================= -->
+
+	<rect x="0" y="0" width="1180" height="1180" fill="#0e0e18"/>
+	<text x="20" y="34" fill="#f6f0dd" font-size="20" font-weight="700">SET 2 -- INK AND CREAM</text>
+	<text x="20" y="56" fill="#9aa3c0" font-size="12">two-tone rim: 34u cream under a 12u ink contour. one flat currentColor region. three features each.</text>
+
+	<!-- ========== SIZE LADDER ========== -->
+	<rect x="10" y="76" width="470" height="490" fill="#1a1a2e"/>
+	<text x="24" y="96" fill="#9aa3c0" font-size="11">SIZE LADDER (coral on deep space)</text>
+	<text x="140" y="112" fill="#9aa3c0" font-size="10" text-anchor="middle">18</text>
+	<text x="210" y="112" fill="#9aa3c0" font-size="10" text-anchor="middle">32</text>
+	<text x="290" y="112" fill="#9aa3c0" font-size="10" text-anchor="middle">44</text>
+	<text x="390" y="112" fill="#9aa3c0" font-size="10" text-anchor="middle">64</text>
+
+	<g style="color:#ff5a5f">
+		<text x="24" y="180" fill="#9aa3c0" font-size="10">mech f1</text>
+		<use href="#mechtron-frame1" x="134" y="168" width="11.25" height="18"/>
+		<use href="#mechtron-frame1" x="200" y="154" width="20" height="32"/>
+		<use href="#mechtron-frame1" x="276" y="142" width="27.5" height="44"/>
+		<use href="#mechtron-frame1" x="370" y="122" width="40" height="64"/>
+
+		<text x="24" y="250" fill="#9aa3c0" font-size="10">mech f2</text>
+		<use href="#mechtron-frame2" x="134" y="238" width="11.25" height="18"/>
+		<use href="#mechtron-frame2" x="200" y="224" width="20" height="32"/>
+		<use href="#mechtron-frame2" x="276" y="212" width="27.5" height="44"/>
+		<use href="#mechtron-frame2" x="370" y="192" width="40" height="64"/>
+
+		<text x="24" y="320" fill="#9aa3c0" font-size="10">flap f1</text>
+		<use href="#flapper-frame1" x="134" y="308" width="11.25" height="18"/>
+		<use href="#flapper-frame1" x="200" y="294" width="20" height="32"/>
+		<use href="#flapper-frame1" x="276" y="282" width="27.5" height="44"/>
+		<use href="#flapper-frame1" x="370" y="262" width="40" height="64"/>
+
+		<text x="24" y="390" fill="#9aa3c0" font-size="10">flap f2</text>
+		<use href="#flapper-frame2" x="134" y="378" width="11.25" height="18"/>
+		<use href="#flapper-frame2" x="200" y="364" width="20" height="32"/>
+		<use href="#flapper-frame2" x="276" y="352" width="27.5" height="44"/>
+		<use href="#flapper-frame2" x="370" y="332" width="40" height="64"/>
+
+		<text x="24" y="460" fill="#9aa3c0" font-size="10">legg f1</text>
+		<use href="#leggite-frame1" x="134" y="448" width="11.25" height="18"/>
+		<use href="#leggite-frame1" x="200" y="434" width="20" height="32"/>
+		<use href="#leggite-frame1" x="276" y="422" width="27.5" height="44"/>
+		<use href="#leggite-frame1" x="370" y="402" width="40" height="64"/>
+
+		<text x="24" y="530" fill="#9aa3c0" font-size="10">legg f2</text>
+		<use href="#leggite-frame2" x="134" y="518" width="11.25" height="18"/>
+		<use href="#leggite-frame2" x="200" y="504" width="20" height="32"/>
+		<use href="#leggite-frame2" x="276" y="492" width="27.5" height="44"/>
+		<use href="#leggite-frame2" x="370" y="472" width="40" height="64"/>
+	</g>
+
+	<!-- ========== 4x INSPECTION ========== -->
+	<rect x="500" y="76" width="670" height="490" fill="#1a1a2e"/>
+	<rect x="510" y="290" width="650" height="150" fill="#7c9a4e"/>
+	<text x="514" y="96" fill="#9aa3c0" font-size="11">4x INSPECTION (80x128). top: coral on deep space. bottom: GREEN PLAYER ON GREEN TERRAIN.</text>
+
+	<g style="color:#ff5a5f">
+		<use href="#mechtron-frame1" x="520" y="120" width="80" height="128"/>
+		<use href="#mechtron-frame2" x="628" y="120" width="80" height="128"/>
+		<use href="#flapper-frame1" x="736" y="120" width="80" height="128"/>
+		<use href="#flapper-frame2" x="844" y="120" width="80" height="128"/>
+		<use href="#leggite-frame1" x="952" y="120" width="80" height="128"/>
+		<use href="#leggite-frame2" x="1060" y="120" width="80" height="128"/>
+	</g>
+	<text x="520" y="266" fill="#9aa3c0" font-size="10">mech f1</text>
+	<text x="628" y="266" fill="#9aa3c0" font-size="10">mech f2</text>
+	<text x="736" y="266" fill="#9aa3c0" font-size="10">flap f1</text>
+	<text x="844" y="266" fill="#9aa3c0" font-size="10">flap f2</text>
+	<text x="952" y="266" fill="#9aa3c0" font-size="10">legg f1</text>
+	<text x="1060" y="266" fill="#9aa3c0" font-size="10">legg f2</text>
+
+	<g style="color:#3aaa18">
+		<use href="#mechtron-frame1" x="520" y="300" width="80" height="128"/>
+		<use href="#mechtron-frame2" x="628" y="300" width="80" height="128"/>
+		<use href="#flapper-frame1" x="736" y="300" width="80" height="128"/>
+		<use href="#flapper-frame2" x="844" y="300" width="80" height="128"/>
+		<use href="#leggite-frame1" x="952" y="300" width="80" height="128"/>
+		<use href="#leggite-frame2" x="1060" y="300" width="80" height="128"/>
+	</g>
+	<text x="514" y="462" fill="#9aa3c0" font-size="11">the cream rim is the whole answer to green-on-green: the fill never has to fight the ground.</text>
+
+	<!-- ========== COLOR x BACKGROUND GRID ========== -->
+	<text x="20" y="600" fill="#f6f0dd" font-size="13" font-weight="700">3 SPECIES x 4 PLAYER COLORS x 3 BACKGROUNDS, AT 32 TALL (game size)</text>
+	<text x="120" y="622" fill="#9aa3c0" font-size="10">coral #ff5a5f</text>
+	<text x="370" y="622" fill="#9aa3c0" font-size="10">cyan #4fd8ff</text>
+	<text x="620" y="622" fill="#9aa3c0" font-size="10">green #3aaa18</text>
+	<text x="870" y="622" fill="#9aa3c0" font-size="10">orchid #f872e8</text>
+
+	<!-- row backgrounds: three tiles per cell, deep space / terrain / panel -->
+	<g>
+		<!-- mechtron row -->
+		<text x="20" y="668" fill="#9aa3c0" font-size="10">mechtron</text>
+		<rect x="120" y="632" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="196" y="632" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="272" y="632" width="76" height="62" fill="#22223a"/>
+		<rect x="370" y="632" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="446" y="632" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="522" y="632" width="76" height="62" fill="#22223a"/>
+		<rect x="620" y="632" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="696" y="632" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="772" y="632" width="76" height="62" fill="#22223a"/>
+		<rect x="870" y="632" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="946" y="632" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="1022" y="632" width="76" height="62" fill="#22223a"/>
+		<g style="color:#ff5a5f">
+			<use href="#mechtron-frame1" x="148" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="224" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="300" y="647" width="20" height="32"/>
+		</g>
+		<g style="color:#4fd8ff">
+			<use href="#mechtron-frame1" x="398" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="474" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="550" y="647" width="20" height="32"/>
+		</g>
+		<g style="color:#3aaa18">
+			<use href="#mechtron-frame1" x="648" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="724" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="800" y="647" width="20" height="32"/>
+		</g>
+		<g style="color:#f872e8">
+			<use href="#mechtron-frame1" x="898" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="974" y="647" width="20" height="32"/>
+			<use href="#mechtron-frame1" x="1050" y="647" width="20" height="32"/>
+		</g>
+
+		<!-- flapper row -->
+		<text x="20" y="738" fill="#9aa3c0" font-size="10">flapper</text>
+		<rect x="120" y="702" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="196" y="702" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="272" y="702" width="76" height="62" fill="#22223a"/>
+		<rect x="370" y="702" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="446" y="702" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="522" y="702" width="76" height="62" fill="#22223a"/>
+		<rect x="620" y="702" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="696" y="702" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="772" y="702" width="76" height="62" fill="#22223a"/>
+		<rect x="870" y="702" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="946" y="702" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="1022" y="702" width="76" height="62" fill="#22223a"/>
+		<g style="color:#ff5a5f">
+			<use href="#flapper-frame1" x="148" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="224" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="300" y="717" width="20" height="32"/>
+		</g>
+		<g style="color:#4fd8ff">
+			<use href="#flapper-frame1" x="398" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="474" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="550" y="717" width="20" height="32"/>
+		</g>
+		<g style="color:#3aaa18">
+			<use href="#flapper-frame1" x="648" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="724" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="800" y="717" width="20" height="32"/>
+		</g>
+		<g style="color:#f872e8">
+			<use href="#flapper-frame1" x="898" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="974" y="717" width="20" height="32"/>
+			<use href="#flapper-frame1" x="1050" y="717" width="20" height="32"/>
+		</g>
+
+		<!-- leggite row -->
+		<text x="20" y="808" fill="#9aa3c0" font-size="10">leggite</text>
+		<rect x="120" y="772" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="196" y="772" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="272" y="772" width="76" height="62" fill="#22223a"/>
+		<rect x="370" y="772" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="446" y="772" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="522" y="772" width="76" height="62" fill="#22223a"/>
+		<rect x="620" y="772" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="696" y="772" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="772" y="772" width="76" height="62" fill="#22223a"/>
+		<rect x="870" y="772" width="76" height="62" fill="#1a1a2e"/>
+		<rect x="946" y="772" width="76" height="62" fill="#7c9a4e"/>
+		<rect x="1022" y="772" width="76" height="62" fill="#22223a"/>
+		<g style="color:#ff5a5f">
+			<use href="#leggite-frame1" x="148" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="224" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="300" y="787" width="20" height="32"/>
+		</g>
+		<g style="color:#4fd8ff">
+			<use href="#leggite-frame1" x="398" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="474" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="550" y="787" width="20" height="32"/>
+		</g>
+		<g style="color:#3aaa18">
+			<use href="#leggite-frame1" x="648" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="724" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="800" y="787" width="20" height="32"/>
+		</g>
+		<g style="color:#f872e8">
+			<use href="#leggite-frame1" x="898" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="974" y="787" width="20" height="32"/>
+			<use href="#leggite-frame1" x="1050" y="787" width="20" height="32"/>
+		</g>
+	</g>
+
+	<!-- ========== 18 PX BADGE ROW ========== -->
+	<text x="20" y="880" fill="#f6f0dd" font-size="13" font-weight="700">18 PX AUCTION DOCK BADGE -- same symbols, unmodified</text>
+	<text x="20" y="900" fill="#9aa3c0" font-size="10">no head crop, no badge pose: the outer silhouette alone (box / wingspan / S) still separates the three species.</text>
+
+	<rect x="20" y="912" width="1140" height="54" fill="#22223a"/>
+	<g>
+		<g style="color:#ff5a5f">
+			<use href="#mechtron-frame1" x="40" y="930" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="70" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="100" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="130" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="160" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="190" y="930" width="11.25" height="18"/>
+		</g>
+		<g style="color:#4fd8ff">
+			<use href="#mechtron-frame1" x="320" y="930" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="350" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="380" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="410" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="440" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="470" y="930" width="11.25" height="18"/>
+		</g>
+		<g style="color:#3aaa18">
+			<use href="#mechtron-frame1" x="600" y="930" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="630" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="660" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="690" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="720" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="750" y="930" width="11.25" height="18"/>
+		</g>
+		<g style="color:#f872e8">
+			<use href="#mechtron-frame1" x="880" y="930" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="910" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="940" y="930" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="970" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="1000" y="930" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="1030" y="930" width="11.25" height="18"/>
+		</g>
+	</g>
+
+	<rect x="20" y="978" width="1140" height="54" fill="#7c9a4e"/>
+	<g>
+		<g style="color:#ff5a5f">
+			<use href="#mechtron-frame1" x="40" y="996" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="70" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="100" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="130" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="160" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="190" y="996" width="11.25" height="18"/>
+		</g>
+		<g style="color:#4fd8ff">
+			<use href="#mechtron-frame1" x="320" y="996" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="350" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="380" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="410" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="440" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="470" y="996" width="11.25" height="18"/>
+		</g>
+		<g style="color:#3aaa18">
+			<use href="#mechtron-frame1" x="600" y="996" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="630" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="660" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="690" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="720" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="750" y="996" width="11.25" height="18"/>
+		</g>
+		<g style="color:#f872e8">
+			<use href="#mechtron-frame1" x="880" y="996" width="11.25" height="18"/>
+			<use href="#mechtron-frame2" x="910" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame1" x="940" y="996" width="11.25" height="18"/>
+			<use href="#flapper-frame2" x="970" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame1" x="1000" y="996" width="11.25" height="18"/>
+			<use href="#leggite-frame2" x="1030" y="996" width="11.25" height="18"/>
+		</g>
+	</g>
+
+	<text x="20" y="1060" fill="#9aa3c0" font-size="11">MOTION CHECK -- frame 1 / frame 2 pairs at 64 tall, on panel. the delta must be visible in the SILHOUETTE.</text>
+	<rect x="20" y="1072" width="1140" height="88" fill="#22223a"/>
+	<g style="color:#4fd8ff">
+		<use href="#mechtron-frame1" x="60" y="1084" width="40" height="64"/>
+		<use href="#mechtron-frame2" x="112" y="1084" width="40" height="64"/>
+		<use href="#flapper-frame1" x="220" y="1084" width="40" height="64"/>
+		<use href="#flapper-frame2" x="272" y="1084" width="40" height="64"/>
+		<use href="#leggite-frame1" x="380" y="1084" width="40" height="64"/>
+		<use href="#leggite-frame2" x="432" y="1084" width="40" height="64"/>
+	</g>
+	<g style="color:#f872e8">
+		<use href="#mechtron-frame1" x="600" y="1084" width="40" height="64"/>
+		<use href="#mechtron-frame2" x="652" y="1084" width="40" height="64"/>
+		<use href="#flapper-frame1" x="760" y="1084" width="40" height="64"/>
+		<use href="#flapper-frame2" x="812" y="1084" width="40" height="64"/>
+		<use href="#leggite-frame1" x="920" y="1084" width="40" height="64"/>
+		<use href="#leggite-frame2" x="972" y="1084" width="40" height="64"/>
+	</g>
+
+</svg>

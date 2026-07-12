@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Candidate C: wide 48x30 alien sprite study.
+
+  Editing contract:
+  - Each symbol has a 48x30 viewBox and one closed .outer silhouette.
+  - currentColor owns every major body region; set color on a <use> parent
+    to preview a player tint.
+  - Neutral, dark, and gold shapes remain interior details.
+  - The presentation board uses each symbol at 4x and at true 48x30 scale.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1440" height="960" viewBox="0 0 1440 960"
+     role="img" aria-labelledby="study-title study-description">
+  <title id="study-title">Candidate C wide 48 by 30 alien sprite study</title>
+  <desc id="study-description">Editable Mechtron, Bonzoid, and Flapper sprite candidates, each with two frames and four player-color previews.</desc>
+
+  <style>
+    .board { fill: #172130; }
+    .header { fill: #22223a; }
+    .study-row { fill: #22223a; stroke: #4a4a68; stroke-width: 2; }
+    .frame-card { fill: #1a1a2e; stroke: #4a4a68; stroke-width: 1.5; }
+    .preview-card { stroke: #4a4a68; stroke-width: 1.25; }
+    .preview-deep { fill: #1a1a2e; }
+    .preview-plain { fill: #7c9a4e; }
+    .title { fill: #f7f3e8; font-family: Arial, Helvetica, sans-serif; font-size: 36px; font-weight: 800; letter-spacing: 1.5px; }
+    .subtitle { fill: #b9c7cf; font-family: Arial, Helvetica, sans-serif; font-size: 17px; letter-spacing: 0.8px; }
+    .species-name { fill: #ffd23f; font-family: Arial, Helvetica, sans-serif; font-size: 29px; font-weight: 800; letter-spacing: 1px; }
+    .species-note { fill: #dfe8e5; font-family: Arial, Helvetica, sans-serif; font-size: 15px; }
+    .frame-label { fill: #9fb8c6; font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+    .preview-label { fill: #dfe8e5; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: 700; text-anchor: middle; }
+    .preview-hex { fill: #9fb8c6; font-family: Arial, Helvetica, sans-serif; font-size: 9px; text-anchor: middle; }
+    .footer { fill: #9fb8c6; font-family: Arial, Helvetica, sans-serif; font-size: 13px; letter-spacing: 0.4px; }
+    .outer { fill: currentColor; stroke: #172436; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+    .panel { fill: #dfe8e5; stroke: #172436; stroke-width: 1.2; stroke-linejoin: round; }
+    .shadow { fill: #4a4a68; stroke: #172436; stroke-width: 1; stroke-linejoin: round; }
+    .dark { fill: #172436; }
+    .accent { fill: #ffd23f; stroke: #172436; stroke-width: 0.8; }
+    .detail-line { fill: none; stroke: #172436; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
+    .ground { fill: #0c1420; opacity: 0.48; }
+  </style>
+
+  <defs>
+    <!-- Mechtron: a centered industrial rover with antenna nubs, side pods,
+         and feet integrated into one low, closed silhouette. -->
+    <symbol id="candidate-c-mechtron-frame1" viewBox="0 0 48 30">
+      <path class="outer" d="M6 12 L8 8 H13 L15 4 H17 L19 8 H29 L31 4 H33 L35 8 H40 L42 12 V16 H45 V21 H40 V23 L37 25 V28 H32 V25 H28 V28 H20 V25 H16 V28 H11 V25 H8 L6 23 V21 H3 V16 H6 Z"/>
+      <path class="panel" d="M12 10 H36 Q38 10 38 12 V16 Q38 18 36 18 H12 Q10 18 10 16 V12 Q10 10 12 10 Z"/>
+      <rect class="dark" x="14" y="12" width="7" height="3.5" rx="1"/>
+      <rect class="dark" x="27" y="12" width="7" height="3.5" rx="1"/>
+      <path class="shadow" d="M14 20 H34 V23 H30 V25 H18 V23 H14 Z"/>
+      <circle class="accent" cx="24" cy="21.5" r="1.6"/>
+      <path class="detail-line" d="M18 22 H21 M27 22 H30"/>
+    </symbol>
+
+    <symbol id="candidate-c-mechtron-frame2" viewBox="0 0 48 30">
+      <path class="outer" d="M6 10 L8 6 H13 L15 2 H17 L19 6 H29 L31 2 H33 L35 6 H40 L42 10 V14 H45 V19 H40 V21 L37 23 V26 H32 V23 H28 V26 H20 V23 H16 V26 H11 V23 H8 L6 21 V19 H3 V14 H6 Z"/>
+      <path class="panel" d="M12 8 H36 Q38 8 38 10 V14 Q38 16 36 16 H12 Q10 16 10 14 V10 Q10 8 12 8 Z"/>
+      <rect class="dark" x="14" y="10" width="7" height="3.5" rx="1"/>
+      <rect class="dark" x="27" y="10" width="7" height="3.5" rx="1"/>
+      <path class="shadow" d="M14 18 H34 V21 H30 V23 H18 V21 H14 Z"/>
+      <circle class="accent" cx="24" cy="19.5" r="1.6"/>
+      <path class="detail-line" d="M18 20 H21 M27 20 H30"/>
+    </symbol>
+
+    <!-- Bonzoid: an organic, armored prow. Its paired low fins are part of
+         the one closed silhouette; its single central eye contrasts with
+         Mechtron's paired mechanical visor. -->
+    <symbol id="candidate-c-bonzoid-frame1" viewBox="0 0 48 30">
+      <path class="outer" d="M24 4 C29 4 33 6 35 9 L42 11 L45 16 L42 20 L35 19 L33 25 H29 L27 28 H21 L19 25 H15 L13 19 L6 20 L3 16 L6 11 L13 9 C15 6 19 4 24 4 Z"/>
+      <path class="panel" d="M15 11 Q24 7.5 33 11 L34 15 Q24 20 14 15 Z"/>
+      <ellipse class="dark" cx="24" cy="14" rx="4.6" ry="3.5"/>
+      <circle class="accent" cx="24" cy="14" r="1.7"/>
+      <path class="shadow" d="M18 21 Q24 23.5 30 21 V24 Q24 26 18 24 Z"/>
+      <circle class="accent" cx="15.5" cy="17" r="1.1"/>
+      <circle class="accent" cx="32.5" cy="17" r="1.1"/>
+    </symbol>
+
+    <symbol id="candidate-c-bonzoid-frame2" viewBox="0 0 48 30">
+      <path class="outer" d="M24 4 C29 4 33 6 35 9 L42 7 L45 12 L39 17 L34 18 L32 25 H29 L27 28 H21 L19 25 H16 L14 18 L9 17 L3 12 L6 7 L13 9 C15 6 19 4 24 4 Z"/>
+      <path class="panel" d="M15 11 Q24 7.5 33 11 L34 15 Q24 20 14 15 Z"/>
+      <ellipse class="dark" cx="24" cy="14" rx="4.6" ry="3.5"/>
+      <circle class="accent" cx="24" cy="14" r="1.7"/>
+      <path class="shadow" d="M18 21 Q24 23.5 30 21 V24 Q24 26 18 24 Z"/>
+      <circle class="accent" cx="15.5" cy="17" r="1.1"/>
+      <circle class="accent" cx="32.5" cy="17" r="1.1"/>
+    </symbol>
+
+    <!-- Flapper: a centered kite-moth. The full outer silhouette changes
+         from a low wing sweep to a high wing sweep, making the flap clear
+         at 48x30 without loose connector lines. -->
+    <symbol id="candidate-c-flapper-frame1" viewBox="0 0 48 30">
+      <path class="outer" d="M24 6 C29 6 32 9 33 12 L44 22 Q45 24 43 25 L39 26 L31 20 C31 25 28 28 24 28 C20 28 17 25 17 20 L9 26 L5 25 Q3 24 4 22 L15 12 C16 9 19 6 24 6 Z"/>
+      <path class="panel" d="M17 10.5 Q24 8.3 31 10.5 V15.5 Q24 20 17 15.5 Z"/>
+      <ellipse class="dark" cx="20.5" cy="13.8" rx="1.8" ry="2.1"/>
+      <ellipse class="dark" cx="27.5" cy="13.8" rx="1.8" ry="2.1"/>
+      <path class="shadow" d="M18.5 20.5 Q24 22.5 29.5 20.5 Q28 26 24 27 Q20 26 18.5 20.5 Z"/>
+      <circle class="accent" cx="24" cy="23" r="1.45"/>
+      <path class="detail-line" d="M9.5 20 Q13 20.5 16.5 22.5 M38.5 20 Q35 20.5 31.5 22.5"/>
+    </symbol>
+
+    <symbol id="candidate-c-flapper-frame2" viewBox="0 0 48 30">
+      <path class="outer" d="M24 6 C29 6 32 9 33 12 L42 3 Q44 2 45 4 L46 8 L32 19 C31 25 28 28 24 28 C20 28 17 25 16 19 L2 8 L3 4 Q4 2 6 3 L15 12 C16 9 19 6 24 6 Z"/>
+      <path class="panel" d="M17 10.5 Q24 8.3 31 10.5 V15.5 Q24 20 17 15.5 Z"/>
+      <ellipse class="dark" cx="20.5" cy="13.8" rx="1.8" ry="2.1"/>
+      <ellipse class="dark" cx="27.5" cy="13.8" rx="1.8" ry="2.1"/>
+      <path class="shadow" d="M18.5 20.5 Q24 22.5 29.5 20.5 Q28 26 24 27 Q20 26 18.5 20.5 Z"/>
+      <circle class="accent" cx="24" cy="23" r="1.45"/>
+      <path class="detail-line" d="M8 8.5 Q12 12 16.5 17 M40 8.5 Q36 12 31.5 17"/>
+    </symbol>
+  </defs>
+
+  <rect class="board" x="0" y="0" width="1440" height="960"/>
+  <rect class="header" x="0" y="0" width="1440" height="126"/>
+  <text id="study-title-text" class="title" x="52" y="59">ALIEN STUDY / C</text>
+  <text class="subtitle" x="54" y="91">WIDE 48 x 30 FRONTIER SILHOUETTES - EDITABLE SVG DESIGN CANDIDATE</text>
+  <text class="subtitle" x="1002" y="55">ONE CLOSED OUTER SHAPE</text>
+  <text class="subtitle" x="1002" y="83">CURRENTCOLOR BODY / DARK OUTLINE</text>
+  <text class="subtitle" x="1002" y="111">BILATERAL GEOMETRY / FLAT DETAILS</text>
+
+  <!-- Mechtron row -->
+  <g transform="translate(42 150)">
+    <rect class="study-row" x="0" y="0" width="1356" height="200" rx="18"/>
+    <text class="species-name" x="28" y="55">MECHTRON</text>
+    <text class="species-note" x="28" y="84">Low industrial rover</text>
+    <text class="species-note" x="28" y="106">Integrated nubs, pods,</text>
+    <text class="species-note" x="28" y="126">and landing feet.</text>
+    <text class="species-note" x="28" y="159">Frame pair: planted / lift</text>
+
+    <rect class="frame-card" x="230" y="20" width="252" height="160" rx="12"/>
+    <text class="frame-label" x="246" y="44">FRAME 1 / PLANTED</text>
+    <ellipse class="ground" cx="356" cy="166" rx="77" ry="9"/>
+    <g style="color: #ff5a5f"><use href="#candidate-c-mechtron-frame1" x="260" y="53" width="192" height="120"/></g>
+
+    <rect class="frame-card" x="500" y="20" width="252" height="160" rx="12"/>
+    <text class="frame-label" x="516" y="44">FRAME 2 / LIFT</text>
+    <ellipse class="ground" cx="626" cy="166" rx="68" ry="7"/>
+    <g style="color: #ff5a5f"><use href="#candidate-c-mechtron-frame2" x="530" y="53" width="192" height="120"/></g>
+
+    <text class="frame-label" x="790" y="40">TRUE 48 x 30 / FOUR PLAYER COLORS</text>
+    <g style="color: #ff5a5f">
+      <rect class="preview-card preview-deep" x="784" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-mechtron-frame1" x="819" y="73" width="48" height="30"/>
+      <text class="preview-label" x="843" y="125">P1 / CORAL</text><text class="preview-hex" x="843" y="143">#FF5A5F</text>
+    </g>
+    <g style="color: #4fd8ff">
+      <rect class="preview-card preview-deep" x="920" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-mechtron-frame1" x="955" y="73" width="48" height="30"/>
+      <text class="preview-label" x="979" y="125">P2 / CYAN</text><text class="preview-hex" x="979" y="143">#4FD8FF</text>
+    </g>
+    <g style="color: #3aaa18">
+      <rect class="preview-card preview-plain" x="1056" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-mechtron-frame1" x="1091" y="73" width="48" height="30"/>
+      <text class="preview-label" x="1115" y="125">P3 / GREEN</text><text class="preview-hex" x="1115" y="143">#3AAA18</text>
+    </g>
+    <g style="color: #f872e8">
+      <rect class="preview-card preview-plain" x="1192" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-mechtron-frame1" x="1227" y="73" width="48" height="30"/>
+      <text class="preview-label" x="1251" y="125">P4 / ORCHID</text><text class="preview-hex" x="1251" y="143">#F872E8</text>
+    </g>
+  </g>
+
+  <!-- Bonzoid row -->
+  <g transform="translate(42 390)">
+    <rect class="study-row" x="0" y="0" width="1356" height="200" rx="18"/>
+    <text class="species-name" x="28" y="55">BONZOID</text>
+    <text class="species-note" x="28" y="84">Organic armored prow</text>
+    <text class="species-note" x="28" y="106">One central eye and</text>
+    <text class="species-note" x="28" y="126">paired shell fins.</text>
+    <text class="species-note" x="28" y="159">Frame pair: low / fins up</text>
+
+    <rect class="frame-card" x="230" y="20" width="252" height="160" rx="12"/>
+    <text class="frame-label" x="246" y="44">FRAME 1 / LOW PROW</text>
+    <ellipse class="ground" cx="356" cy="166" rx="82" ry="9"/>
+    <g style="color: #ff5a5f"><use href="#candidate-c-bonzoid-frame1" x="260" y="53" width="192" height="120"/></g>
+
+    <rect class="frame-card" x="500" y="20" width="252" height="160" rx="12"/>
+    <text class="frame-label" x="516" y="44">FRAME 2 / FINS UP</text>
+    <ellipse class="ground" cx="626" cy="166" rx="82" ry="9"/>
+    <g style="color: #ff5a5f"><use href="#candidate-c-bonzoid-frame2" x="530" y="53" width="192" height="120"/></g>
+
+    <text class="frame-label" x="790" y="40">TRUE 48 x 30 / FOUR PLAYER COLORS</text>
+    <g style="color: #ff5a5f">
+      <rect class="preview-card preview-deep" x="784" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-bonzoid-frame1" x="819" y="73" width="48" height="30"/>
+      <text class="preview-label" x="843" y="125">P1 / CORAL</text><text class="preview-hex" x="843" y="143">#FF5A5F</text>
+    </g>
+    <g style="color: #4fd8ff">
+      <rect class="preview-card preview-deep" x="920" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-bonzoid-frame1" x="955" y="73" width="48" height="30"/>
+      <text class="preview-label" x="979" y="125">P2 / CYAN</text><text class="preview-hex" x="979" y="143">#4FD8FF</text>
+    </g>
+    <g style="color: #3aaa18">
+      <rect class="preview-card preview-plain" x="1056" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-bonzoid-frame1" x="1091" y="73" width="48" height="30"/>
+      <text class="preview-label" x="1115" y="125">P3 / GREEN</text><text class="preview-hex" x="1115" y="143">#3AAA18</text>
+    </g>
+    <g style="color: #f872e8">
+      <rect class="preview-card preview-plain" x="1192" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-bonzoid-frame1" x="1227" y="73" width="48" height="30"/>
+      <text class="preview-label" x="1251" y="125">P4 / ORCHID</text><text class="preview-hex" x="1251" y="143">#F872E8</text>
+    </g>
+  </g>
+
+  <!-- Flapper row -->
+  <g transform="translate(42 630)">
+    <rect class="study-row" x="0" y="0" width="1356" height="200" rx="18"/>
+    <text class="species-name" x="28" y="55">FLAPPER</text>
+    <text class="species-note" x="28" y="84">Kite-moth scout</text>
+    <text class="species-note" x="28" y="106">Full-span wing sweep</text>
+    <text class="species-note" x="28" y="126">is the animation cue.</text>
+    <text class="species-note" x="28" y="159">Frame pair: down / raised</text>
+
+    <rect class="frame-card" x="230" y="20" width="252" height="160" rx="12"/>
+    <text class="frame-label" x="246" y="44">FRAME 1 / WINGS DOWN</text>
+    <ellipse class="ground" cx="356" cy="166" rx="86" ry="9"/>
+    <g style="color: #ff5a5f"><use href="#candidate-c-flapper-frame1" x="260" y="53" width="192" height="120"/></g>
+
+    <rect class="frame-card" x="500" y="20" width="252" height="160" rx="12"/>
+    <text class="frame-label" x="516" y="44">FRAME 2 / WINGS RAISED</text>
+    <ellipse class="ground" cx="626" cy="166" rx="60" ry="6"/>
+    <g style="color: #ff5a5f"><use href="#candidate-c-flapper-frame2" x="530" y="53" width="192" height="120"/></g>
+
+    <text class="frame-label" x="790" y="40">TRUE 48 x 30 / FOUR PLAYER COLORS</text>
+    <g style="color: #ff5a5f">
+      <rect class="preview-card preview-deep" x="784" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-flapper-frame1" x="819" y="73" width="48" height="30"/>
+      <text class="preview-label" x="843" y="125">P1 / CORAL</text><text class="preview-hex" x="843" y="143">#FF5A5F</text>
+    </g>
+    <g style="color: #4fd8ff">
+      <rect class="preview-card preview-deep" x="920" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-flapper-frame1" x="955" y="73" width="48" height="30"/>
+      <text class="preview-label" x="979" y="125">P2 / CYAN</text><text class="preview-hex" x="979" y="143">#4FD8FF</text>
+    </g>
+    <g style="color: #3aaa18">
+      <rect class="preview-card preview-plain" x="1056" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-flapper-frame1" x="1091" y="73" width="48" height="30"/>
+      <text class="preview-label" x="1115" y="125">P3 / GREEN</text><text class="preview-hex" x="1115" y="143">#3AAA18</text>
+    </g>
+    <g style="color: #f872e8">
+      <rect class="preview-card preview-plain" x="1192" y="58" width="118" height="104" rx="10"/>
+      <use href="#candidate-c-flapper-frame1" x="1227" y="73" width="48" height="30"/>
+      <text class="preview-label" x="1251" y="125">P4 / ORCHID</text><text class="preview-hex" x="1251" y="143">#F872E8</text>
+    </g>
+  </g>
+
+  <rect class="header" x="0" y="858" width="1440" height="102"/>
+  <text class="footer" x="52" y="895">CANDIDATE C PRINCIPLE: THE PLAYER TINT OWNS THE SILHOUETTE; THE FACE AND PANELS PROVIDE SPECIES IDENTITY.</text>
+  <text class="footer" x="52" y="923">SYMBOL IDS: candidate-c-mechtron-frame1/2, candidate-c-bonzoid-frame1/2, candidate-c-flapper-frame1/2.</text>
+</svg>

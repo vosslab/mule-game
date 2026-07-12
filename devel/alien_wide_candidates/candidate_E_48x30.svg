@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Candidate E — editable 48x30 wide alien study
+
+  Each source symbol below is a self-contained 48 by 30 sprite frame. The
+  board uses the symbols at review scale and in four player colors. Major body
+  regions resolve from currentColor; neutral face panels and small gold
+  indicators are shared decorative details.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 940 890"
+  width="1880"
+  height="1780"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Candidate E: wide 48 by 30 color-adaptable alien study</title>
+  <desc id="description">
+    Mechtron, Bonzoid, and Flapper each have two wide 48 by 30 SVG frames.
+    All three creatures use a bold closed outline, player-color body regions,
+    expressive neutral face panels, and four-player-color preview strips.
+  </desc>
+
+  <style>
+    .board { fill: #17243b; }
+    .board-grid { stroke: #2a3b59; stroke-width: 1; opacity: 0.42; }
+    .card { fill: #21314d; stroke: #45638a; stroke-width: 2; }
+    .frame-deep { fill: #14233d; stroke: #55769f; stroke-width: 2; }
+    .frame-terrain { fill: #e8ce8b; stroke: #846c40; stroke-width: 2; }
+    .frame-ridge { fill: #547b8e; opacity: 0.38; }
+    .title { fill: #fff6dc; font: 800 34px/1.1 "Arial Rounded MT Bold", "Trebuchet MS", sans-serif; letter-spacing: 1px; }
+    .subtitle { fill: #b8cbe6; font: 600 16px/1.35 "Trebuchet MS", sans-serif; }
+    .species { fill: #fff6dc; font: 800 25px/1 "Arial Rounded MT Bold", "Trebuchet MS", sans-serif; letter-spacing: 2px; }
+    .species-note { fill: #b8cbe6; font: 600 14px/1.3 "Trebuchet MS", sans-serif; }
+    .frame-label { fill: #fff6dc; font: 800 12px/1 "Trebuchet MS", sans-serif; letter-spacing: 1.1px; }
+    .frame-label-terrain { fill: #26344d; font: 800 12px/1 "Trebuchet MS", sans-serif; letter-spacing: 1.1px; }
+    .preview-label { fill: #9fb8dc; font: 800 11px/1 "Trebuchet MS", sans-serif; letter-spacing: 1.15px; }
+    .preview-name { fill: #d8e7fb; font: 700 10px/1 "Trebuchet MS", sans-serif; letter-spacing: 0.6px; }
+    .footer { fill: #9fb8dc; font: 600 12px/1.3 "Trebuchet MS", sans-serif; }
+
+    /* Sprite paint contract. */
+    .outline {
+      fill: currentColor;
+      stroke: #172238;
+      stroke-width: 1.45;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .panel {
+      fill: #fff3d7;
+      stroke: #172238;
+      stroke-width: 0.9;
+      stroke-linejoin: round;
+    }
+    .dark-detail {
+      fill: #172238;
+      stroke: #172238;
+      stroke-width: 0.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .line-detail {
+      fill: none;
+      stroke: #172238;
+      stroke-width: 1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .accent {
+      fill: #f4c544;
+      stroke: #172238;
+      stroke-width: 0.7;
+      stroke-linejoin: round;
+    }
+    .light-detail {
+      fill: none;
+      stroke: #fff3d7;
+      stroke-width: 1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+
+  <defs>
+    <!--
+      MECHTRON — a centered modular chassis. The antenna nubs, side pods, and
+      feet form one closed silhouette; the second frame retracts its feet and
+      lifts its face for a compact mechanical hover.
+    -->
+    <symbol id="mechtron-frame-1" viewBox="0 0 48 30">
+      <path
+        class="outline"
+        d="M17 5 L18.5 1.5 Q19.2 0.7 20.2 1.5 L21.5 5 H26.5 L27.8 1.5 Q28.8 0.7 29.5 1.5 L31 5 H34 Q38 5 39.5 8 L40.5 11 H44 Q46 11 46 13 V20 Q46 22 44 22 H40 Q39 25.5 35 27 H32 V29 H28 V27 H20 V29 H16 V27 H13 Q9 25.5 8 22 H4 Q2 22 2 20 V13 Q2 11 4 11 H7.5 L8.5 8 Q10 5 14 5 Z"
+      />
+      <path class="panel" d="M13 10 H35 Q37 10 37 12 V18 Q37 20 35 20 H13 Q11 20 11 18 V12 Q11 10 13 10 Z" />
+      <path class="dark-detail" d="M15 12 H33 V16 H15 Z" />
+      <circle fill="#fff3d7" cx="19" cy="14" r="1.3" />
+      <circle fill="#fff3d7" cx="29" cy="14" r="1.3" />
+      <path class="line-detail" d="M18 22 H30 M20 24 H28" />
+      <rect class="accent" x="21.5" y="21" width="5" height="4" rx="1" />
+      <path class="light-detail" d="M23 22.1 V23.9 M22.1 23 H24" />
+      <circle class="accent" cx="7" cy="16" r="1.2" />
+      <circle class="accent" cx="41" cy="16" r="1.2" />
+    </symbol>
+
+    <symbol id="mechtron-frame-2" viewBox="0 0 48 30">
+      <path
+        class="outline"
+        d="M17 4 L18.5 1.2 Q19.2 0.5 20.2 1.2 L21.5 4 H26.5 L27.8 1.2 Q28.8 0.5 29.5 1.2 L31 4 H34 Q38 4 39.5 7 L40.5 10 H44 Q46 10 46 12 V19 Q46 21 44 21 H40 Q39 24.5 35 26 H32 V28 H28 V26 H20 V28 H16 V26 H13 Q9 24.5 8 21 H4 Q2 21 2 19 V12 Q2 10 4 10 H7.5 L8.5 7 Q10 4 14 4 Z"
+      />
+      <path class="panel" d="M13 9 H35 Q37 9 37 11 V17 Q37 19 35 19 H13 Q11 19 11 17 V11 Q11 9 13 9 Z" />
+      <path class="dark-detail" d="M15 11 H33 V15 H15 Z" />
+      <circle fill="#fff3d7" cx="19" cy="13" r="1.3" />
+      <circle fill="#fff3d7" cx="29" cy="13" r="1.3" />
+      <path class="line-detail" d="M18 21 H30 M20 23 H28" />
+      <rect class="accent" x="21.5" y="20" width="5" height="4" rx="1" />
+      <path class="light-detail" d="M23 21.1 V22.9 M22.1 22 H24" />
+      <circle class="accent" cx="7" cy="15" r="1.2" />
+      <circle class="accent" cx="41" cy="15" r="1.2" />
+    </symbol>
+
+    <!--
+      BONZOID — a low, organic beetle-mask creature. Its soft shoulder fins,
+      paired feet, and central belly make a single rounded silhouette that is
+      clearly unlike Mechtron's rectilinear pod chassis.
+    -->
+    <symbol id="bonzoid-frame-1" viewBox="0 0 48 30">
+      <path
+        class="outline"
+        d="M8 10 C9 5 15 2 24 2 C33 2 39 5 40 10 L45 13 Q46.5 14.5 45 16 L41 19 L39 24 H35 L33 29 H28 L24 26 L20 29 H15 L13 24 H9 L7 19 L3 16 Q1.5 14.5 3 13 Z"
+      />
+      <path class="panel" d="M13 10 Q24 6.5 35 10 V16 Q24 20 13 16 Z" />
+      <path class="dark-detail" d="M16 12 Q19 10 21 12 V15 Q19 16.5 16 15 Z" />
+      <path class="dark-detail" d="M27 12 Q29 10 32 12 V15 Q29 16.5 27 15 Z" />
+      <path class="line-detail" d="M20 18 Q24 20 28 18" />
+      <path class="accent" d="M20 21 Q24 19 28 21 V24 Q24 26 20 24 Z" />
+      <circle fill="#fff3d7" cx="22" cy="22" r="0.65" />
+      <circle fill="#fff3d7" cx="26" cy="22" r="0.65" />
+      <path class="light-detail" d="M10 13 L13 14 M38 13 L35 14" />
+    </symbol>
+
+    <symbol id="bonzoid-frame-2" viewBox="0 0 48 30">
+      <path
+        class="outline"
+        d="M9 9 C10 4 16 2 24 2 C32 2 38 4 39 9 L45 6 Q47 6 47 8 L45 13 L40 15 L38 24 H34 L32 28 H28 L24 25 L20 28 H16 L14 24 H10 L8 15 L3 13 L1 8 Q1 6 3 6 Z"
+      />
+      <path class="panel" d="M13 9 Q24 5.5 35 9 V15 Q24 19 13 15 Z" />
+      <path class="dark-detail" d="M16 11 Q19 9 21 11 V14 Q19 15.5 16 14 Z" />
+      <path class="dark-detail" d="M27 11 Q29 9 32 11 V14 Q29 15.5 27 14 Z" />
+      <path class="line-detail" d="M20 17 Q24 19 28 17" />
+      <path class="accent" d="M20 20 Q24 18 28 20 V23 Q24 25 20 23 Z" />
+      <circle fill="#fff3d7" cx="22" cy="21" r="0.65" />
+      <circle fill="#fff3d7" cx="26" cy="21" r="0.65" />
+      <path class="light-detail" d="M9 11 L13 13 M39 11 L35 13" />
+    </symbol>
+
+    <!--
+      FLAPPER — a soft kite-moth. Its wing positions are part of the outer
+      contour, producing an unambiguous wings-down / wings-raised animation.
+    -->
+    <symbol id="flapper-frame-1" viewBox="0 0 48 30">
+      <path
+        class="outline"
+        d="M24 4 C29 4 33 7 34 12 L44 20 Q46 22 44 24 L39 23 L33 19 C32 25 29 28 24 28 C19 28 16 25 15 19 L9 23 L4 24 Q2 22 4 20 L14 12 C15 7 19 4 24 4 Z"
+      />
+      <path class="panel" d="M15 11 Q24 7.5 33 11 V17 Q24 21 15 17 Z" />
+      <ellipse class="dark-detail" cx="20" cy="14" rx="2.1" ry="2.8" />
+      <ellipse class="dark-detail" cx="28" cy="14" rx="2.1" ry="2.8" />
+      <circle fill="#fff3d7" cx="20.5" cy="13.6" r="0.55" />
+      <circle fill="#fff3d7" cx="28.5" cy="13.6" r="0.55" />
+      <path class="line-detail" d="M20 18 Q24 20 28 18 M11 16 L16 19 M37 16 L32 19" />
+      <circle class="accent" cx="24" cy="23.5" r="1.9" />
+      <circle class="accent" cx="18.8" cy="23.2" r="0.85" />
+      <circle class="accent" cx="29.2" cy="23.2" r="0.85" />
+    </symbol>
+
+    <symbol id="flapper-frame-2" viewBox="0 0 48 30">
+      <path
+        class="outline"
+        d="M24 5 C29 5 33 8 34 13 L43 2 Q45 0.5 46 2 L47 7 L35 21 C33 26 29 29 24 29 C19 29 15 26 13 21 L1 7 L2 2 Q3 0.5 5 2 L14 13 C15 8 19 5 24 5 Z"
+      />
+      <path class="panel" d="M15 12 Q24 8.5 33 12 V18 Q24 22 15 18 Z" />
+      <ellipse class="dark-detail" cx="20" cy="15" rx="2.1" ry="2.8" />
+      <ellipse class="dark-detail" cx="28" cy="15" rx="2.1" ry="2.8" />
+      <circle fill="#fff3d7" cx="20.5" cy="14.6" r="0.55" />
+      <circle fill="#fff3d7" cx="28.5" cy="14.6" r="0.55" />
+      <path class="line-detail" d="M20 19 Q24 21 28 19 M12 13 L16 20 M36 13 L32 20" />
+      <circle class="accent" cx="24" cy="24.5" r="1.9" />
+      <circle class="accent" cx="18.8" cy="24.2" r="0.85" />
+      <circle class="accent" cx="29.2" cy="24.2" r="0.85" />
+    </symbol>
+  </defs>
+
+  <rect class="board" width="940" height="890" rx="28" />
+  <path
+    class="board-grid"
+    d="M30 72 H910 M30 329 H910 M30 578 H910 M30 827 H910
+       M170 18 V72 M330 18 V72 M490 18 V72 M650 18 V72 M810 18 V72"
+  />
+
+  <text class="title" x="38" y="48">CANDIDATE E · WIDE ALIEN STUDY</text>
+  <text class="subtitle" x="40" y="72">Three 48 × 30 vector systems · closed bilateral silhouettes · player-color adaptable</text>
+
+  <!-- Mechtron review card -->
+  <g transform="translate(30 88)">
+    <rect class="card" width="880" height="232" rx="20" />
+    <text class="species" x="25" y="37">MECHTRON</text>
+    <text class="species-note" x="25" y="60">modular pod chassis</text>
+    <text class="species-note" x="25" y="80">centered · mechanical</text>
+    <text class="species-note" x="25" y="100">grounded → hover</text>
+
+    <rect class="frame-deep" x="220" y="20" width="282" height="150" rx="15" />
+    <path class="frame-ridge" d="M220 147 L272 117 L326 139 L391 101 L452 131 L502 107 V170 H220 Z" />
+    <use href="#mechtron-frame-1" x="246" y="23" width="230" height="143.75" style="color: #e8645d" />
+    <text class="frame-label" x="246" y="184">FRAME 1 · GROUNDED</text>
+
+    <rect class="frame-terrain" x="560" y="20" width="282" height="150" rx="15" />
+    <path fill="#87b34d" opacity="0.66" d="M560 143 L610 119 L667 136 L735 102 L792 132 L842 110 V170 H560 Z" />
+    <use href="#mechtron-frame-2" x="586" y="23" width="230" height="143.75" style="color: #e8645d" />
+    <text class="frame-label" x="586" y="184">FRAME 2 · HOVER</text>
+
+    <text class="preview-label" x="25" y="207">FOUR PLAYER COLOR PROOF</text>
+    <use href="#mechtron-frame-1" x="255" y="189" width="56" height="35" style="color: #e8645d" />
+    <use href="#mechtron-frame-1" x="335" y="189" width="56" height="35" style="color: #3f9ed4" />
+    <use href="#mechtron-frame-1" x="415" y="189" width="56" height="35" style="color: #83b84a" />
+    <use href="#mechtron-frame-1" x="495" y="189" width="56" height="35" style="color: #aa68c4" />
+    <text class="preview-name" x="258" y="229">CORAL</text>
+    <text class="preview-name" x="340" y="229">CYAN</text>
+    <text class="preview-name" x="416" y="229">LIME</text>
+    <text class="preview-name" x="498" y="229">ORCHID</text>
+  </g>
+
+  <!-- Bonzoid review card -->
+  <g transform="translate(30 337)">
+    <rect class="card" width="880" height="232" rx="20" />
+    <text class="species" x="25" y="37">BONZOID</text>
+    <text class="species-note" x="25" y="60">low organic beetle-mask</text>
+    <text class="species-note" x="25" y="80">centered · broad</text>
+    <text class="species-note" x="25" y="100">settled → pulse</text>
+
+    <rect class="frame-deep" x="220" y="20" width="282" height="150" rx="15" />
+    <path class="frame-ridge" d="M220 144 L288 112 L347 137 L405 108 L458 137 L502 120 V170 H220 Z" />
+    <use href="#bonzoid-frame-1" x="246" y="23" width="230" height="143.75" style="color: #e8645d" />
+    <text class="frame-label" x="246" y="184">FRAME 1 · SETTLED</text>
+
+    <rect class="frame-terrain" x="560" y="20" width="282" height="150" rx="15" />
+    <path fill="#87b34d" opacity="0.66" d="M560 145 L625 111 L679 134 L736 105 L789 136 L842 119 V170 H560 Z" />
+    <use href="#bonzoid-frame-2" x="586" y="23" width="230" height="143.75" style="color: #e8645d" />
+    <text class="frame-label" x="586" y="184">FRAME 2 · PULSE</text>
+
+    <text class="preview-label" x="25" y="207">FOUR PLAYER COLOR PROOF</text>
+    <use href="#bonzoid-frame-1" x="255" y="189" width="56" height="35" style="color: #e8645d" />
+    <use href="#bonzoid-frame-1" x="335" y="189" width="56" height="35" style="color: #3f9ed4" />
+    <use href="#bonzoid-frame-1" x="415" y="189" width="56" height="35" style="color: #83b84a" />
+    <use href="#bonzoid-frame-1" x="495" y="189" width="56" height="35" style="color: #aa68c4" />
+    <text class="preview-name" x="258" y="229">CORAL</text>
+    <text class="preview-name" x="340" y="229">CYAN</text>
+    <text class="preview-name" x="416" y="229">LIME</text>
+    <text class="preview-name" x="498" y="229">ORCHID</text>
+  </g>
+
+  <!-- Flapper review card -->
+  <g transform="translate(30 586)">
+    <rect class="card" width="880" height="232" rx="20" />
+    <text class="species" x="25" y="37">FLAPPER</text>
+    <text class="species-note" x="25" y="60">kite-moth glider</text>
+    <text class="species-note" x="25" y="80">centered · airborne</text>
+    <text class="species-note" x="25" y="100">wings down → raised</text>
+
+    <rect class="frame-deep" x="220" y="20" width="282" height="150" rx="15" />
+    <path class="frame-ridge" d="M220 148 L284 111 L349 141 L416 105 L468 135 L502 118 V170 H220 Z" />
+    <use href="#flapper-frame-1" x="246" y="23" width="230" height="143.75" style="color: #e8645d" />
+    <text class="frame-label" x="246" y="184">FRAME 1 · WINGS DOWN</text>
+
+    <rect class="frame-terrain" x="560" y="20" width="282" height="150" rx="15" />
+    <path fill="#87b34d" opacity="0.66" d="M560 146 L620 116 L681 136 L740 103 L792 133 L842 116 V170 H560 Z" />
+    <use href="#flapper-frame-2" x="586" y="23" width="230" height="143.75" style="color: #e8645d" />
+    <text class="frame-label" x="586" y="184">FRAME 2 · WINGS RAISED</text>
+
+    <text class="preview-label" x="25" y="207">FOUR PLAYER COLOR PROOF</text>
+    <use href="#flapper-frame-1" x="255" y="189" width="56" height="35" style="color: #e8645d" />
+    <use href="#flapper-frame-1" x="335" y="189" width="56" height="35" style="color: #3f9ed4" />
+    <use href="#flapper-frame-1" x="415" y="189" width="56" height="35" style="color: #83b84a" />
+    <use href="#flapper-frame-1" x="495" y="189" width="56" height="35" style="color: #aa68c4" />
+    <text class="preview-name" x="258" y="229">CORAL</text>
+    <text class="preview-name" x="340" y="229">CYAN</text>
+    <text class="preview-name" x="416" y="229">LIME</text>
+    <text class="preview-name" x="498" y="229">ORCHID</text>
+  </g>
+
+  <text class="footer" x="40" y="846">SPRITE CONTRACT: 48 × 30 source symbols · dominant body fill uses currentColor · shared ink, face, and gold details.</text>
+  <text class="footer" x="40" y="871">REFERENCE DIRECTION: playful geometric aliens · clean comic outlines · large readable features · NES-scale wide character proportions.</text>
+</svg>

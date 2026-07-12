@@ -173,51 +173,74 @@ function buildHumanoidSymbols(): string {
 }
 
 //============================================
-// Gollumer: lumpy blob. Three overlapping circles read as an irregular,
-// asymmetric mass; the two side lumps shift vertically between frames for
-// a squish-walk wobble instead of a leg swing (this species has no legs).
+// Gollumer: cheerful jelly blob. A single asymmetrical, rounded outline keeps
+// the player tint as one dominant mass, while the large pale eyes, dark smile,
+// and two tiny gold freckles give it a readable face at map scale. The second
+// frame squashes lower and swaps the eye tilt for a buoyant blob-hop.
 function buildGollumerSymbols(): string {
   let markup = "";
   markup += `<symbol id="${speciesSymbolId("gollumer", 1)}" viewBox="0 0 32 32">`;
   markup += groundContactEllipseMarkup();
-  markup += keylineOuterShapeMarkup("circle", 'cx="16" cy="19" r="9"');
-  markup += '<circle cx="11" cy="13" r="5" fill="currentColor" />';
-  markup += '<circle cx="22" cy="15" r="4" fill="currentColor" />';
+  markup += keylineOuterShapeMarkup(
+    "path",
+    'd="M5 21 C5 16 7 12 11 11 C13 7 19 7 21 10 C26 10 28 14 28 19 C28 25 23 28 16 28 C9 28 5 26 5 21 Z"',
+  );
+  markup += `<ellipse cx="12" cy="16" rx="3" ry="3.5" fill="${PALETTE.textPrimary}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<ellipse cx="20" cy="15" rx="3" ry="3.5" fill="${PALETTE.textPrimary}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<circle cx="12.75" cy="16.5" r="1.25" fill="${PALETTE.bgPanel}" />`;
+  markup += `<circle cx="19.25" cy="15.5" r="1.25" fill="${PALETTE.bgPanel}" />`;
+  markup += `<path d="M12 22 Q16 25 21 21" fill="none" stroke="${PALETTE.bgPanel}" stroke-width="1.5" stroke-linecap="round" />`;
+  markup += `<circle cx="8.5" cy="19" r="1" fill="${PALETTE.gold}" />`;
+  markup += `<circle cx="24.5" cy="20" r="1" fill="${PALETTE.gold}" />`;
   markup += "</symbol>";
   markup += `<symbol id="${speciesSymbolId("gollumer", 2)}" viewBox="0 0 32 32">`;
   markup += groundContactEllipseMarkup();
-  markup += keylineOuterShapeMarkup("circle", 'cx="16" cy="19" r="9"');
-  markup += '<circle cx="11" cy="15" r="5" fill="currentColor" />';
-  markup += '<circle cx="22" cy="13" r="4" fill="currentColor" />';
+  markup += keylineOuterShapeMarkup(
+    "path",
+    'd="M4 22 C4 17 7 13 11 13 C13 9 19 9 21 12 C26 12 29 16 28 21 C27 26 23 28 16 28 C8 28 4 26 4 22 Z"',
+  );
+  markup += `<ellipse cx="12" cy="18" rx="3" ry="3.25" fill="${PALETTE.textPrimary}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<ellipse cx="20" cy="17" rx="3" ry="3.25" fill="${PALETTE.textPrimary}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<circle cx="11.25" cy="17.5" r="1.25" fill="${PALETTE.bgPanel}" />`;
+  markup += `<circle cx="20.75" cy="16.5" r="1.25" fill="${PALETTE.bgPanel}" />`;
+  markup += `<path d="M12 23 Q16 20 21 23" fill="none" stroke="${PALETTE.bgPanel}" stroke-width="1.5" stroke-linecap="round" />`;
+  markup += `<circle cx="8.5" cy="21" r="1" fill="${PALETTE.gold}" />`;
+  markup += `<circle cx="24.5" cy="22" r="1" fill="${PALETTE.gold}" />`;
   markup += "</symbol>";
   return markup;
 }
 
 //============================================
-// Mechtron: boxy robot. Square head, rectilinear torso, a thin antenna, and
-// fixed-color eye dots that stay legible against any tint; legs shift
-// fore/aft between frames like the humanoid, but blockier.
+// Mechtron: a bilaterally symmetric panel robot. Its antenna nubs, side pods,
+// and feet belong to one closed currentColor silhouette, which keeps every
+// contour intentional at 32px. Frame 2 is a centered hop.
 function buildMechtronSymbols(): string {
   let markup = "";
   markup += `<symbol id="${speciesSymbolId("mechtron", 1)}" viewBox="0 0 32 32">`;
   markup += groundContactEllipseMarkup();
-  markup += keylineOuterShapeMarkup("rect", 'x="9" y="13" width="14" height="11" rx="1"');
-  markup += '<rect x="11" y="5" width="10" height="7" fill="currentColor" />';
-  markup += '<rect x="15" y="2" width="2" height="4" fill="currentColor" />';
-  markup += `<rect x="13" y="7" width="2" height="2" fill="${PALETTE.bgPanel}" />`;
-  markup += `<rect x="17" y="7" width="2" height="2" fill="${PALETTE.bgPanel}" />`;
-  markup += '<rect x="10" y="24" width="3" height="6" fill="currentColor" />';
-  markup += '<rect x="20" y="24" width="3" height="6" fill="currentColor" />';
+  markup += keylineOuterShapeMarkup(
+    "path",
+    'd="M11 8 L12 5 L14 8 H18 L20 5 L21 8 H23 Q26 8 26 11 V14 H29 V22 H26 V24 Q26 26 23 26 H21 V29 H18 V26 H14 V29 H11 V26 H9 Q6 26 6 24 V22 H3 V14 H6 V11 Q6 8 9 8 Z"',
+  );
+  markup += `<rect x="9" y="12" width="14" height="6" rx="2" fill="${PALETTE.bgPanel}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<rect x="11" y="14" width="3" height="2" rx="1" fill="${PALETTE.textPrimary}" />`;
+  markup += `<rect x="18" y="14" width="3" height="2" rx="1" fill="${PALETTE.textPrimary}" />`;
+  markup += `<rect x="12" y="20" width="8" height="2" rx="1" fill="${PALETTE.gold}" stroke="${PALETTE.bgTrackAxis}" stroke-width="0.75" />`;
+  markup += `<rect x="9" y="20" width="1.5" height="2" rx="0.5" fill="${PALETTE.bgPanel}" />`;
+  markup += `<rect x="21.5" y="20" width="1.5" height="2" rx="0.5" fill="${PALETTE.bgPanel}" />`;
   markup += "</symbol>";
   markup += `<symbol id="${speciesSymbolId("mechtron", 2)}" viewBox="0 0 32 32">`;
   markup += groundContactEllipseMarkup();
-  markup += keylineOuterShapeMarkup("rect", 'x="9" y="13" width="14" height="11" rx="1"');
-  markup += '<rect x="11" y="5" width="10" height="7" fill="currentColor" />';
-  markup += '<rect x="15" y="2" width="2" height="4" fill="currentColor" />';
-  markup += `<rect x="13" y="7" width="2" height="2" fill="${PALETTE.bgPanel}" />`;
-  markup += `<rect x="17" y="7" width="2" height="2" fill="${PALETTE.bgPanel}" />`;
-  markup += '<rect x="11" y="24" width="3" height="6" fill="currentColor" />';
-  markup += '<rect x="19" y="24" width="3" height="6" fill="currentColor" />';
+  markup += keylineOuterShapeMarkup(
+    "path",
+    'd="M11 7 L12 4 L14 7 H18 L20 4 L21 7 H23 Q26 7 26 10 V13 H29 V21 H26 V23 Q26 25 23 25 H21 V28 H18 V25 H14 V28 H11 V25 H9 Q6 25 6 23 V21 H3 V13 H6 V10 Q6 7 9 7 Z"',
+  );
+  markup += `<rect x="9" y="11" width="14" height="6" rx="2" fill="${PALETTE.bgPanel}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<rect x="11" y="13" width="3" height="2" rx="1" fill="${PALETTE.textPrimary}" />`;
+  markup += `<rect x="18" y="13" width="3" height="2" rx="1" fill="${PALETTE.textPrimary}" />`;
+  markup += `<rect x="12" y="19" width="8" height="2" rx="1" fill="${PALETTE.gold}" stroke="${PALETTE.bgTrackAxis}" stroke-width="0.75" />`;
+  markup += `<rect x="9" y="19" width="1.5" height="2" rx="0.5" fill="${PALETTE.bgPanel}" />`;
+  markup += `<rect x="21.5" y="19" width="1.5" height="2" rx="0.5" fill="${PALETTE.bgPanel}" />`;
   markup += "</symbol>";
   return markup;
 }
@@ -326,24 +349,41 @@ function buildSpheroidSymbols(): string {
 }
 
 //============================================
-// Flapper: winged. A slim oval body with two wing panels that flap between
-// a resting down-sweep (frame 1) and a raised up-sweep (frame 2), the one
-// species whose 2-frame "walk" is really a wingbeat.
+// Flapper: hovering kite-moth. One broad, winged currentColor silhouette
+// reads immediately as airborne, while a dark mask, two bright eyes, and a
+// gold chest beacon stay facially legible at 32px. The wings swing from a
+// low spread in frame 1 to a high spread in frame 2, making a clear wingbeat.
 function buildFlapperSymbols(): string {
   let markup = "";
   markup += `<symbol id="${speciesSymbolId("flapper", 1)}" viewBox="0 0 32 32">`;
   markup += groundContactEllipseMarkup();
-  markup += keylineOuterShapeMarkup("ellipse", 'cx="16" cy="18" rx="5" ry="8"');
-  markup += '<circle cx="16" cy="8" r="4" fill="currentColor" />';
-  markup += '<polygon points="11,14 2,20 11,22" fill="currentColor" />';
-  markup += '<polygon points="21,14 30,20 21,22" fill="currentColor" />';
+  markup += keylineOuterShapeMarkup(
+    "path",
+    'd="M16 7 C20 7 22 10 23 13 L30 16 L27 21 L22 19 C21 24 19 27 16 27 C13 27 10 24 10 19 L4 22 L2 17 L9 13 C10 10 12 7 16 7 Z"',
+  );
+  markup += `<path d="M9 14 L14 18 M23 14 L18 18" fill="none" stroke="${PALETTE.bgTrackAxis}" stroke-width="1.25" stroke-linecap="round" />`;
+  markup += `<path d="M11 14 Q16 10 21 14 V17 Q16 20 11 17 Z" fill="${PALETTE.bgPanel}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<ellipse cx="13.5" cy="15" rx="1.5" ry="1.75" fill="${PALETTE.textPrimary}" />`;
+  markup += `<ellipse cx="18.5" cy="15" rx="1.5" ry="1.75" fill="${PALETTE.textPrimary}" />`;
+  markup += `<circle cx="14" cy="15.5" r="0.75" fill="${PALETTE.bgDeep}" />`;
+  markup += `<circle cx="18" cy="15.5" r="0.75" fill="${PALETTE.bgDeep}" />`;
+  markup += `<path d="M14 21 Q16 22.5 18 21" fill="none" stroke="${PALETTE.bgPanel}" stroke-width="1.25" stroke-linecap="round" />`;
+  markup += `<circle cx="16" cy="23" r="1.5" fill="${PALETTE.gold}" stroke="${PALETTE.bgTrackAxis}" stroke-width="0.75" />`;
   markup += "</symbol>";
   markup += `<symbol id="${speciesSymbolId("flapper", 2)}" viewBox="0 0 32 32">`;
   markup += groundContactEllipseMarkup();
-  markup += keylineOuterShapeMarkup("ellipse", 'cx="16" cy="18" rx="5" ry="8"');
-  markup += '<circle cx="16" cy="8" r="4" fill="currentColor" />';
-  markup += '<polygon points="11,14 2,6 11,18" fill="currentColor" />';
-  markup += '<polygon points="21,14 30,6 21,18" fill="currentColor" />';
+  markup += keylineOuterShapeMarkup(
+    "path",
+    'd="M16 8 C20 8 22 10 23 14 L28 4 L31 9 L23 19 C21 24 19 27 16 27 C13 27 10 24 9 19 L2 9 L5 4 L10 14 C11 10 13 8 16 8 Z"',
+  );
+  markup += `<path d="M10 14 L14 18 M22 14 L18 18" fill="none" stroke="${PALETTE.bgTrackAxis}" stroke-width="1.25" stroke-linecap="round" />`;
+  markup += `<path d="M11 14 Q16 11 21 14 V17 Q16 20 11 17 Z" fill="${PALETTE.bgPanel}" stroke="${PALETTE.bgTrackAxis}" stroke-width="1" />`;
+  markup += `<ellipse cx="13.5" cy="15" rx="1.5" ry="1.75" fill="${PALETTE.textPrimary}" />`;
+  markup += `<ellipse cx="18.5" cy="15" rx="1.5" ry="1.75" fill="${PALETTE.textPrimary}" />`;
+  markup += `<circle cx="13" cy="14.5" r="0.75" fill="${PALETTE.bgDeep}" />`;
+  markup += `<circle cx="19" cy="14.5" r="0.75" fill="${PALETTE.bgDeep}" />`;
+  markup += `<path d="M14 21 Q16 20 18 21" fill="none" stroke="${PALETTE.bgPanel}" stroke-width="1.25" stroke-linecap="round" />`;
+  markup += `<circle cx="16" cy="23" r="1.5" fill="${PALETTE.gold}" stroke="${PALETTE.bgTrackAxis}" stroke-width="0.75" />`;
   markup += "</symbol>";
   return markup;
 }
