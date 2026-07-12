@@ -321,33 +321,77 @@ export async function isVisible(page, selector) {
 }
 
 /**
- * Bounded wait clickIfPresent allows Playwright's click() before giving up.
- * Short relative to Playwright's default ~30s actionability timeout, so a
- * control that stops being actionable between the presence check and the
- * click itself (a role/intent panel that unmounts every tick after tick 0;
- * see auction_role's tick-0-only render in scene_manager.ts) fails fast
- * instead of hanging the whole auction-tick loop for 30s while a bare
- * `.catch` silently swallows the eventual rejection -- the exact bug shape
- * this helper exists to prevent.
+ * Bounded wait clickIfPresent/clickRequired allow Playwright's click() before
+ * giving up. Short relative to Playwright's default ~30s actionability
+ * timeout, so a control that stops being actionable between the presence
+ * check and the click itself fails fast instead of hanging the calling loop
+ * for 30s while a bare `.catch` silently swallows the eventual rejection --
+ * the exact bug shape both helpers exist to prevent.
  */
 const CLICK_TIMEOUT_MS = 1000;
+
+/**
+ * Root directory for best-effort failure screenshots taken by clickRequired.
+ * Deliberately independent of the orchestrator's own `--screenshots`
+ * override (e2e_walkthrough.mjs's per-phase transition shots): a REQUIRED
+ * click can fail from any driver at any tick, so this path is self-contained
+ * rather than needing screenshotsDir threaded through every driver's deps
+ * just to leave diagnostic evidence behind. Sits alongside the existing
+ * `test-results/walker/` report root (docs/WALKTHROUGH_GUIDE.md's Output
+ * files table).
+ */
+const FAILURE_SCREENSHOT_DIR = path.join(REPO_ROOT, "test-results", "walker", "failures");
+
+//============================================
+/**
+ * Best-effort full-page screenshot taken at the moment a REQUIRED gesture
+ * fails, so the next human or agent reading a failure has a picture of the
+ * screen alongside the text diagnosis -- the whole point of a rich failure
+ * report (a bare assertion message repeats the original silent-failure sin
+ * in a faster form). Never throws: a screenshot failure (a torn-down page, a
+ * closed browser) must never mask the original failure it was trying to
+ * document, so any error here is swallowed and null is returned instead.
+ *
+ * @param page - The Playwright page.
+ * @param tag - A short label identifying the failure, folded into the file
+ *   name alongside a timestamp (sanitized to filesystem-safe characters) so
+ *   repeated failures never collide.
+ * @returns The absolute screenshot path, or null if the screenshot itself
+ *   failed.
+ */
+async function saveFailureScreenshot(page, tag) {
+  const safeTag = tag.replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 80);
+  const filePath = path.join(FAILURE_SCREENSHOT_DIR, `${Date.now()}_${safeTag}.png`);
+  return fs.promises
+    .mkdir(FAILURE_SCREENSHOT_DIR, { recursive: true })
+    .then(() => page.screenshot({ path: filePath }))
+    .then(() => filePath)
+    .catch(() => null);
+}
 
 //============================================
 /**
  * Click a selector only if it currently resolves to a visible element,
- * documenting the "safe to miss" contract every walkthrough gesture click
- * relies on: a missing/not-yet-rendered control (the target state already
- * changed, a role/intent button not mounted this tick) is a normal, silent
- * no-op, never a report.fail. Resolves one element handle and reuses it for
- * both the visibility check and the click (rather than re-querying the
- * selector), so the presence check and the click target the same DOM node
- * and the click() call itself is bounded by CLICK_TIMEOUT_MS -- closing the
- * gap where the element could vanish between a separate check and a
- * default-timeout click. A click that DOES find the element but then
- * rejects (detached mid-click within the bounded wait, occluded, navigated
- * away) is a real signal worth surfacing, so it is logged via
- * report.log("warn", ...) with the selector and reason instead of being
- * swallowed identically.
+ * documenting the "safe to miss" contract an OPTIONAL walkthrough gesture
+ * click relies on: a missing/not-yet-rendered control (the target state
+ * already changed, an intent button not mounted this tick, a screen that
+ * legitimately does not expose this control right now) is a normal, silent
+ * no-op, never a report.fail. Use this ONLY when the caller's own run can
+ * legitimately proceed whether or not the click landed; for a click the run
+ * cannot proceed without, use clickRequired instead -- discarding this
+ * function's return value on a click the caller actually needs is the exact
+ * silent-failure defect documented in docs/WALKTHROUGH_GUIDE.md's failure
+ * taxonomy (`required_control_missing`).
+ *
+ * Resolves one element handle and reuses it for both the visibility check
+ * and the click (rather than re-querying the selector), so the presence
+ * check and the click target the same DOM node and the click() call itself
+ * is bounded by CLICK_TIMEOUT_MS -- closing the gap where the element could
+ * vanish between a separate check and a default-timeout click. A click that
+ * DOES find the element but then rejects (detached mid-click within the
+ * bounded wait, occluded, navigated away) is a real signal worth surfacing,
+ * so it is logged via report.log("warn", ...) with the selector and reason
+ * instead of being swallowed identically.
  *
  * @param page - The Playwright page.
  * @param selector - CSS selector to click if present.
@@ -371,6 +415,75 @@ export async function clickIfPresent(page, selector, report) {
       const reason = error instanceof Error ? error.message : String(error);
       report.log("warn", `clickIfPresent: click failed on "${selector}"`, { selector, reason });
       return false;
+    });
+}
+
+//============================================
+/**
+ * Click a selector the caller's run CANNOT proceed without -- the REQUIRED
+ * counterpart to clickIfPresent's "safe to miss" contract. A missing/hidden
+ * target, or a target that resolves but whose click itself rejects, is by
+ * definition a run-ending problem: it is recorded via
+ * report.fail("required_control_missing", ...) and then thrown, so a caller
+ * can never accidentally discard the outcome and carry on as if the click
+ * had landed (the exact defect this helper exists to close; see
+ * docs/WALKTHROUGH_GUIDE.md's failure taxonomy). Bounded by the same
+ * CLICK_TIMEOUT_MS as clickIfPresent, so a doomed click fails in about a
+ * second, not Playwright's ~30s default -- and the caller does not have to
+ * wait out its own phase/run budget to notice.
+ *
+ * @param page - The Playwright page.
+ * @param selector - CSS selector that the caller's contract requires to be
+ *   present, visible, and clickable this tick.
+ * @param report - The walk report (see walkthrough_report.mjs); records the
+ *   required_control_missing failure before throwing.
+ * @param options - `{ detail, extra }`, both optional. `detail` is a short
+ *   human-readable phrase appended to the failure message (for example which
+ *   good or plan requested the click). `extra` is a caller-supplied plain
+ *   object of the game-state facts relevant to diagnosing THIS failure (for
+ *   example `{ phaseKind, good, tick, finished, humanRole }`) -- the rich
+ *   diagnostic the failure taxonomy calls for so the next reader knows
+ *   instantly which layer broke without re-running the walkthrough. Recorded
+ *   both in the thrown message (so a bare console failure shows it too) and
+ *   in report.fail's structured `extra` (so it lands in the written
+ *   playthrough_report.json log).
+ * @returns True; a failure never returns false, it always throws instead --
+ *   so a caller cannot silently ignore the outcome the way a discarded
+ *   boolean return would allow.
+ */
+export async function clickRequired(page, selector, report, options = {}) {
+  const { detail, extra } = options;
+  const suffix = detail === undefined ? "" : ` (${detail})`;
+  const handle = await page.$(selector);
+  const visible = handle === null ? false : await handle.isVisible().catch(() => false);
+  if (handle === null || !visible) {
+    const screenshotPath = await saveFailureScreenshot(
+      page,
+      `required_control_missing_${selector}`,
+    );
+    const diagnostics = { ...extra, selector, screenshotPath };
+    const message =
+      `clickRequired: the UI did not present a required control "${selector}"${suffix}. ` +
+      "This means the screen never rendered or exposed the control -- not that an engine stalled. " +
+      `Diagnostics: ${JSON.stringify(diagnostics)}`;
+    report.fail("required_control_missing", message, diagnostics);
+    throw new Error(message);
+  }
+  return handle
+    .click({ timeout: CLICK_TIMEOUT_MS })
+    .then(() => true)
+    .catch(async (error) => {
+      const reason = error instanceof Error ? error.message : String(error);
+      const screenshotPath = await saveFailureScreenshot(
+        page,
+        `required_control_click_failed_${selector}`,
+      );
+      const diagnostics = { ...extra, selector, reason, screenshotPath };
+      const message =
+        `clickRequired: required control "${selector}" was present but the click failed` +
+        `${suffix}: ${reason}. Diagnostics: ${JSON.stringify(diagnostics)}`;
+      report.fail("required_control_missing", message, diagnostics);
+      throw new Error(message);
     });
 }
 
@@ -461,11 +574,26 @@ const DEFAULT_ACT_PROGRESS_POLL_MS = 100;
  * Comparison is by `JSON.stringify` equality, which suits the small
  * plain-data snapshots (projection field subsets) every caller passes.
  *
+ * This is the primitive an ENGINE-STALL diagnosis needs ENGINE EVIDENCE for:
+ * `failureMessage` may be a function `(lastSnapshot) => string` instead of a
+ * plain string, so a caller whose act() has already been verified to land
+ * (for example a required click's own success) can report the ACTUAL
+ * observed state at the moment the budget expired -- not just an assertion
+ * that something stalled -- distinguishing "the click never landed" from
+ * "the click landed and the engine still did not respond" with the state
+ * that proves it.
+ *
  * @param page - The Playwright page (or any object exposing `waitForTimeout`).
  * @param report - The walk report (see walkthrough_report.mjs), for `fail()`.
  * @param options - `{ snapshot(page), act(), failureKind, failureMessage,
- *   budgetMs, pollIntervalMs }`. `snapshot` and `act` are required; the rest
- *   default to DEFAULT_ACT_PROGRESS_BUDGET_MS / DEFAULT_ACT_PROGRESS_POLL_MS.
+ *   budgetMs, pollIntervalMs, beforeSnapshot }`. `snapshot` and `act` are
+ *   required. `failureMessage` is a string, or a `(lastSnapshot) => string`
+ *   function for evidence-carrying messages. `beforeSnapshot` is an optional
+ *   pre-computed baseline value: when the caller already has the "before"
+ *   state in hand (for example the payload it just decided a plan from), it
+ *   can be passed directly instead of paying for a redundant `snapshot(page)`
+ *   round trip immediately before `act()`. The rest default to
+ *   DEFAULT_ACT_PROGRESS_BUDGET_MS / DEFAULT_ACT_PROGRESS_POLL_MS.
  * @returns True once the snapshot changed, false if the budget expired.
  */
 export async function actAndWaitProgress(page, report, options) {
@@ -476,18 +604,23 @@ export async function actAndWaitProgress(page, report, options) {
     failureMessage,
     budgetMs = DEFAULT_ACT_PROGRESS_BUDGET_MS,
     pollIntervalMs = DEFAULT_ACT_PROGRESS_POLL_MS,
+    beforeSnapshot,
   } = options;
-  const before = JSON.stringify(await snapshot(page));
+  const initialSnapshot = beforeSnapshot === undefined ? await snapshot(page) : beforeSnapshot;
+  const before = JSON.stringify(initialSnapshot);
   await act();
   const deadline = Date.now() + budgetMs;
+  let lastSnapshot = initialSnapshot;
   while (Date.now() < deadline) {
-    const current = JSON.stringify(await snapshot(page));
-    if (current !== before) {
+    lastSnapshot = await snapshot(page);
+    if (JSON.stringify(lastSnapshot) !== before) {
       return true;
     }
     await page.waitForTimeout(pollIntervalMs);
   }
-  report.fail(failureKind, failureMessage);
+  const message =
+    typeof failureMessage === "function" ? failureMessage(lastSnapshot) : failureMessage;
+  report.fail(failureKind, message, { lastSnapshot });
   return false;
 }
 

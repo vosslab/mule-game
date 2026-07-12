@@ -30,7 +30,7 @@
 // second, post-click read.
 
 import { marshalProjection } from "./walkthrough_strategy.mjs";
-import { clickIfPresent } from "./walkthrough_helpers.mjs";
+import { actAndWaitProgress, clickIfPresent, clickRequired } from "./walkthrough_helpers.mjs";
 
 /** The human seat this driver plays. */
 const HUMAN_SEAT = 0;
@@ -39,9 +39,22 @@ const HUMAN_SEAT = 0;
 const AUCTION_POLL_INTERVAL_MS = 120;
 
 /**
- * Defensive tick cap so a stuck engine (a bug elsewhere) fails loud with a
- * clear message instead of hanging the walkthrough forever. Comfortably
- * above any real auction phase's tick count.
+ * Bounded wait for the auction clock to leave tick 0 (or the window to
+ * finish outright, which a quiescent window can do without tick ever
+ * exceeding 0) after a successful required role-commit click. Sized many
+ * times over AUCTION_TICK_MS (scene_manager.ts, 500ms base cadence scaled by
+ * `?speed=`), so a normal commit is proven within a couple of ticks, while a
+ * genuinely stalled engine still fails in seconds -- not the ~8 minutes
+ * MAX_TICKS_PER_AUCTION below previously took to surface the same stall.
+ */
+const AUCTION_COMMIT_VERIFY_BUDGET_MS = 5_000;
+
+/**
+ * Defensive tick cap for the auction phase as a whole (every good's window
+ * combined), so a stuck engine somewhere other than the tick-0 commit gate
+ * (already caught fast by AUCTION_COMMIT_VERIFY_BUDGET_MS above) still fails
+ * loud with a clear message instead of hanging the walkthrough forever.
+ * Comfortably above any real auction phase's tick count.
  */
 const MAX_TICKS_PER_AUCTION = 4000;
 
@@ -96,6 +109,49 @@ function snapshotGoodStart(state) {
 
 //============================================
 /**
+ * Snapshot of the current good's auction CLOCK, read fresh off the live
+ * page: `payload.tick` (advances once the engine unblocks the clock) and
+ * `payload.finished` (a quiescent window can jump straight from tick 0 to
+ * finished without tick itself ever exceeding 0), plus `payload.good` (a
+ * good-transition is also legitimate progress). Used as
+ * actAndWaitProgress's before/after comparison around the required
+ * role-commit click, so a field changing proves the commit actually
+ * UNBLOCKED THE CLOCK -- not just that the click itself resolved.
+ *
+ * Deliberately does NOT include the human participant's role. The role
+ * button's own onClick handler (auction_screen.tsx's `choose`) makes TWO
+ * separate calls -- `dispatch({type:"set_auction_role",...})` (the engine
+ * reducer field this function would read) and `notifyAuctionCommit()` (the
+ * scene-manager flag that actually unblocks `isAuctionTickable`,
+ * scene_manager.ts) -- so a role-field change alone does not prove the
+ * clock unblocked; a future bug that drops the second call while keeping
+ * the first would flip the role but leave the clock stalled, and a
+ * role-inclusive comparison would misreport that as progress, masking
+ * exactly the wiring bug this verification exists to catch.
+ *
+ * @param readProjection - `deps.readProjection`.
+ * @param page - The Playwright page.
+ * @returns `{ phaseKind, good, tick, finished }` while still in the auction
+ *   phase, or `{ phaseKind }` if the phase itself moved on (also legitimate
+ *   progress).
+ */
+async function auctionClockSnapshot(readProjection, page) {
+  const projection = await readProjection(page);
+  const state = marshalProjection(projection);
+  if (state.phase.kind !== "auction") {
+    return { phaseKind: state.phase.kind };
+  }
+  const payload = state.phase.payload;
+  return {
+    phaseKind: "auction",
+    good: payload.good,
+    tick: payload.tick,
+    finished: payload.finished,
+  };
+}
+
+//============================================
+/**
  * Build and record one good's outcome tuple once its window is finished,
  * incrementing `report.counters.trades` when the human's goods actually
  * moved. `intentsPushed` carries this window's participation evidence: the
@@ -132,14 +188,18 @@ function recordOutcome(report, goodStart, state, intentsPushed) {
 
 //============================================
 /**
- * Apply one seat-0 gesture plan to the live page: click the role button, the
- * matching intent button, or do nothing for the legitimate no-click
- * "auction_continue" (role and intent already match the adapter's target
- * this tick). Any other plan kind is fatal (see the "unexpected plan kind"
- * throw shape shared with driveLandGrant/driveLandAuction, matched by
- * walkthrough_exec.mjs's UNEXPECTED_PLAN_KIND_PATTERN into a real
- * unknown_plan_kind report failure), so a coverage gap surfaces instead of
- * silently no-opping.
+ * Apply one seat-0 gesture plan to the live page: click the matching intent
+ * button, or do nothing for the legitimate no-click "auction_continue" (role
+ * and intent already match the adapter's target this tick). "auction_role"
+ * is deliberately NOT handled here: the required opening commit and the
+ * optional mid-window role-change request are both owned directly by
+ * driveAuction (the former needs the asserted clickRequired path, the latter
+ * its own once-per-good logging), so a plan of that kind reaching this
+ * function is a dispatch bug in the caller, not a normal case -- it falls
+ * through to the "unexpected plan kind" throw below like any other
+ * out-of-taxonomy kind (matched by walkthrough_exec.mjs's
+ * UNEXPECTED_PLAN_KIND_PATTERN into a real unknown_plan_kind report
+ * failure), so a coverage gap surfaces instead of silently no-opping.
  *
  * @param page - The Playwright page.
  * @param plan - The plan returned by `decideAuctionIntent`.
@@ -147,10 +207,6 @@ function recordOutcome(report, goodStart, state, intentsPushed) {
  *   to `clickIfPresent` for its warn-on-real-rejection log.
  */
 async function applyPlan(page, plan, report) {
-  if (plan.kind === "auction_role") {
-    await clickIfPresent(page, `[data-action="auction-role"][data-role="${plan.role}"]`, report);
-    return;
-  }
   if (plan.kind === "auction_intent") {
     if (plan.direction === "up") {
       await clickIfPresent(page, '[data-action="auction-intent-up"]', report);
@@ -175,27 +231,64 @@ async function applyPlan(page, plan, report) {
  * outcome tuple per good along the way. Returns once the phase advances to
  * something other than "auction".
  *
+ * The opening role commit for each good is a REQUIRED, verified action, not
+ * an optional gesture: the engine holds the auction clock at tick 0 until
+ * the human seat commits a role (scene_manager.ts's isAuctionTickable), so a
+ * missed or silently-discarded commit click stalls the whole auction. The two
+ * ways this commit can fail are reported, worded, AND PROPAGATED differently
+ * on purpose, so a failing run points at the right owner immediately -- see
+ * docs/WALKTHROUGH_GUIDE.md's failure taxonomy:
+ *   - A missing/unclickable role control (the screen never presented the
+ *     control this driver's documented selector contract calls for -- a UI
+ *     defect) THROWS: clickRequired records `required_control_missing` via
+ *     report.fail, then throws, and nothing between it and this driver's own
+ *     `await actAndWaitProgress(...)` call catches that throw, so it
+ *     propagates out of driveAuction uncaught and ends the run. It does NOT
+ *     return early.
+ *   - A commit click that lands but never unblocks the clock fails via
+ *     `act_did_not_advance`, with a message naming the engine's tick gate,
+ *     not the UI, as the suspect. This is the one case that returns early
+ *     without throwing: actAndWaitProgress's budget expiry calls report.fail
+ *     and returns false rather than throwing, so this driver sees
+ *     `committed === false` and returns plainly (the orchestrator checks
+ *     report.hasFailed() the moment this driver returns), the same pattern
+ *     driveLandGrant/driveLandAuction use for a failed act.
+ *
+ * A later-tick "adapter wants a different role than the one already
+ * committed" request is a genuinely optional, best-effort click
+ * (clickIfPresent): this driver does not know or assert whether a given
+ * screen's role control still exists once a good's window is underway, so a
+ * missing control there is a normal no-op, not a reported failure or a
+ * documented UI limitation.
+ *
  * @param page - The Playwright page.
  * @param report - The walk report (see walkthrough_report.mjs).
- * @param deps - `{ readProjection, decideAuctionIntent }`: `readProjection(page)`
- *   returns the raw walker projection (see walkthrough_helpers.mjs's
- *   readGameState), and `decideAuctionIntent(state)` is the seat-0 strategy
- *   adapter (walkthrough_strategy.mjs).
+ * @param deps - `{ readProjection, decideAuctionIntent, commitVerifyBudgetMs }`:
+ *   `readProjection(page)` returns the raw walker projection (see
+ *   walkthrough_helpers.mjs's readGameState), `decideAuctionIntent(state)` is
+ *   the seat-0 strategy adapter (walkthrough_strategy.mjs), and
+ *   `commitVerifyBudgetMs` overrides AUCTION_COMMIT_VERIFY_BUDGET_MS (a unit
+ *   test injects a short budget so a genuine-stall test case does not have to
+ *   wait out the full production budget in real wall-clock time). Only
+ *   `readProjection` and `decideAuctionIntent` are required.
  */
 export async function driveAuction(page, report, deps) {
-  const { readProjection, decideAuctionIntent } = deps;
+  const {
+    readProjection,
+    decideAuctionIntent,
+    commitVerifyBudgetMs = AUCTION_COMMIT_VERIFY_BUDGET_MS,
+  } = deps;
   let goodStart = null;
   // The good (by name) for which the human seat's one required role-commit
-  // click has already fired, or null before that click has happened for the
+  // click has already landed and been verified, or null before that for the
   // good currently on screen. Reset alongside goodStart on every good change.
   let committedGood = null;
-  // The good (by name) for which the "adapter wants a role change the UI
-  // cannot express mid-window" info log has already fired, or null before
-  // that log has happened for the good currently on screen. Reset alongside
-  // goodStart/committedGood on every good change, so a strategy that keeps
-  // wanting the same unreachable role every tick logs once per good, not
+  // The good (by name) for which a mid-window "adapter wants a different
+  // role" request has already been logged once, or null before that. Reset
+  // alongside goodStart/committedGood on every good change, so a strategy
+  // that keeps proposing the same role every tick logs once per good, not
   // once per tick.
-  let deferredRoleInfoGood = null;
+  let roleChangeNoticedGood = null;
   // Count of "auction_intent" plans applied for the good currently on
   // screen -- the driver's own participation evidence, reset alongside
   // goodStart on every good change.
@@ -221,7 +314,7 @@ export async function driveAuction(page, report, deps) {
     if (goodStart === null || goodStart.good !== payload.good) {
       goodStart = snapshotGoodStart(state);
       committedGood = null;
-      deferredRoleInfoGood = null;
+      roleChangeNoticedGood = null;
       intentsPushedThisGood = 0;
     }
 
@@ -229,7 +322,7 @@ export async function driveAuction(page, report, deps) {
       recordOutcome(report, goodStart, state, intentsPushedThisGood);
       goodStart = null;
       committedGood = null;
-      deferredRoleInfoGood = null;
+      roleChangeNoticedGood = null;
       intentsPushedThisGood = 0;
       await clickIfPresent(page, '[data-action="auction-continue"]', report);
       await page.waitForTimeout(AUCTION_POLL_INTERVAL_MS);
@@ -237,60 +330,96 @@ export async function driveAuction(page, report, deps) {
     }
 
     const plan = decideAuctionIntent(state);
-    // The engine holds the auction clock at each good's opening tick until the
-    // human seat clicks a role button (scene_manager.ts's isAuctionTickable /
-    // humanAuctionCommitted), exactly as a real human always picks a side
-    // before the clock runs. The strategy adapter only returns an
-    // "auction_role" plan when its desired role DIFFERS from the engine's
-    // auto-assigned one; when they already match it returns
-    // "auction_intent"/"auction_continue" instead, which never clicks a role
-    // button on its own. So the driver commits unconditionally here: if the
-    // good has not been committed yet and the plan itself is not a role
-    // click, click the currently-assigned role explicitly before doing
-    // anything else, emulating the human's explicit commit rather than
-    // waiting for a role change that may never come.
-    if (committedGood !== payload.good && plan.kind !== "auction_role") {
-      const assignedRole = findHumanRole(payload);
-      await clickIfPresent(
-        page,
-        `[data-action="auction-role"][data-role="${assignedRole}"]`,
-        report,
-      );
-    }
+
     if (committedGood !== payload.good) {
+      // First sighting of this good's (not-yet-finished) window: the engine
+      // holds the clock at tick 0 until the human commits, so this is always
+      // reached at tick 0. Commit whichever role is on the table this tick --
+      // the adapter's own choice when it already wants one, else the engine's
+      // auto-assigned role -- matching a real human who always picks a side
+      // before the clock runs. This click is REQUIRED and its effect is
+      // verified below (see the doc comment above for the two ways it can
+      // fail and why they are reported differently).
+      const roleToCommit = plan.kind === "auction_role" ? plan.role : findHumanRole(payload);
+      const commitContext = {
+        phaseKind: "auction",
+        good: payload.good,
+        tick: payload.tick,
+        finished: payload.finished,
+        humanRoleAssigned: findHumanRole(payload),
+        roleBeingCommitted: roleToCommit,
+      };
+      const committed = await actAndWaitProgress(page, report, {
+        // Computed synchronously from the payload the main loop already
+        // fetched this tick (no extra read): the engine holds the clock at
+        // tick 0 until commit, so this is always the true pre-commit clock
+        // state, and skipping a redundant round trip here also keeps every
+        // readProjection call meaningful (see the deps.readProjection
+        // contract other drivers document).
+        beforeSnapshot: {
+          phaseKind: "auction",
+          good: payload.good,
+          tick: payload.tick,
+          finished: payload.finished,
+        },
+        snapshot: (currentPage) => auctionClockSnapshot(readProjection, currentPage),
+        act: () =>
+          clickRequired(page, `[data-action="auction-role"][data-role="${roleToCommit}"]`, report, {
+            detail: `human role commit for good "${payload.good}"`,
+            extra: commitContext,
+          }),
+        failureKind: "act_did_not_advance",
+        // ENGINE EVIDENCE, not an assertion: lastSnapshot is the ACTUAL observed
+        // tick/finished/role read after the verified click landed, so this
+        // failure names the engine's tick gate as the suspect with the state
+        // that proves it, distinguishing this from a missing UI control (which
+        // clickRequired above would already have failed on before this poll
+        // ever started).
+        failureMessage: (lastSnapshot) =>
+          `driveAuction: the role commit click for good "${payload.good}" (role ` +
+          `"${roleToCommit}") landed, but the auction clock never advanced within ` +
+          `${commitVerifyBudgetMs}ms. Observed state after the click: ` +
+          `${JSON.stringify(lastSnapshot)}. This is engine evidence, not a UI defect: the ` +
+          "click was verified to land, yet isAuctionTickable/auctionStep " +
+          "(src/ui/scenes/scene_manager.ts) never unblocked the clock -- suspect an engine " +
+          "stall, not the UI.",
+        budgetMs: commitVerifyBudgetMs,
+        pollIntervalMs: AUCTION_POLL_INTERVAL_MS,
+      });
+      if (!committed) {
+        return;
+      }
       committedGood = payload.good;
+      // The click above already applied this tick's whole decision (the
+      // commit); re-decide fresh on the next tick rather than reusing a plan
+      // computed against a payload the commit has now moved past.
+      continue;
     }
 
-    // The role buttons only render at the good's opening tick (payload.tick
-    // === 0; see auction_screen.tsx's mode() switch), because the engine
-    // holds the human's role fixed once the clock starts -- matching a real
-    // human who picks a side once and then trades it. The adapter still
-    // recomputes its desired role from live holdings every tick, though, so
-    // it can keep proposing an "auction_role" plan after tick 0 (a good's
-    // critical target crossed mid-window). The UI cannot express that
-    // change, so treat it as a no-op here rather than attempting a click on
-    // a selector that no longer exists (a doomed attempt is exactly what
-    // used to hang on Playwright's default actionability timeout). Reported
-    // once per good, not once per tick, via deferredRoleInfoGood.
-    if (plan.kind === "auction_role" && payload.tick !== 0) {
-      if (deferredRoleInfoGood !== payload.good) {
-        report.log("info", "auction_role_deferred", {
+    if (plan.kind === "auction_role") {
+      // A mid-window role-change request: optional and best-effort (see the
+      // doc comment above). Logged once per good purely for visibility.
+      if (roleChangeNoticedGood !== payload.good) {
+        report.log("info", "auction_role_change_requested", {
           good: payload.good,
           requestedRole: plan.role,
           tick: payload.tick,
         });
-        deferredRoleInfoGood = payload.good;
+        roleChangeNoticedGood = payload.good;
       }
-    } else {
-      // Only "up"/"down" is a genuine price-walking click; "auction_intent"
-      // with direction "hold" (the AI's desired intent already matches, most
-      // commonly for a held "out" role, where desiredIntent always resolves
-      // to "hold") applies no click and is not participation evidence.
-      if (plan.kind === "auction_intent" && plan.direction !== "hold") {
-        intentsPushedThisGood += 1;
-      }
-      await applyPlan(page, plan, report);
+      await clickIfPresent(page, `[data-action="auction-role"][data-role="${plan.role}"]`, report);
+      await page.waitForTimeout(AUCTION_POLL_INTERVAL_MS);
+      continue;
     }
+
+    // Only "up"/"down" is a genuine price-walking click; "auction_intent"
+    // with direction "hold" (the AI's desired intent already matches, most
+    // commonly for a held "out" role, where desiredIntent always resolves
+    // to "hold") applies no click and is not participation evidence.
+    if (plan.kind === "auction_intent" && plan.direction !== "hold") {
+      intentsPushedThisGood += 1;
+    }
+    await applyPlan(page, plan, report);
     await page.waitForTimeout(AUCTION_POLL_INTERVAL_MS);
   }
 }

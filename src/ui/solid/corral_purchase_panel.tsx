@@ -124,16 +124,22 @@ export function CorralPurchasePanel(props: CorralPurchasePanelProps): JSX.Elemen
       }}
     >
       <h2 class="corral-purchase-title">Corral</h2>
+      {/* data-corral-figure names which figure a row is: the three rows are
+          structurally identical (a plain dt/dd pair), so a positional read
+          would silently break the moment this list is reordered. This
+          attribute is an external test contract
+          (tests/playwright/corral_purchase.spec.mjs's readCorralFigures) --
+          renaming or removing a value here breaks that spec. */}
       <dl class="corral-purchase-figures">
-        <div class="corral-purchase-figure">
+        <div class="corral-purchase-figure" data-corral-figure="price">
           <dt>M.U.L.E. price</dt>
           <dd>${mulePrice()}</dd>
         </div>
-        <div class="corral-purchase-figure">
+        <div class="corral-purchase-figure" data-corral-figure="stock">
           <dt>In stock</dt>
           <dd>{muleStock()}</dd>
         </div>
-        <div class="corral-purchase-figure">
+        <div class="corral-purchase-figure" data-corral-figure="funds">
           <dt>Your funds</dt>
           <dd>${funds()}</dd>
         </div>

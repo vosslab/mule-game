@@ -30,12 +30,21 @@ import { createWalkReport } from "../tests/e2e/walkthrough_report.mjs";
 // A fake page recording every click selector and keypress. waitForTimeout
 // resolves immediately (no real timer), keeping tests fast. `cell` is the fake
 // overworld avatar's current position, moved by the injected readCell/walk.
+// Exposes `$()` (resolving every selector to a visible, clickable handle) so
+// maybeTruncateTurn's required-and-verified end-turn click (clickRequired,
+// walkthrough_helpers.mjs) has a real element to find, mirroring the fake
+// page shape test_walkthrough_auction.mjs uses for the same reason.
 function fakePage() {
   const page = {
     clicks: [],
     keypresses: [],
-    async click(selector) {
-      page.clicks.push(selector);
+    async $(selector) {
+      return {
+        isVisible: async () => true,
+        async click() {
+          page.clicks.push(selector);
+        },
+      };
     },
     keyboard: {
       async press(key) {
@@ -418,13 +427,28 @@ test("planCommitsBudget: true for buy/outfit/place, false for turn-ending kinds"
   );
 });
 
+// A fake readProjection for maybeTruncateTurn's required end-turn click:
+// always reports phaseKind "production", standing in for the develop phase
+// having actually ended once the click landed. maybeTruncateTurn computes
+// its "before" snapshot synchronously from the already-marshalled state (no
+// read), so this is consulted only by the post-click verify poll.
+async function fakeReadProjectionAfterEndTurn() {
+  return { phaseKind: "production" };
+}
+
 //============================================
 test("maybeTruncateTurn: low ticks + committing plan end the turn and count a truncation, no fail", async () => {
   const page = fakePage();
   const state = developProjection(emptyOwnedPlots(), 2).state;
   const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
 
-  const truncated = await maybeTruncateTurn(page, report, {}, { kind: "buy_mule" }, state);
+  const truncated = await maybeTruncateTurn(
+    page,
+    report,
+    { readProjection: fakeReadProjectionAfterEndTurn },
+    { kind: "buy_mule" },
+    state,
+  );
 
   assert.equal(truncated, true);
   assert.deepEqual(page.clicks, ['[data-action="develop-end-turn"]']);
@@ -438,7 +462,13 @@ test("maybeTruncateTurn: low ticks + turn-ending gamble ends the turn but is not
   const state = developProjection(emptyOwnedPlots(), 2).state;
   const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
 
-  const truncated = await maybeTruncateTurn(page, report, {}, { kind: "gamble_pub" }, state);
+  const truncated = await maybeTruncateTurn(
+    page,
+    report,
+    { readProjection: fakeReadProjectionAfterEndTurn },
+    { kind: "gamble_pub" },
+    state,
+  );
 
   // The turn ends at the budget floor (same end-turn click, same gameplay as a
   // committing truncation), but a plan that was going to end the turn anyway is
@@ -447,6 +477,40 @@ test("maybeTruncateTurn: low ticks + turn-ending gamble ends the turn but is not
   assert.deepEqual(page.clicks, ['[data-action="develop-end-turn"]']);
   assert.equal(report.counters.truncatedTurns, 0);
   assert.equal(report.hasFailed(), false);
+});
+
+//============================================
+test("maybeTruncateTurn: a click that lands but never ends the phase fails, does not count", async () => {
+  const page = fakePage();
+  const state = developProjection(emptyOwnedPlots(), 2).state;
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  // The phase never actually leaves "develop": the required click is
+  // verified to land (the fake page clicks successfully), but the observed
+  // phaseKind never changes -- the engine-stall shape the verify step exists
+  // to catch, distinct from a missing UI control.
+  const readProjection = async () => ({ phaseKind: "develop" });
+
+  // A short truncateVerifyBudgetMs override keeps this test fast without
+  // changing what it proves (the fake page's timers are already no-ops; only
+  // the real wall-clock budget check gates the loop).
+  const truncated = await maybeTruncateTurn(
+    page,
+    report,
+    { readProjection, truncateVerifyBudgetMs: 50 },
+    { kind: "buy_mule" },
+    state,
+  );
+
+  // Still returns true (the caller loop stops either way), but report.fail
+  // recorded the real cause and the turn is NOT counted as truncated, since
+  // the click never actually completed it.
+  assert.equal(truncated, true);
+  assert.equal(report.hasFailed(), true);
+  assert.equal(report.counters.truncatedTurns, 0);
+  const errorEntries = report.getLog().filter((entry) => entry.severity === "error");
+  assert.equal(errorEntries.length, 1);
+  assert.match(errorEntries[0].message, /the phase never left "develop"/);
+  assert.match(errorEntries[0].message, /engine evidence, not a UI defect/);
 });
 
 //============================================

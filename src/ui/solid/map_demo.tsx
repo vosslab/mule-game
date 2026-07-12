@@ -95,6 +95,11 @@ function buildFixtureState(): GameState {
     players,
     store: createInitialStoreState(),
     landMarket: { priceAccumulator: 0, setSize: 0, lastSellPrice: 0 },
+    // Static map fixture: the auction status beat's round ledger is never
+    // exercised here (the fixture never enters the develop phase, which is
+    // where a real ledger is snapshotted), so it stays empty. Reading it would
+    // throw rather than report a wrong number. Compiler-forced.
+    roundLedger: [],
     // Static map fixture: the event subsystems (M6) are never exercised here,
     // so they carry empty schedules/decks. Added to satisfy the engine's
     // GameState shape after events landed (compiler-forced).

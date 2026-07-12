@@ -1,5 +1,16 @@
 # REPO_STYLE.md
 
+<!--
+Local correction (2026-07-11): the "Centrally maintained docs, do not edit
+locally" list below gained a `docs/E2E_TESTS.md` bullet. That file IS
+template-propagated -- a propagation clobbered this repo's local corrections to
+it and the omission from the list is why nobody expected it. This file is itself
+centrally maintained, so the edit is made locally to keep THIS repo correct, but
+the durable fix belongs upstream in the template repo that ships REPO_STYLE.md;
+until it lands there, the next propagation will drop this bullet again. Same
+convention as the local-corrections comment at the top of docs/E2E_TESTS.md.
+-->
+
 Repo-wide conventions for this project and related repos.
 
 ## Core philosophies
@@ -258,6 +269,7 @@ Preferred structure:
 ### Centrally maintained docs, do not edit locally
 - `docs/AUTHORS.md`: primary maintainers and notable contributors
 - `docs/CLAUDE_HOOK_USAGE_GUIDE.md`: generated hook behavior reference, not a repo style source of truth. If repo style differs from hook examples, update repo style docs and recommend a hook rule update upstream.
+- `docs/E2E_TESTS.md`: end-to-end testing conventions (the non-browser `tests/e2e/` tier and its boundary with `tests/playwright/`). Template-propagated: a propagation overwrote local corrections in this repo on 2026-07-11 and silently dropped them. The file carries an HTML comment at the top recording every local correction so they can be re-applied after the next sync; keep that comment current when editing locally.
 - `docs/MARKDOWN_STYLE.md`: Markdown writing rules and formatting conventions for this repo.
 - `docs/PLAYWRIGHT_TEST_STYLE.md`: browser test authoring style for the website family (`website` and its inheriting `typescript`); ships via the `templates/website/` overlay.
 - `docs/PYTEST_STYLE.md`: pytest test-writing rules, commands, fixture policy, and failure triage.

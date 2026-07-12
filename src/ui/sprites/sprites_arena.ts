@@ -14,20 +14,23 @@
  * Viewbox sizing is kept separate from a shared module-level constant:
  * these chrome pieces are not one of the spec's 4 documented sprite
  * classes (icon/actor/terrain/building), so this module chooses a viewBox
- * per shape that keeps composition simple for a caller layering it behind
- * the existing `.auction-track-*` markup in `src/ui/auction_screen.ts`
- * (`TRACK_WIDTH = 280`, `TRACK_HEIGHT = 400`, echoed here so the backdrop
- * and axis bar line up with that panel's own dimensions). This module does
- * NOT edit `auction_screen.ts` or `style.css`; it only supplies symbols a
- * later scene workstream can wire in.
+ * per shape. The 280x400 dimensions below were sized to match the old
+ * portrait auction track panel, which has since been replaced by
+ * `src/ui/scenes/auction_arena.tsx`'s full-stage 960x600 SVG (that arena
+ * draws its own backdrop and price bands directly, via CSS-styled rects,
+ * rather than these symbols). Of the five chrome pieces this module
+ * builds, only `trade-flash` is currently drawn -- `<use>`d by
+ * `src/ui/scenes/auction_trade_fx.ts` when a trade executes. `backdrop`,
+ * `axis-bar`, `axis-tick`, and `store-band` are still emitted into the
+ * shared `<defs>` markup but nothing references their symbol ids.
  */
 
 import { PALETTE } from "./palette";
 
-/** Matches `TRACK_WIDTH` in src/ui/auction_screen.ts, so the backdrop lines up. */
+/** Width of the old portrait auction track panel; kept only so `backdrop` and `axis-bar`, which are not currently drawn anywhere, retain that panel's original proportions. */
 const ARENA_TRACK_WIDTH = 280;
 
-/** Matches `TRACK_HEIGHT` in src/ui/auction_screen.ts, so the axis bar lines up. */
+/** Height of the old portrait auction track panel; kept only so `backdrop` and `axis-bar`, which are not currently drawn anywhere, retain that panel's original proportions. */
 const ARENA_TRACK_HEIGHT = 400;
 
 /** Fixed set of arena chrome pieces this module draws. */
@@ -72,9 +75,11 @@ export function buildArenaSpriteDefsMarkup(): string {
 }
 
 //============================================
-// Backdrop: a rounded panel sized to match the live track's own viewBox,
-// with a faint top highlight and bottom shadow band (the spec's two-shade
-// budget, as flat overlay rects rather than a gradient).
+// Backdrop: a rounded panel sized to the legacy portrait track's viewBox
+// (ARENA_TRACK_WIDTH x ARENA_TRACK_HEIGHT), with a faint top highlight and
+// bottom shadow band (the spec's two-shade budget, as flat overlay rects
+// rather than a gradient). Built into the defs markup but not currently
+// drawn by anything (see the module doc comment).
 function buildBackdropSymbol(): string {
   let markup = `<symbol id="${arenaSymbolId("backdrop")}" viewBox="0 0 ${ARENA_TRACK_WIDTH} ${ARENA_TRACK_HEIGHT}">`;
   markup += `<rect x="2" y="2" width="${ARENA_TRACK_WIDTH - 4}" height="${ARENA_TRACK_HEIGHT - 4}" rx="10" fill="${PALETTE.bgPanel}" stroke="${PALETTE.bgTrackAxis}" stroke-width="2" />`;
@@ -85,8 +90,9 @@ function buildBackdropSymbol(): string {
 }
 
 //============================================
-// Axis bar: a slim rounded vertical bar, the chrome version of the plain
-// `.auction-track-axis` line, sized to the same track height.
+// Axis bar: a slim rounded vertical bar, sized to the legacy portrait
+// track height. Built into the defs markup but not currently drawn by
+// anything (see the module doc comment).
 function buildAxisBarSymbol(): string {
   let markup = `<symbol id="${arenaSymbolId("axis-bar")}" viewBox="0 0 16 ${ARENA_TRACK_HEIGHT}">`;
   markup += `<rect x="6" y="0" width="4" height="${ARENA_TRACK_HEIGHT}" rx="2" fill="${PALETTE.bgTrackAxis}" />`;
@@ -105,10 +111,10 @@ function buildAxisTickSymbol(): string {
 }
 
 //============================================
-// Store-band bracket: a full-width band marking the store buy/sell price
-// zone, echoing the dashed `.auction-track-store-buy-line` /
-// `-sell-line` pair as a single stretchable bracket a caller positions
-// between those two y-coordinates and scales to the band height.
+// Store-band bracket: a full-width band meant to mark the store buy/sell
+// price zone, as a single stretchable bracket a caller positions between
+// two y-coordinates and scales to the band height. Built into the defs
+// markup but not currently drawn by anything (see the module doc comment).
 function buildStoreBandSymbol(): string {
   let markup = `<symbol id="${arenaSymbolId("store-band")}" viewBox="0 0 ${ARENA_TRACK_WIDTH} 40">`;
   markup += `<rect x="0" y="0" width="${ARENA_TRACK_WIDTH}" height="2" fill="${PALETTE.textPrimary}" opacity="0.6" />`;
@@ -121,9 +127,10 @@ function buildStoreBandSymbol(): string {
 }
 
 //============================================
-// Trade-flash: an 8-point starburst in `gold`, matching
-// `.auction-screen-trade-flash`'s existing gold text color, for a caller
-// to flash briefly around a token when a trade executes.
+// Trade-flash: an 8-point starburst in `gold`, `<use>`d by
+// src/ui/scenes/auction_trade_fx.ts and styled via the
+// `.auction-trade-flash-burst` CSS class, to flash briefly around a token
+// when a trade executes.
 function buildTradeFlashSymbol(): string {
   let markup = `<symbol id="${arenaSymbolId("trade-flash")}" viewBox="0 0 32 32">`;
   markup += `<polygon points="16,0 20,12 32,16 20,20 16,32 12,20 0,16 12,12" fill="${PALETTE.gold}" />`;

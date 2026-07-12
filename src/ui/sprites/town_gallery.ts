@@ -10,9 +10,9 @@
  * page.
  *
  * This module is standalone: it does not import or touch `src/ui/main.ts`
- * or `src/ui/auction_screen.ts` (the walkable-scene and auction-scene
+ * or `src/ui/solid/auction_screen.tsx` (the walkable-scene and auction-scene
  * wiring are later workstreams' concern). `tests/playwright/
- * town_gallery.spec.mjs` bundles this file directly with esbuild and
+ * visual_render.spec.mjs` bundles this file directly with esbuild and
  * injects it into the built `dist/index.html` shell, following the same
  * pattern as `terrain_gallery.ts` / `terrain_gallery.spec.mjs`.
  *

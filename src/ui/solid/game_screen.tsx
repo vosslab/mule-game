@@ -166,7 +166,10 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
           outside it. Downstream auction and phase-panel layouts fill this box
           (assert against #game-stage's bounding box, not the raw viewport). */}
       <div id="game-stage">
-        <div id="game-hud">
+        <div
+          id="game-hud"
+          classList={{ "game-hud-hidden": phaseOwnsFullStage(state().phase.kind) }}
+        >
           <Hud state={state()} />
         </div>
         <div id="game-map" classList={{ "game-map-filled": phaseShowsMap(state().phase.kind) }}>
@@ -223,6 +226,7 @@ export function GameScreen(props: GameScreenProps): JSX.Element {
         </div>
         <div
           id="game-panel"
+          classList={{ "game-panel-filled": phaseOwnsFullStage(state().phase.kind) }}
           tabIndex={-1}
           aria-label={phasePanelLabel(state().phase.kind)}
           ref={(el) => {
@@ -364,6 +368,26 @@ function phaseShowsMap(kind: Phase["kind"]): boolean {
   return (
     kind === "land_grant" || kind === "land_auction" || kind === "develop" || kind === "production"
   );
+}
+
+//============================================
+/**
+ * Whether a phase's panel takes over the whole 16:10 stage. The goods auction
+ * does: its arena is the screen (a full-width price runway with a per-lane
+ * player dock that carries the money, goods, and role readouts the top HUD
+ * would otherwise show), so the HUD row hides and #game-panel flex-fills the
+ * stage instead of shrink-fitting under #game-stage's `align-items: center`.
+ * The two classes this drives -- `game-hud-hidden` and `game-panel-filled` --
+ * mirror the `game-map-filled` slot idiom the board phases already use
+ * (src/style.css). The goods auction is deliberately NOT a board phase (it is
+ * absent from `phaseShowsMap` above), so #game-map has nothing to draw and
+ * collapses with the HUD.
+ *
+ * @param kind - The current phase kind.
+ * @returns True when the phase panel should fill the stage.
+ */
+function phaseOwnsFullStage(kind: Phase["kind"]): boolean {
+  return kind === "auction";
 }
 
 //============================================

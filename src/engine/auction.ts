@@ -49,12 +49,23 @@ import type {
   AuctionParticipant,
   AuctionPayload,
   AuctionRole,
+  AuctionStatus,
+  AuctionStatusEntry,
   AuctionTrade,
+  ColonyVerdict,
   GameState,
+  PlayerRoundLedger,
   Plot,
+  RoundLedgerCell,
 } from "./game_state";
 import type { StoreState } from "./store";
-import { applyBuyFromStore, applySellToStore, storeBuyQuote, storeSellQuote } from "./store";
+import {
+  applyBuyFromStore,
+  applySellToStore,
+  computeColonyStats,
+  storeBuyQuote,
+  storeSellQuote,
+} from "./store";
 import {
   AUCTION_IDLE_TIMEOUT,
   AUCTION_MAX_TICKS,
@@ -233,12 +244,100 @@ function tradePossible(
 }
 
 /**
+ * Read one player's ledger cell for a good, failing loudly on a missing slot
+ * (the ledger always carries one entry per player, so a gap is a bug).
+ *
+ * @param ledger - The round-in-flight ledger.
+ * @param playerId - Player whose cell to read.
+ * @param good - Good whose cell to read.
+ * @returns That player's ledger cell for the good.
+ */
+function ledgerCellAt(
+  ledger: readonly PlayerRoundLedger[],
+  playerId: number,
+  good: Resource,
+): RoundLedgerCell {
+  const entry = ledger[playerId];
+  if (entry === undefined) {
+    throw new Error(`round ledger has no entry for player ${playerId}`);
+  }
+  return entry[good];
+}
+
+/**
+ * The colony's surplus/shortage verdict for the good up for auction, from
+ * `computeColonyStats`'s supply-vs-need pair. Food and energy carry a modeled
+ * colony need, so they get a verdict; smithore and crystite carry none and are
+ * always neutral (user decision 2026-07-11). Supply exactly meeting need counts
+ * as a surplus -- the colony is covered, which is what the verdict answers.
+ *
+ * The need is read one round ahead (`round + 1`), the same horizon the auction's
+ * own role assignment uses (`auctionResourceCritical` reads
+ * `FOOD_REQUIREMENTS_BY_ROUND[min(round + 1, 12)]`) and the same one the
+ * round-boundary store recalc uses: this window is where the colony stocks up
+ * for the develop turns that come next, so "is the colony covered?" is a
+ * question about the round ahead, not the round just played.
+ *
+ * @param state - Current game state.
+ * @param good - Good up for auction.
+ * @returns The colony verdict, or null for the ores.
+ */
+function colonyVerdict(state: GameState, good: Resource): ColonyVerdict {
+  if (good !== "food" && good !== "energy") {
+    return null;
+  }
+  const stats = computeColonyStats(state.players, state.plots, state.store, state.round + 1);
+  if (good === "food") {
+    return stats.foodSupply >= stats.foodNeed ? "surplus" : "shortage";
+  }
+  return stats.energySupply >= stats.energyNeed ? "surplus" : "shortage";
+}
+
+/**
+ * Assemble the pre-auction STATUS beat for a good: one accounting entry per
+ * player, read from the recorded round ledger, plus the colony verdict.
+ *
+ * `held` is read LIVE from the player's current holding at window creation
+ * rather than accumulated in the ledger. That is what makes the boundary clean:
+ * each good is auctioned exactly once per round, so no earlier window in this
+ * round can have traded THIS good, and the live holding at this window's
+ * creation is therefore still the post-production holding -- the one the ledger
+ * reconciles to. Auction trades are not ledger entries (they happen after the
+ * window is created), and no separate trades category is needed.
+ *
+ * @param state - Current game state.
+ * @param good - Good up for auction.
+ * @returns The status snapshot for this window.
+ */
+function buildAuctionStatus(state: GameState, good: Resource): AuctionStatus {
+  const accounting: AuctionStatusEntry[] = [];
+  for (let playerId = 0; playerId < PLAYER_COUNT; playerId += 1) {
+    const player = playerAt(state.players, playerId);
+    const cell = ledgerCellAt(state.roundLedger, playerId, good);
+    accounting.push({
+      playerId,
+      previous: cell.previous,
+      usage: cell.usage,
+      spoilage: cell.spoilage,
+      production: cell.production,
+      eventDelta: cell.eventDelta,
+      held: player.goods[good],
+    });
+  }
+  return { good, accounting, verdict: colonyVerdict(state, good) };
+}
+
+/**
  * Build the initial auction sub-state for a good. The band runs from the
  * store's live buy quote (floor) to its sell quote (ceiling). When the good is
  * unavailable or it is the last round, the window is created already `skipped`
  * and `finished` (planet_mule's `skipAuction`), with every player left out.
  * Otherwise each player is auto-assigned a role from its critical threshold,
  * buyers seated at the floor walking up and sellers at the ceiling walking down.
+ *
+ * The observational `status` beat (see `buildAuctionStatus`) is assembled here
+ * for every window, skipped ones included, so the UI always has the round's
+ * accounting to show.
  *
  * @param state - Current game state (its store supplies prices and stock).
  * @param good - Good being auctioned.
@@ -288,6 +387,7 @@ export function createAuctionPayload(state: GameState, good: Resource): AuctionP
     trades: [],
     skipped,
     finished: skipped,
+    status: buildAuctionStatus(state, good),
   };
 }
 

@@ -11,17 +11,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { driveAuction } from "./e2e/walkthrough_auction.mjs";
-import { clickIfPresent } from "./e2e/walkthrough_helpers.mjs";
+import { clickIfPresent, clickRequired } from "./e2e/walkthrough_helpers.mjs";
 import { createWalkReport } from "./e2e/walkthrough_report.mjs";
 
 //============================================
 // A fake Playwright page: resolves waitForTimeout() immediately, and $()
 // resolves every selector to a visible fake element handle whose click()
-// records the selector into `clicks` (clickIfPresent clicks the handle it
-// resolved from $(), not the page, so the fake handle -- not page -- is
-// where clicks get recorded; every selector is treated as mounted, mirroring
-// the real role/intent/continue buttons being present, just conditionally
-// active, rather than only recognizing one selector).
+// records the selector into `clicks` (both clickIfPresent and clickRequired
+// click the handle they resolved from $(), not the page, so the fake handle
+// -- not page -- is where clicks get recorded; every selector is treated as
+// mounted, mirroring the real role/intent/continue buttons being present,
+// just conditionally active, rather than only recognizing one selector).
 function makeFakePage() {
   const clicks = [];
   const page = {
@@ -79,8 +79,9 @@ function makeFakeReport() {
 function auctionState(round, overrides = {}) {
   const payload = {
     good: "food",
-    // Defaults to the good's opening tick; the auction_role tick-0 gate
-    // tests below override this to exercise later ticks.
+    // Defaults to the good's opening tick, before the required role commit
+    // has landed; most call sites override this to model the clock advancing
+    // after commit (see buildTradingRun's per-state comments).
     tick: 0,
     finished: false,
     priceFloor: 10,
@@ -102,23 +103,48 @@ function auctionState(round, overrides = {}) {
 }
 
 //============================================
-// A trading run: role chosen, intent walked up then down, held once, then
-// the good finishes with the human three units richer and $30 poorer, and
-// the phase advances to production after the Continue click.
+// A trading run: role committed (verified), intent walked up then down, held
+// once, then the good finishes with the human three units richer and $30
+// poorer, and the phase advances to production after the Continue click.
+//
+// driveAuction's required, VERIFIED role commit costs one extra
+// readProjection call beyond the old 1-read-per-decision model: the entry
+// read (round 0, tick 0, pre-commit, role "out") is followed by a dedicated
+// commit-verify read (round 1, tick 1 -- the clock advancing past tick 0 is
+// exactly the evidence the verify step is proving the commit landed) before
+// the main loop resumes its normal one-read-per-decision cadence. Every
+// state after that keeps the committed "buyer" role; only tick and the
+// price/intent fields move.
 function buildTradingRun() {
   const states = [
-    auctionState(0), // entry snapshot: role "out", goods=2, money=100
+    auctionState(0), // entry read: pre-commit, tick 0, role "out"
     auctionState(1, {
-      payload: { participants: [{ playerId: 0, role: "buyer", price: 10, intent: "hold" }] },
-    }),
+      payload: {
+        tick: 1,
+        participants: [{ playerId: 0, role: "buyer", price: 10, intent: "hold" }],
+      },
+    }), // commit-verify read: tick advanced to 1 -- proves the commit landed
     auctionState(2, {
-      payload: { participants: [{ playerId: 0, role: "buyer", price: 11, intent: "up" }] },
-    }),
+      payload: {
+        tick: 1,
+        participants: [{ playerId: 0, role: "buyer", price: 10, intent: "hold" }],
+      },
+    }), // decision read: round 2 -> intent up
     auctionState(3, {
-      payload: { participants: [{ playerId: 0, role: "buyer", price: 10, intent: "down" }] },
-    }),
+      payload: {
+        tick: 2,
+        participants: [{ playerId: 0, role: "buyer", price: 11, intent: "up" }],
+      },
+    }), // decision read: round 3 -> intent down
     auctionState(4, {
       payload: {
+        tick: 3,
+        participants: [{ playerId: 0, role: "buyer", price: 10, intent: "down" }],
+      },
+    }), // decision read: round 4 -> continue (hold)
+    auctionState(5, {
+      payload: {
+        tick: 4,
         finished: true,
         priceFloor: 12,
         priceCeiling: 22,
@@ -127,18 +153,20 @@ function buildTradingRun() {
       human: { id: 0, goods: { food: 5, energy: 0, smithore: 0, crystite: 0 }, money: 70 },
     }),
     {
-      round: 5,
+      round: 6,
       phase: { kind: "production", payload: {} },
       players: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }],
     },
   ];
-  // Plans are read only on the not-finished states (indices 0-3); index 4 is
-  // finished (no decision call) and index 5 exits the loop before deciding.
+  // Only the main-loop decision reads reach decideAuctionIntent: round 0 (the
+  // pre-commit read, consulted only for its role.kind), round 2 (up), round 3
+  // (down), round 4 (continue). Round 1 (the commit-verify read) and round 5
+  // (finished) are never decided on.
   const plansByRound = {
     0: { kind: "auction_role", role: "buyer" },
-    1: { kind: "auction_intent", direction: "up" },
-    2: { kind: "auction_intent", direction: "down" },
-    3: { kind: "auction_continue" },
+    2: { kind: "auction_intent", direction: "up" },
+    3: { kind: "auction_intent", direction: "down" },
+    4: { kind: "auction_continue" },
   };
   const decideAuctionIntent = (state) => plansByRound[state.round];
   return { states, decideAuctionIntent };
@@ -216,19 +244,29 @@ test("continue on an uncommitted good still clicks the assigned role button once
   // desired role. A real human still must click a role button before the
   // engine's clock starts (scene_manager.ts's isAuctionTickable), so the
   // driver must commit the ASSIGNED role explicitly even though the plan
-  // itself never asks for a role click.
+  // itself never asks for a role click. The window happens to quiesce
+  // straight to finished (a legitimate zero-tick outcome the commit-verify
+  // step treats as progress just as validly as a tick advancing).
   const states = [
     auctionState(0, {
       payload: { participants: [{ playerId: 0, role: "seller", price: 10, intent: "hold" }] },
-    }),
+    }), // entry read: pre-commit
     auctionState(1, {
       payload: {
+        tick: 1,
         finished: true,
         participants: [{ playerId: 0, role: "seller", price: 10, intent: "hold" }],
       },
-    }),
+    }), // commit-verify read: finished flips true -- proves the commit landed
+    auctionState(2, {
+      payload: {
+        tick: 1,
+        finished: true,
+        participants: [{ playerId: 0, role: "seller", price: 10, intent: "hold" }],
+      },
+    }), // decision read: the main loop now observes the finished window itself
     {
-      round: 2,
+      round: 3,
       phase: { kind: "production", payload: {} },
       players: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }],
     },
@@ -276,9 +314,24 @@ test("an unmapped plan kind throws the shared unexpected-plan-kind error", async
   // A fabricated kind outside PLAN_KINDS must fail loud so a coverage gap
   // surfaces instead of silently no-opping (walkthrough_exec.mjs's
   // UNEXPECTED_PLAN_KIND_PATTERN reclassifies this exact throw shape into a
-  // real unknown_plan_kind report failure).
-  const states = [auctionState(0)];
-  const decideAuctionIntent = () => ({ kind: "not_a_real_plan_kind" });
+  // real unknown_plan_kind report failure). The bad plan is decided on an
+  // ALREADY-COMMITTED good: the required role commit only ever sees
+  // "auction_role"/other plan kinds via roleToCommit's fallback, so a bad
+  // kind must arrive after commit to reach the real unmapped-kind dispatch.
+  const states = [
+    auctionState(0), // entry read: pre-commit, tick 0
+    auctionState(1, {
+      payload: { tick: 1, participants: [{ playerId: 0, role: "out", price: 10, intent: "hold" }] },
+    }), // commit-verify read: tick advances -- proves the commit landed
+    auctionState(2, {
+      payload: { tick: 1, participants: [{ playerId: 0, role: "out", price: 10, intent: "hold" }] },
+    }), // decision read: already committed, bad plan kind decided here
+  ];
+  const plansByRound = {
+    0: { kind: "auction_continue" },
+    2: { kind: "not_a_real_plan_kind" },
+  };
+  const decideAuctionIntent = (state) => plansByRound[state.round];
   const { page } = makeFakePage();
   const { report } = makeFakeReport();
 
@@ -301,17 +354,27 @@ test("trades counter increments only when the human's goods actually moved", asy
   });
   assert.equal(tradingReport.counters.trades, 1, "a nonzero goods delta should count as one trade");
 
-  // A sit-out run: role stays "out" the whole way, goods and money never move.
+  // A sit-out run: role stays "out" the whole way, goods and money never
+  // move. The window quiesces straight to finished, which the commit-verify
+  // step reads as progress just as validly as a tick advancing.
   const sitOutStates = [
-    auctionState(0),
+    auctionState(0), // entry read: pre-commit
     auctionState(1, {
       payload: {
+        tick: 1,
         finished: true,
         participants: [{ playerId: 0, role: "out", price: 10, intent: "hold" }],
       },
-    }),
+    }), // commit-verify read: finished flips true -- proves the commit landed
+    auctionState(2, {
+      payload: {
+        tick: 1,
+        finished: true,
+        participants: [{ playerId: 0, role: "out", price: 10, intent: "hold" }],
+      },
+    }), // decision read: the main loop now observes the finished window itself
     {
-      round: 2,
+      round: 3,
       phase: { kind: "production", payload: {} },
       players: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }],
     },
@@ -327,17 +390,70 @@ test("trades counter increments only when the human's goods actually moved", asy
 });
 
 //============================================
-// The tick-ceiling guard: report.fail classification before the throw
+// The required, verified role commit: two distinguishable failure causes
+// (WP-H). "the UI never presented the control" fails fast via
+// required_control_missing (see the clickRequired tests below); "the click
+// landed but the engine never responded" fails via act_did_not_advance with
+// ENGINE EVIDENCE (the actual observed tick/finished state), not a bare
+// assertion. The old MAX_TICKS_PER_AUCTION spin is no longer the way a
+// stalled commit surfaces -- it now only guards a stall somewhere else in
+// the phase, once every good's commit has already succeeded.
 //============================================
 
-test("the tick-ceiling guard classifies auction_stalled before throwing", async () => {
-  // A good that never finishes (payload.finished stays false forever) and a
-  // strategy that never asks for a role/intent click, so driveAuction spins
-  // until MAX_TICKS_PER_AUCTION is exceeded.
+test("a commit that lands but never unblocks the clock fails fast with engine evidence, not a throw", async () => {
+  // The state never changes across any read: the click is verified to land
+  // (the fake page resolves every selector as clickable), but tick/finished
+  // never move, which is exactly the "click landed, engine stalled" shape
+  // the commit-verify step exists to catch and diagnose correctly.
   const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
   const { page } = makeFakePage();
   const stuckState = auctionState(0);
   const readProjection = async () => ({ phaseKind: stuckState.phase.kind, state: stuckState });
+  const decideAuctionIntent = () => ({ kind: "auction_continue" });
+
+  // Resolves (does not throw): report.fail already recorded the failure, and
+  // driveAuction returns early the same way driveLandGrant/driveLandAuction
+  // do on a failed act, trusting the caller's report.hasFailed() check. A
+  // short commitVerifyBudgetMs override keeps this test fast without
+  // changing what it proves (the fake page's timers are already no-ops; only
+  // the real wall-clock budget check gates the loop).
+  await driveAuction(page, report, {
+    readProjection,
+    decideAuctionIntent,
+    commitVerifyBudgetMs: 50,
+  });
+
+  assert.equal(report.hasFailed(), true);
+  const errorEntries = report.getLog().filter((entry) => entry.severity === "error");
+  assert.equal(errorEntries.length, 1, "expected exactly one recorded failure");
+  assert.match(errorEntries[0].message, /auction clock never advanced/);
+  assert.match(errorEntries[0].message, /engine evidence, not a UI defect/);
+  // The observed post-click state is embedded in the message, not just
+  // asserted -- the whole point of engine evidence over a bare claim.
+  assert.match(errorEntries[0].message, /"tick":0/);
+  assert.match(errorEntries[0].message, /"finished":false/);
+});
+
+test("the tick-ceiling guard still classifies auction_stalled for a stall elsewhere in the phase", async () => {
+  // The commit itself succeeds immediately every time (tick keeps advancing
+  // on every read, so the verify step never has to wait), but the window
+  // never finishes and the good never changes, so only the whole-phase tick
+  // ceiling can end this run -- proving MAX_TICKS_PER_AUCTION still catches a
+  // genuine non-commit stall rather than being fully retired by the fix.
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const { page } = makeFakePage();
+  let callCount = 0;
+  const readProjection = async () => {
+    callCount += 1;
+    const state = auctionState(callCount, {
+      payload: {
+        tick: callCount,
+        finished: false,
+        participants: [{ playerId: 0, role: "buyer", price: 10, intent: "hold" }],
+      },
+    });
+    return { phaseKind: state.phase.kind, state };
+  };
   const decideAuctionIntent = () => ({ kind: "auction_continue" });
 
   await assert.rejects(
@@ -349,45 +465,46 @@ test("the tick-ceiling guard classifies auction_stalled before throwing", async 
 });
 
 //============================================
-// The tick-0 gate: an "auction_role" plan proposed after the good's opening
-// tick cannot be expressed by the UI (the role buttons only render at
-// payload.tick === 0), so the driver must no-op the click and log an info
-// once per good instead of attempting a click on a vanished selector.
+// A mid-window role-change request is a NEUTRAL, best-effort click (WP-H):
+// the driver no longer knows or asserts WHERE OR WHEN a screen's role
+// control exists past the opening commit. It tries the click regardless of
+// tick, and logs once per good for visibility only -- no assumption baked
+// in about why a screen might or might not still expose the control.
 //============================================
 
-test("an auction_role plan after tick 0 is not clicked and logs one info", async () => {
-  // Tick 0: the adapter wants "buyer" and the engine's auto-assigned role is
-  // "out", so this role click is legitimate (the UI still renders the role
-  // buttons) and should fire as normal. Tick 1: holdings have shifted (the
-  // participant's role is already "buyer", mirroring the tick-0 click having
-  // landed) and the adapter now wants "seller" -- a role change the UI can no
-  // longer express, since the role buttons unmount after tick 0.
+test("a mid-window auction_role plan is a best-effort click, logged once per good", async () => {
   const states = [
     auctionState(0, {
       payload: { tick: 0, participants: [{ playerId: 0, role: "out", price: 10, intent: "hold" }] },
-    }),
+    }), // entry read: pre-commit
     auctionState(1, {
       payload: {
         tick: 1,
         participants: [{ playerId: 0, role: "buyer", price: 10, intent: "hold" }],
       },
-    }),
+    }), // commit-verify read: tick advances -- proves the buyer commit landed
     auctionState(2, {
+      payload: {
+        tick: 1,
+        participants: [{ playerId: 0, role: "buyer", price: 10, intent: "hold" }],
+      },
+    }), // decision read: already committed; adapter now wants "seller"
+    auctionState(3, {
       payload: {
         tick: 2,
         finished: true,
-        participants: [{ playerId: 0, role: "buyer", price: 10, intent: "hold" }],
+        participants: [{ playerId: 0, role: "seller", price: 10, intent: "hold" }],
       },
     }),
     {
-      round: 3,
+      round: 4,
       phase: { kind: "production", payload: {} },
       players: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }],
     },
   ];
   const plansByRound = {
     0: { kind: "auction_role", role: "buyer" },
-    1: { kind: "auction_role", role: "seller" },
+    2: { kind: "auction_role", role: "seller" },
   };
   const decideAuctionIntent = (state) => plansByRound[state.round];
   const { page, clicks } = makeFakePage();
@@ -398,38 +515,26 @@ test("an auction_role plan after tick 0 is not clicked and logs one info", async
     decideAuctionIntent,
   });
 
-  // The tick-0 buyer click is legitimate and fires; the tick-1 seller click
-  // is gated and never fires.
+  // Both the opening commit AND the mid-window change fire: the driver tries
+  // the click regardless of tick, rather than assuming it is unreachable.
   assert.ok(
     clicks.includes('[data-action="auction-role"][data-role="buyer"]'),
-    "expected the tick-0 role click to still fire",
+    "expected the opening role commit to fire",
   );
-  const sellerRoleClicks = clicks.filter((selector) => selector.includes('data-role="seller"'));
-  assert.equal(sellerRoleClicks.length, 0, "expected no click for the UI-unreachable role change");
-
-  const deferredEntries = logs.filter((entry) => entry.message === "auction_role_deferred");
-  assert.equal(deferredEntries.length, 1, "expected exactly one deferred-role info per good");
-  assert.equal(deferredEntries[0].severity, "info");
-  assert.equal(deferredEntries[0].extra.good, "food");
-  assert.equal(deferredEntries[0].extra.requestedRole, "seller");
-});
-
-test("an auction_role plan at tick 0 is still clicked as before", async () => {
-  const { states, decideAuctionIntent } = buildTradingRun();
-  const { page, clicks } = makeFakePage();
-  const { report, logs } = makeFakeReport();
-
-  await driveAuction(page, report, {
-    readProjection: makeFakeReadProjection(states),
-    decideAuctionIntent,
-  });
-
   assert.ok(
-    clicks.includes('[data-action="auction-role"][data-role="buyer"]'),
-    "expected the tick-0 role click to still fire",
+    clicks.includes('[data-action="auction-role"][data-role="seller"]'),
+    "expected the mid-window role-change click to be attempted",
   );
-  const deferredEntries = logs.filter((entry) => entry.message === "auction_role_deferred");
-  assert.equal(deferredEntries.length, 0, "no deferred-role info expected when tick 0 handles it");
+
+  const changeEntries = logs.filter((entry) => entry.message === "auction_role_change_requested");
+  assert.equal(
+    changeEntries.length,
+    1,
+    "expected exactly one mid-window role-change info per good",
+  );
+  assert.equal(changeEntries[0].severity, "info");
+  assert.equal(changeEntries[0].extra.good, "food");
+  assert.equal(changeEntries[0].extra.requestedRole, "seller");
 });
 
 //============================================
@@ -521,5 +626,89 @@ test("clickIfPresent returns false without clicking when the handle is present b
 
   assert.equal(result, false);
   assert.equal(clickCalled, false);
+  assert.equal(report.getLog().length, 0);
+});
+
+//============================================
+// clickRequired: the REQUIRED counterpart -- fails fast and loud, never
+// silently returns false, and carries rich diagnostics (WP-H).
+//============================================
+
+test("clickRequired throws and records required_control_missing when the element is absent", async () => {
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const page = {
+    async $() {
+      return null;
+    },
+    // clickRequired's best-effort failure screenshot must never throw even
+    // when the fake page has no screenshot() method; the catch(() => null)
+    // contract is exercised implicitly by omitting it here.
+  };
+
+  await assert.rejects(
+    clickRequired(page, "[data-action=missing]", report, {
+      detail: "a required test control",
+      extra: { phaseKind: "auction", good: "food", tick: 3 },
+    }),
+    /clickRequired: the UI did not present a required control "\[data-action=missing\]"/,
+  );
+
+  assert.equal(report.hasFailed(), true);
+  const errorEntries = report.getLog().filter((entry) => entry.severity === "error");
+  assert.equal(errorEntries.length, 1);
+  assert.match(errorEntries[0].message, /a required test control/);
+  assert.match(errorEntries[0].message, /not that an engine stalled/);
+  // The caller's extra diagnostics (phase/good/tick) and the selector both
+  // land in the structured extra, not just the free-text message.
+  assert.equal(errorEntries[0].extra.selector, "[data-action=missing]");
+  assert.equal(errorEntries[0].extra.phaseKind, "auction");
+  assert.equal(errorEntries[0].extra.good, "food");
+  assert.equal(errorEntries[0].extra.tick, 3);
+});
+
+test("clickRequired throws and records required_control_missing when the click itself rejects", async () => {
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const page = {
+    async $() {
+      return {
+        isVisible: async () => true,
+        async click() {
+          throw new Error("element is not attached to the DOM");
+        },
+      };
+    },
+  };
+
+  await assert.rejects(
+    clickRequired(page, "[data-action=detaches]", report),
+    /clickRequired: required control "\[data-action=detaches\]" was present but the click failed/,
+  );
+
+  assert.equal(report.hasFailed(), true);
+  const errorEntries = report.getLog().filter((entry) => entry.severity === "error");
+  assert.equal(errorEntries.length, 1);
+  assert.match(errorEntries[0].message, /element is not attached to the DOM/);
+  assert.equal(errorEntries[0].extra.reason, "element is not attached to the DOM");
+});
+
+test("clickRequired resolves true and records nothing when the click succeeds", async () => {
+  const report = createWalkReport({ seed: 1, mode: "beginner", speed: 8 });
+  const clicks = [];
+  const page = {
+    async $(selector) {
+      return {
+        isVisible: async () => true,
+        async click() {
+          clicks.push(selector);
+        },
+      };
+    },
+  };
+
+  const result = await clickRequired(page, "[data-action=present]", report);
+
+  assert.equal(result, true);
+  assert.deepEqual(clicks, ["[data-action=present]"]);
+  assert.equal(report.hasFailed(), false);
   assert.equal(report.getLog().length, 0);
 });

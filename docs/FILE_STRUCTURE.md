@@ -125,10 +125,16 @@ tests/
 |                     current file list
 +- e2e/               Non-browser whole-system harnesses: e2e_mini_flow.mjs,
 |                     e2e_full_game.mjs, e2e_balance_sim.mjs (--report also
-|                     writes the HTML balance dashboard), and
+|                     writes the HTML balance dashboard),
 |                     e2e_balance_report.mjs (runs the --report command as a
-|                     subprocess and checks the written dashboard; see
-|                     docs/E2E_TESTS.md and docs/USAGE.md)
+|                     subprocess and checks the written dashboard),
+|                     e2e_auction_beat_capture.mjs (walks a deterministic seed
+|                     to every goods-auction beat and writes 14 screenshots,
+|                     7 beats x 2 viewports, to output_smoke/auction_beats/),
+|                     and the walkthrough harness (e2e_walkthrough.mjs,
+|                     e2e_walkthrough_sweep.mjs, plus their walkthrough_*.mjs
+|                     driver modules; see docs/WALKTHROUGH_GUIDE.md). See
+|                     docs/E2E_TESTS.md and docs/USAGE.md
 +- conftest.py        Pytest config; ignores tests/e2e and tests/playwright
 |                     from pytest collection
 +- file_utils.py      Shared repo-root helper for Python test scripts

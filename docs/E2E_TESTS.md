@@ -1,5 +1,21 @@
 # E2E_TESTS.md
 
+<!--
+Local corrections, re-applied after template propagation overwrote them:
+(1) the "How to run" runner is named `tests/e2e/e2e_run_all.sh`, not
+`run_all.sh` (the `e2e_` prefix is enforced by
+`tests/test_test_naming_conventions.py`), and (2) the "Related docs" bullet
+linking to WALKTHROUGH_GUIDE.md. Both belong upstream in the template repo
+that ships this file; until the template is fixed, the next propagation will
+clobber them again.
+
+Repo-specific sections that propagation will also drop, because the template
+has no place for them: "Where to write artifacts" and "Capture drivers in
+this repo". These are mule-game content, not template content -- the durable
+home for them is this repo, so re-add them here after any sync rather than
+pushing them upstream.
+-->
+
 End-to-end (E2E) testing conventions for this repo.
 
 ## Two E2E homes
@@ -10,6 +26,48 @@ This repo supports two distinct E2E execution models, each with its own folder:
 - `tests/e2e/` - **non-browser E2E**: shell/Python orchestration for whole-system testing: CLIs, builds, services, multi-suite coordination. This doc focuses on the non-browser model.
 
 Both are excluded from `pytest tests/` via `collect_ignore = ["e2e", "playwright"]` in `tests/conftest.py`.
+
+## Where to write artifacts
+
+Playwright CLEARS its `outputDir` at the start of every `npx playwright test`
+run. `playwright.config.ts` sets `outputDir: "test-results/playwright"`, so
+Playwright only ever clears that subdirectory, not the shared `test-results/`
+root. This is not a hypothetical: an earlier capture driver wrote 14
+screenshots directly under `test-results/`, a concurrent Playwright run
+started, and 13 of the 14 files were silently deleted mid-session.
+
+- Durable artifacts (screenshots, capture output, generated reports) go under
+  `output_smoke/` (reuse a stable directory name per
+  [REPO_STYLE.md](REPO_STYLE.md)'s output-folder rule), or another
+  tool-specific subdirectory outside `test-results/playwright/` -- for
+  example the walkthrough harness's `test-results/walker/` report root.
+- `test-results/playwright/` belongs to Playwright. Treat anything written
+  there as ephemeral; it does not survive the next Playwright run.
+- Do not write ad hoc output directly under the `test-results/` root -- that
+  path only stays safe if it is inside a subdirectory Playwright does not
+  own.
+
+## Capture drivers in this repo
+
+A capture driver is an E2E script whose product is EVIDENCE (screenshots) rather
+than a pass/fail assertion about pure logic. It still exits non-zero when it
+fails to produce the full evidence set, so an incomplete run cannot be mistaken
+for a clean one.
+
+- `tests/e2e/e2e_auction_beat_capture.mjs` -- walks a deterministic seed through
+  every goods-auction beat and screenshots each one at both supported viewports
+  (1024x640, the minimum supported stage; 1280x800, nominal). Writes 14 PNGs
+  (7 beats x 2 viewports) into `output_smoke/auction_beats/`. This is the
+  evidence set the auction's visual-acceptance gate is judged from; see
+  [active_plans/reports/auction_visual_acceptance_final.md](active_plans/reports/auction_visual_acceptance_final.md).
+
+```bash
+node --import tsx tests/e2e/e2e_auction_beat_capture.mjs
+```
+
+The driver imports `playwright-core`, not `playwright` or `@playwright/test`,
+which is what lets it live under `tests/e2e/` without tripping the
+"Playwright imports belong under `tests/playwright/`" rule below.
 
 ## Test layout overview
 

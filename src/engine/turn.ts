@@ -22,7 +22,7 @@
  */
 
 import type { Player, Resource, Species } from "./player";
-import { SPECIES } from "./player";
+import { RESOURCES, SPECIES } from "./player";
 import type {
   Action,
   DevelopPayload,
@@ -30,8 +30,10 @@ import type {
   GameState,
   LandGrantPayload,
   LandMarketState,
+  PlayerRoundLedger,
   Plot,
   ProductionPayload,
+  RoundLedgerCell,
   WampusState,
 } from "./game_state";
 import { createRng } from "./rng";
@@ -227,6 +229,166 @@ function assayPlotOnBoard(plots: readonly (readonly Plot[])[], row: number, col:
 }
 
 // ============================================================
+// Round ledger (observational STATUS-beat accounting)
+// ============================================================
+
+/**
+ * Build a fresh round ledger: each player's per-good `previous` is snapshotted
+ * from their current holding and every delta starts at zero.
+ *
+ * Called when the develop phase is entered, which is the round's FIRST
+ * goods-mutating seam -- land grant and land auction move money and land but
+ * never goods, so the holding at develop entry is the round-start holding. The
+ * ledger is then written at each seam that actually applies a goods change, so
+ * the auction's STATUS beat can report what the round did rather than
+ * recomputing it from rule constants. See docs/RULE_SOURCES.md, "Auction status
+ * beat: recorded round ledger".
+ *
+ * @param players - Players whose round-start holdings seed `previous`.
+ * @returns A fresh ledger, one entry per player in `players` order.
+ */
+function createRoundLedger(players: readonly Player[]): PlayerRoundLedger[] {
+  return players.map((player) => {
+    const cells = {} as Record<Resource, RoundLedgerCell>;
+    for (const good of RESOURCES) {
+      cells[good] = {
+        previous: player.goods[good],
+        usage: 0,
+        spoilage: 0,
+        production: 0,
+        eventDelta: 0,
+      };
+    }
+    return cells;
+  });
+}
+
+/**
+ * Read one player's ledger, failing loudly when the slot is missing (the ledger
+ * always carries one entry per player, so a gap is a bug, not a data case).
+ *
+ * @param ledger - The round-in-flight ledger.
+ * @param playerId - Player whose ledger to read.
+ * @returns That player's ledger.
+ */
+function ledgerAt(ledger: readonly PlayerRoundLedger[], playerId: number): PlayerRoundLedger {
+  const entry = ledger[playerId];
+  if (entry === undefined) {
+    throw new Error(`round ledger has no entry for player ${playerId}`);
+  }
+  return entry;
+}
+
+/**
+ * Return a new ledger array with `playerId`'s entry replaced, sharing every
+ * other player's entry unchanged.
+ *
+ * @param ledger - The round-in-flight ledger.
+ * @param playerId - Player whose entry to replace.
+ * @param cells - The replacement per-good cells.
+ * @returns A new ledger array.
+ */
+function replaceLedgerEntry(
+  ledger: readonly PlayerRoundLedger[],
+  playerId: number,
+  cells: PlayerRoundLedger,
+): PlayerRoundLedger[] {
+  return ledger.map((entry, index) => (index === playerId ? cells : entry));
+}
+
+/**
+ * Record one develop turn's applied goods changes for the active player: the
+ * personal event's net per-good delta as `eventDelta`, and the food actually
+ * consumed this turn as food `usage`.
+ *
+ * The event delta is read as (post-event holding - pre-event holding) rather
+ * than from the event's own factor table, so a clamped or conditional effect is
+ * recorded exactly as applied. This covers every personal event that moves a
+ * holding (the home-world package's food and energy, the wandering traveler's
+ * smithore, the Glac-Elves halving food); the money-only and land-only events
+ * produce a zero delta and cost nothing to record.
+ *
+ * @param ledger - The round-in-flight ledger.
+ * @param playerId - The player taking their develop turn.
+ * @param preEventGoods - That player's goods before the personal event applied.
+ * @param postEventGoods - Their goods after the event, before food consumption.
+ * @param foodUsage - Food actually consumed this turn (`computeFoodUsage`).
+ * @returns A new ledger with this turn's amounts recorded.
+ */
+function recordDevelopTurnInLedger(
+  ledger: readonly PlayerRoundLedger[],
+  playerId: number,
+  preEventGoods: Readonly<Record<Resource, number>>,
+  postEventGoods: Readonly<Record<Resource, number>>,
+  foodUsage: number,
+): PlayerRoundLedger[] {
+  const current = ledgerAt(ledger, playerId);
+  const cells = {} as Record<Resource, RoundLedgerCell>;
+  for (const good of RESOURCES) {
+    const cell = current[good];
+    cells[good] = {
+      previous: cell.previous,
+      usage: cell.usage + (good === "food" ? foodUsage : 0),
+      spoilage: cell.spoilage,
+      production: cell.production,
+      eventDelta: cell.eventDelta + (postEventGoods[good] - preEventGoods[good]),
+    };
+  }
+  return replaceLedgerEntry(ledger, playerId, cells);
+}
+
+/**
+ * Record the production phase's applied goods changes for one player: the gross
+ * yield as `production`, the per-mule energy actually drawn as energy `usage`,
+ * the decay actually lost as `spoilage`, and the space-pirates crystite
+ * inventory wipe as `eventDelta`.
+ *
+ * `combined` is the post-production, pre-spoilage holding and `afterSpoilage`
+ * the post-spoilage holding, so `combined - afterSpoilage` is the amount
+ * spoilage actually took. The pirate wipe is the only colony effect that zeroes
+ * a HOLDING at production time (every other colony effect reaches the player
+ * through the per-plot yields already summed into `produced`), and it wipes both
+ * this round's crystite production and the player's prior crystite; recording
+ * the whole wiped amount as a negative `eventDelta` keeps the reconciliation
+ * exact, since `production` still reports the (pirate-zeroed) yield.
+ *
+ * @param ledger - The round-in-flight ledger.
+ * @param playerId - Player whose production to record.
+ * @param produced - That player's gross yields this round.
+ * @param energyConsumed - Energy actually drawn powering their mules.
+ * @param combined - Their post-production, pre-spoilage holdings.
+ * @param afterSpoilage - Their post-spoilage holdings.
+ * @param zeroCrystiteInventory - Whether space pirates wiped crystite this round.
+ * @param preCrystite - Their crystite holding entering the production phase.
+ * @returns A new ledger with this round's production amounts recorded.
+ */
+function recordProductionInLedger(
+  ledger: readonly PlayerRoundLedger[],
+  playerId: number,
+  produced: ResourceRecord,
+  energyConsumed: number,
+  combined: ResourceRecord,
+  afterSpoilage: ResourceRecord,
+  zeroCrystiteInventory: boolean,
+  preCrystite: number,
+): PlayerRoundLedger[] {
+  const current = ledgerAt(ledger, playerId);
+  const crystiteWiped = zeroCrystiteInventory ? -(preCrystite + produced.crystite) : 0;
+  const cells = {} as Record<Resource, RoundLedgerCell>;
+  for (const good of RESOURCES) {
+    const cell = current[good];
+    cells[good] = {
+      previous: cell.previous,
+      usage: cell.usage + (good === "energy" ? energyConsumed : 0),
+      spoilage: cell.spoilage + (combined[good] - afterSpoilage[good]),
+      production: cell.production + produced[good],
+      eventDelta: cell.eventDelta + (good === "crystite" ? crystiteWiped : 0),
+    };
+  }
+  return replaceLedgerEntry(ledger, playerId, cells);
+}
+
+// ============================================================
 // Initial state and phase entry
 // ============================================================
 
@@ -286,6 +448,9 @@ export function createInitialGameState(
     players,
     store: createInitialStoreState(),
     landMarket,
+    // Seeded so the field is always valid; the real per-round snapshot is taken
+    // when each round's develop phase is entered (`enterDevelop`).
+    roundLedger: createRoundLedger(players),
     colonyEventSchedule: colony.schedule,
     colonyEventRngState: colony.rngState,
     playerEventDeck: playerEvents.deck,
@@ -331,8 +496,13 @@ export function enterLandGrant(state: GameState, round: number): GameState {
 
 /**
  * Enter the development phase: compute this round's turn queue (rank order,
- * reversed on M.U.L.E. shortage), spawn this round's wampus, and begin the
- * first player's turn.
+ * reversed on M.U.L.E. shortage), reset the round's goods ledger, spawn this
+ * round's wampus, and begin the first player's turn.
+ *
+ * The ledger reset lands here because develop entry is the round's first
+ * goods-mutating seam: the very next thing that happens is the first player's
+ * personal event and food consumption (`beginDevelopTurn`), and nothing before
+ * this point in the round has moved a good. See `createRoundLedger`.
  *
  * @param state - Current game state.
  * @returns State in the development phase for the first player in queue.
@@ -342,7 +512,11 @@ export function enterDevelop(state: GameState): GameState {
   const turnQueue =
     state.store.muleStock <= DEVELOP_ORDER_REVERSAL_MULE_THRESHOLD ? [...order].reverse() : order;
   const created = createWampusState(state);
-  const withWampusRng: GameState = { ...state, wampusRngState: created.wampusRngState };
+  const withWampusRng: GameState = {
+    ...state,
+    wampusRngState: created.wampusRngState,
+    roundLedger: createRoundLedger(state.players),
+  };
   return beginDevelopTurn(withWampusRng, turnQueue, order, 0, created.wampus);
 }
 
@@ -431,6 +605,15 @@ function beginDevelopTurn(
     ...current,
     goods: { ...current.goods, food: current.goods.food - foodUsage },
   }));
+  // Record what this turn actually did to the player's goods: the personal
+  // event's net delta (pre-event vs post-event holdings) and the food consumed.
+  const roundLedger = recordDevelopTurnInLedger(
+    afterEvent.roundLedger,
+    activePlayer,
+    preFoodPlayer.goods,
+    player.goods,
+    foodUsage,
+  );
   const basePayload: DevelopPayload = {
     turnQueue,
     queueIndex,
@@ -445,6 +628,7 @@ function beginDevelopTurn(
   return {
     ...afterEvent,
     players,
+    roundLedger,
     phase: { kind: "develop", payload },
   };
 }
@@ -576,6 +760,11 @@ export function enterProduction(state: GameState): GameState {
   // Sum the (possibly event-adjusted) per-plot production into per-player
   // yields; this snapshot is what the production payload reports.
   const yields = sumPerPlot(perPlot, state.players.length);
+  // The ledger accumulates as each player's goods are applied below, so the
+  // recorded production, energy draw, spoilage, and pirate wipe are the exact
+  // values that landed on the player -- not a second computation that could
+  // drift from this one. `mapPlayers` visits players 0..3 in order.
+  let ledger = state.roundLedger;
   const updatedPlayers = mapPlayers(state.players, (player, index) => {
     const produced = yields[index] ?? emptyResourceRecord();
     const consumed = production.energyConsumed[index] ?? 0;
@@ -588,6 +777,16 @@ export function enterProduction(state: GameState): GameState {
       crystite: zeroCrystiteInventory ? 0 : player.goods.crystite + produced.crystite,
     };
     const afterSpoilage = applySpoilage(combined);
+    ledger = recordProductionInLedger(
+      ledger,
+      player.id,
+      produced,
+      consumed,
+      combined,
+      afterSpoilage,
+      zeroCrystiteInventory,
+      player.goods.crystite,
+    );
     return { ...player, goods: afterSpoilage };
   });
 
@@ -598,6 +797,7 @@ export function enterProduction(state: GameState): GameState {
     plots,
     players: updatedPlayers,
     store,
+    roundLedger: ledger,
     rngState: productionRng.getState(),
     colonyEventRngState,
     phase: { kind: "production", payload },

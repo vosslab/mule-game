@@ -78,6 +78,7 @@ node tests/e2e/e2e_mini_flow.mjs                 # one phase transition through 
 node tests/e2e/e2e_full_game.mjs                 # New Game to scoring, both modes x 3 fixed seeds
 node --import tsx tests/e2e/e2e_balance_sim.mjs  # seeded AI-vs-AI sim sweep for economy/AI tuning
 node tests/e2e/e2e_balance_report.mjs            # asserts the HTML balance dashboard renders all sections
+node --import tsx tests/e2e/e2e_auction_beat_capture.mjs  # 14 goods-auction beat screenshots -> output_smoke/auction_beats/
 ```
 
 `e2e_balance_sim.mjs` imports `src/engine/*.ts` and `src/ai/*.ts` directly, so it
@@ -105,6 +106,16 @@ Two standalone params open a screen instead of combining with `?demo=`:
 `?replay=fixture` opens the replay viewer (same as the title screen's "Watch
 demo replay" control) and `?hints=off` suppresses every tutorial hint, as if
 already dismissed.
+
+`?speed=` COMPOUNDS with the goods auction's sit-out fast-forward. Once the
+human has committed to a good and declared the "out" role, the auction tick
+interval is already divided by `AUCTION_SIT_OUT_FACTOR` (10x); `?speed=` then
+multiplies that. `?speed=8` on top of a sit-out window leaves roughly 6ms per
+tick, far too fast to watch or screenshot -- a trap that has cost several
+debugging sessions. To observe a sit-out window at a readable pace, drop
+`?speed=` entirely and let the 10x factor do the work. See
+[RULE_SOURCES.md](RULE_SOURCES.md), "Sit-out fast-forward
+(`AUCTION_SIT_OUT_FACTOR`)".
 
 ## Inputs and outputs
 

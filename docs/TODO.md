@@ -85,16 +85,28 @@ timing, transfer (WS-E-auction)" for the updated figures.
   reclaimable) so the develop-phase board grows toward full slot size inside
   the 16:10 stage; schedule after the WP-3B walk-in-door hint rewrite lands
   to avoid colliding edits (found during WP-5A, 2026-07-10).
-- Shipped: rework the goods-auction screen to a landscape, full-16:10
-  horizontal price track (`src/ui/solid/auction_screen.tsx`,
-  `src/style.css`). See `docs/CHANGELOG.md` 2026-07-10 (WP-6A landscape
-  rotation, WP-6B full-canvas CSS, WP-6C spec update and visual acceptance)
-  and the visual acceptance report at
-  [docs/active_plans/reports/auction_landscape_visual_acceptance.md](active_plans/reports/auction_landscape_visual_acceptance.md).
-- Optional polish: give the auction track more of the wide-viewport height
-  budget at 1600x900 -- the WP-6C visual pass measured a ~16% trailing gap
-  below the intent buttons at that size (`src/style.css` auction rules).
-  Non-blocking.
+- Superseded (2026-07-11): the 2026-07-10 goods-auction rework -- a landscape,
+  full-16:10 horizontal price TRACK (`src/ui/solid/auction_screen.tsx`,
+  `src/style.css`; WP-6A landscape rotation, WP-6B full-canvas CSS, WP-6C spec
+  update) shipped and was then SCRAPPED in the native 16:10 recomposition the
+  next day. Do not build against it. The track, its stacked intent buttons, and
+  its trade log are deleted; price now runs left-to-right across a runway bounded
+  by store rails, each player owns a horizontal lane row, a left dock carries
+  per-player role/money/units/traded, and a status/accounting beat precedes each
+  window. The 2026-07-10 changelog entries and the
+  [docs/active_plans/reports/auction_landscape_visual_acceptance.md](active_plans/reports/auction_landscape_visual_acceptance.md)
+  report describe the dead layout and are kept only as history. Current design:
+  [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md) and
+  [docs/active_plans/active/auction_native_recompose.md](active_plans/active/auction_native_recompose.md);
+  see `docs/CHANGELOG.md` 2026-07-11.
+- Superseded (2026-07-11): the "give the auction track more of the wide-viewport
+  height budget at 1600x900" polish item is retired. Both things it referred to
+  are gone -- the auction track and its stacked intent buttons were scrapped in
+  the native 16:10 recomposition, and 1600x900 is no longer a supported viewport
+  (superseded by 1024x640 as the minimum and 1280x800 as the nominal target). The
+  ~16% trailing gap it tracked is a property of the deleted layout. See
+  [ROADMAP.md](ROADMAP.md), "Near term," and
+  [docs/active_plans/active/auction_native_recompose.md](active_plans/active/auction_native_recompose.md).
 - Shipped: audit the other phase screens (land grant, land auction, town,
   overworld, production, scoring) for the same narrow-centered-column-with-
   dead-margins problem the auction screen has, and apply the
@@ -146,6 +158,35 @@ timing, transfer (WS-E-auction)" for the updated figures.
   engine effect), so a fix must keep those specs green or update them
   intentionally if the affordance changes from notice to modal. Not part of the
   current town-rebuild plan's scope; file as separate follow-up work.
+- Retire the four dead arena sprite symbols (low priority cleanup, found
+  2026-07-11 during the goods-auction rebuild). `src/ui/sprites/sprites_arena.ts`
+  builds five SVG symbols into the app's shared `<defs>`: `backdrop`, `axis-bar`,
+  `axis-tick`, `store-band`, and `trade-flash`. Only `trade-flash` is drawn by
+  the live game (`<use href="#sprite-arena-trade-flash">` in
+  `src/ui/scenes/auction_trade_fx.ts`); the rebuilt full-stage arena
+  (`src/ui/scenes/auction_arena.tsx`) paints its own backdrop and bands with CSS
+  rects, replacing the old portrait "track panel" composition the other four
+  symbols were drawn for. Those four therefore ship in every player's `<defs>`
+  and are never drawn. They are NOT safe to simply delete:
+  `src/ui/sprites/town_gallery.ts` imports `ARENA_CHROME_NAMES` and
+  `arenaSymbolId` and renders all five in its arena-chrome gallery section, and
+  that gallery is screenshotted by `tests/playwright/visual_render.spec.mjs`,
+  whose pixel-coverage and palette-conformance thresholds were calibrated
+  including those pixels -- deleting the symbols fails that spec. The full job:
+  remove the four symbols, remove `ARENA_TRACK_WIDTH` (280) and
+  `ARENA_TRACK_HEIGHT` (400) (they exist only to size the dead symbols, and are
+  the dimensions of the deleted portrait track panel), remove the arena-chrome
+  section from `town_gallery.ts`, and recalibrate the visual-render thresholds
+  for the changed gallery. That recalibration is a judgment call rather than a
+  mechanical edit, which is why it was deliberately left out of the auction
+  rebuild. Method lesson, because it nearly caused a bad deletion: a grep for the
+  literal symbol ids (`sprite-arena-backdrop` and friends) returns zero hits
+  outside the defining module, which makes the symbols look orphaned. They are
+  not -- the consumer builds each id at runtime with `arenaSymbolId(chromeName)`
+  over `ARENA_CHROME_NAMES`, so a literal-string grep cannot see the reference.
+  When checking whether something is dead, search for the identifiers that BUILD
+  the name, not only the name itself. See [CHANGELOG.md](CHANGELOG.md) 2026-07-11
+  (auction rebuild, sprite audit).
 - Add a `data-assay-armed` attribute to `town_scene.tsx`: the E2E walker
   currently verifies assay arming via an exact `[data-town-notice]` text
   match, which is brittle if the notice string is ever reworded. Found
@@ -241,3 +282,23 @@ timing, transfer (WS-E-auction)" for the updated figures.
   interactions), not a race in this test's own timing/waits, so it was
   documented rather than "fixed" by loosening the spec's wait (which would
   only mask CPU contention, not address it) or touching production code.
+- Give the scoring screen an unconditional presence attribute so the walkthrough
+  harness stops keying off a CSS class. `confirmScoring`
+  (`tests/e2e/e2e_walkthrough.mjs`, with a second `.scoring-panel` visibility
+  check in the legacy `tests/e2e/e2e_full_game.mjs`) identifies the scoring
+  screen by the `.scoring-panel` CSS class. It works today and every run detects
+  the screen correctly, so this is NOT a defect and NOT urgent -- but a CSS class
+  is a styling hook, not a behavioral contract, and a rename during a restyle
+  would break the harness silently. The durable fix belongs on the PRODUCT side,
+  not the test side: `src/ui/solid/scoring_panel.tsx` should expose an
+  unconditional presence flag (for example `data-scoring-visible="true"`) that
+  the harness keys off instead. The harness must not simply switch to the
+  scoring panel's existing `data-*` attributes, because neither is a reliable
+  universal presence check: `data-colony-failed` binds a raw boolean, and
+  SolidJS may omit the attribute entirely when it is `false`, so a presence
+  selector would silently match only the colony-FAILURE case and miss a normal
+  successful scoring screen; and `[data-first-founder]` is conditionally
+  rendered, so not every game has one. Recorded as the softer contract noted in
+  [docs/active_plans/decisions/walkthrough_gate_suspension.md](active_plans/decisions/walkthrough_gate_suspension.md)
+  (WP-H2 scope paragraph), which explicitly excluded it from the gate
+  restoration as a future `data-*` migration rather than a defect.

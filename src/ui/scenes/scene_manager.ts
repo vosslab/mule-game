@@ -65,6 +65,20 @@ const PRODUCTION_PAUSE_MS = 2000;
 /** Delay between auction ticks (price movement plus trade matching). */
 const AUCTION_TICK_MS = 500;
 
+/**
+ * Speed-up factor applied to the auction tick cadence while the human has
+ * committed to sitting out the current good's auction: a human who declared
+ * "out" should not spectate the remaining AI-only ticks in real time.
+ * Measured by experiment (1x/3x/6x/10x sweep at seed 1234, scripted sit-out,
+ * true in-game pace with no test-only speed multiplier): all four factors
+ * produced an identical trades array and closing price to the 1x baseline,
+ * and every trade's `data-flash-count` increment was observed before the
+ * next trade fired, so 10x -- the fastest candidate tested -- was chosen
+ * (2544ms wall time to window close vs 25503ms at 1x). See
+ * docs/CHANGELOG.md 2026-07-11 for the full measurement table.
+ */
+const AUCTION_SIT_OUT_FACTOR = 10;
+
 /** Pause on the finished auction panel before auto-advancing to the next good. */
 const AUCTION_FINISHED_PAUSE_MS = 1500;
 
@@ -134,6 +148,15 @@ let lastAuctionGood: Resource | null = null;
 let humanAuctionCommitted = false;
 
 /**
+ * True while the auction clock is fast-forwarding because the human sat out
+ * the current good, read by the arena's FAST indicator. Updated by
+ * `auctionTickMs` on every schedule pass and cleared whenever the auction
+ * clock is not actively ticking (finished pause, or waiting on the human's
+ * opening role choice).
+ */
+let auctionFastForward = false;
+
+/**
  * Sim-time elapsed since the land-grant sweep cursor last advanced,
  * decoupled from `phaseTimerMs` (which resets on every picker change, see
  * `phaseSignature`'s land_grant case) so the sweep keeps a steady cadence
@@ -185,6 +208,7 @@ export function startSceneLoop(store: GameStore, speed = 1, relaxedTimer = false
   lastPhaseSignature = "";
   lastAuctionGood = null;
   humanAuctionCommitted = false;
+  auctionFastForward = false;
   resetTickOwnership();
   lastFrameTime = performance.now();
   rafHandle = requestAnimationFrame(onFrame);
@@ -232,6 +256,18 @@ export function onSceneFrame(callback: (now: number) => void): () => void {
  */
 export function notifyAuctionCommit(): void {
   humanAuctionCommitted = true;
+}
+
+//============================================
+/**
+ * Whether the auction clock is currently fast-forwarding because the human
+ * sat out the auctioned good. Read by the arena's FAST indicator; safe to
+ * poll every frame since it is a plain flag read.
+ *
+ * @returns True while the sit-out fast-forward speed-up is active.
+ */
+export function isAuctionFastForward(): boolean {
+  return auctionFastForward;
 }
 
 //============================================
@@ -407,6 +443,9 @@ function schedulePhase(store: GameStore, state: GameState): void {
 function scheduleAuction(store: GameStore, payload: AuctionPayload): void {
   resetAuctionCommitmentIfGoodChanged(payload.good);
   if (payload.finished) {
+    // The window is over: the fast-forward indicator (if it was showing) no
+    // longer applies during the finished pause.
+    auctionFastForward = false;
     if (phaseTimerMs >= AUCTION_FINISHED_PAUSE_MS) {
       store.dispatch({ type: "end_auction" });
       phaseTimerMs = 0;
@@ -415,13 +454,36 @@ function scheduleAuction(store: GameStore, payload: AuctionPayload): void {
   }
   if (!isAuctionTickable(payload)) {
     // Wait for the human to declare a side for this good before the clock runs.
+    auctionFastForward = false;
     phaseTimerMs = 0;
     return;
   }
-  if (phaseTimerMs >= AUCTION_TICK_MS) {
+  if (phaseTimerMs >= auctionTickMs(payload)) {
     auctionStep(store);
     phaseTimerMs = 0;
   }
+}
+
+//============================================
+/**
+ * The auction tick cadence for the current payload: `AUCTION_TICK_MS`
+ * divided by `AUCTION_SIT_OUT_FACTOR` only while the human has committed to
+ * sitting out the current good, else the normal cadence. Updates
+ * `auctionFastForward` as a side effect, so the arena's FAST indicator stays
+ * in sync with every schedule pass. The per-good commitment reset
+ * (`resetAuctionCommitmentIfGoodChanged`) self-cancels the speedup the moment
+ * a new good's auction begins uncommitted; `?speed=` still multiplies the
+ * whole scaled real-time budget consumed against this threshold, so the two
+ * speed-ups compose.
+ *
+ * @param payload - The current auction payload.
+ * @returns The tick cadence in milliseconds.
+ */
+function auctionTickMs(payload: AuctionPayload): number {
+  const human = payload.participants.find((participant) => participant.playerId === HUMAN_ID);
+  const humanSatOut = humanAuctionCommitted && human?.role === "out";
+  auctionFastForward = humanSatOut;
+  return humanSatOut ? AUCTION_TICK_MS / AUCTION_SIT_OUT_FACTOR : AUCTION_TICK_MS;
 }
 
 //============================================

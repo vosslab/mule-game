@@ -18,6 +18,7 @@ site/
 
 # === TYPESCRIPT ===
 node_modules/
+dist_*/
 _site/
 *.tsbuildinfo
 .eslintcache

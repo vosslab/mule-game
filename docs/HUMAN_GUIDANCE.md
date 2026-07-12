@@ -17,6 +17,11 @@ we can switch from portrait to landscape in auction to better fill the 16:10 asp
 
 C. User interaction is designed around mouse + arrow keys + enter key
 
+D. Use the NES auction screen as the behavioral and layout reference, then adapt its composition for a native 16:10 landscape browser
+stage. Run the price axis from left to right. Move buyers and sellers horizontally. Use the full width for clear player lanes, store
+limits, trade positions, and player information. Preserve the NES auction relationships and information presented.
+
+
 ## Rule fidelity targets game mechanics, not input devices
 
 Target the 1983/1990 M.U.L.E. game rules -- formulas, economy, and phase

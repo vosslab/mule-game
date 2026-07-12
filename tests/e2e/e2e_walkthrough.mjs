@@ -65,6 +65,7 @@ import {
   readGameState,
   isVisible,
   actAndWaitProgress,
+  clickIfPresent,
   exitTown,
 } from "./walkthrough_helpers.mjs";
 import { createWalkReport } from "./walkthrough_report.mjs";
@@ -328,20 +329,27 @@ async function endDevelopTurn(page, report) {
  * Take the human's passive scripted action for the given phase, if any
  * control is live: pass a land grant, end a develop turn, or sit out a
  * goods auction. Every other phase (title, land_auction, production,
- * scoring) has no live human control and is left to run on its own. A
- * detached element between the visibility check and the click is ignored
- * (the phase advanced on its own).
+ * scoring) has no live human control and is left to run on its own. Every
+ * click here is genuinely optional (this whole function's contract, per its
+ * own name, is "act only if a control is live this poll"; the next poll
+ * simply tries again), so each site uses the shared clickIfPresent helper
+ * rather than a bespoke isVisible-then-click: clickIfPresent resolves one
+ * element handle and reuses it for both the visibility check and the click,
+ * closing the race where the control could vanish between a separate check
+ * and a default-timeout click, and it warn-logs a real click rejection
+ * instead of discarding it identically to a legitimate miss (see
+ * docs/WALKTHROUGH_GUIDE.md's failure taxonomy and
+ * walkthrough_helpers.mjs's own clickIfPresent doc comment).
  *
  * @param page - The Playwright page.
  * @param phaseKind - The current `WalkerProjection.phaseKind`.
  * @param report - The walk report, so a completed develop turn can be
- *   counted.
+ *   counted, and so a real (non-missing) click rejection is logged rather
+ *   than silently discarded.
  */
 async function actForPhase(page, phaseKind, report) {
   if (phaseKind === "land_grant") {
-    if (await isVisible(page, '[data-action="land-grant-pass"]')) {
-      await page.click('[data-action="land-grant-pass"]').catch(() => undefined);
-    }
+    await clickIfPresent(page, '[data-action="land-grant-pass"]', report);
     return;
   }
   if (phaseKind === "develop") {
@@ -351,13 +359,15 @@ async function actForPhase(page, phaseKind, report) {
     return;
   }
   if (phaseKind === "auction") {
-    if (await isVisible(page, '[data-action="auction-role"][data-role="out"]')) {
-      await page.click('[data-action="auction-role"][data-role="out"]').catch(() => undefined);
+    const committed = await clickIfPresent(
+      page,
+      '[data-action="auction-role"][data-role="out"]',
+      report,
+    );
+    if (committed) {
       return;
     }
-    if (await isVisible(page, '[data-action="auction-continue"]')) {
-      await page.click('[data-action="auction-continue"]').catch(() => undefined);
-    }
+    await clickIfPresent(page, '[data-action="auction-continue"]', report);
   }
   // land_auction, production, scoring: no live human control, wait it out.
 }

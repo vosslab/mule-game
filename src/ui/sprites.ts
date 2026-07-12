@@ -169,3 +169,22 @@ function buildCrystiteIconSymbol(): string {
 export function resourceIconSymbolId(resource: Resource): string {
   return `sprite-icon-${resource}`;
 }
+
+/**
+ * The palette fill a resource-icon `<use>` must paint itself with.
+ *
+ * The resource symbols above define a SHAPE and deliberately no fill, so they
+ * can be tinted per site. That makes the fill the CALLER's job, and a caller
+ * that forgets it does not get a warning -- it gets a black silhouette, because
+ * black is SVG's default fill. That is exactly what happened to the auction's
+ * rail crates and its flying trade goods: the same glyphs the town renders as a
+ * green diamond and a silver nugget rendered as featureless blobs at 1.42:1
+ * against the rail. This accessor exists so a `<use>` site can reach the fill
+ * without importing the table and indexing it by hand.
+ *
+ * @param resource - Resource whose icon is being drawn.
+ * @returns The hex fill color for that resource's icon.
+ */
+export function resourceIconFill(resource: Resource): string {
+  return RESOURCE_ICON_FILLS[resource];
+}

@@ -38,7 +38,7 @@
 import { chromium } from "playwright-core";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
-import { REPO_ROOT, startServer } from "./walkthrough_helpers.mjs";
+import { REPO_ROOT, startServer, isVisible, clickIfPresent } from "./walkthrough_helpers.mjs";
 
 /** Game modes exercised by the default full-matrix run. */
 const MODES = ["beginner", "standard"];
@@ -82,34 +82,36 @@ function buildSite() {
   });
 }
 
-//============================================
 /**
- * Whether a selector currently resolves to a visible element.
- *
- * @param page - The Playwright page.
- * @param selector - CSS selector to test.
- * @returns True when at least one matching element is visible.
+ * Minimal report shim for clickIfPresent (tests/e2e/walkthrough_helpers.mjs):
+ * this harness has no evidence-report object of its own (unlike
+ * e2e_walkthrough.mjs's walkthrough_report.mjs), but clickIfPresent's warn
+ * log on a real (non-missing) click rejection is still worth surfacing
+ * rather than discarding, so its one required method is backed by
+ * console.error instead of being silently absorbed.
  */
-async function isVisible(page, selector) {
-  const handle = await page.$(selector);
-  if (handle === null) {
-    return false;
-  }
-  return handle.isVisible().catch(() => false);
-}
+const CONSOLE_REPORT = {
+  log(level, message, extra) {
+    console.error(`e2e_full_game: [${level}] ${message}`, extra ?? "");
+  },
+};
 
 //============================================
 /**
  * Take the human's scripted action for the current phase, if any control is
- * live: pass a land grant, end a develop turn, or sit out a goods auction. A
- * detached element between the check and the click is ignored (the phase
- * advanced on its own).
+ * live: pass a land grant, end a develop turn, or sit out a goods auction.
+ * Every click here is genuinely optional (this whole function's contract is
+ * "act only if a control is live this poll"; the next poll simply tries
+ * again), so each site uses the shared clickIfPresent helper
+ * (walkthrough_helpers.mjs) rather than a bespoke isVisible-then-click:
+ * clickIfPresent resolves one element handle and reuses it for both the
+ * visibility check and the click, closing the race where the control could
+ * vanish between a separate check and a default-timeout click.
  *
  * @param page - The Playwright page.
  */
 async function actForCurrentPhase(page) {
-  if (await isVisible(page, "#land-grant-pass-button")) {
-    await page.click("#land-grant-pass-button").catch(() => undefined);
+  if (await clickIfPresent(page, "#land-grant-pass-button", CONSOLE_REPORT)) {
     return;
   }
   // The End turn control's data-action hook is shared by the town chrome
@@ -125,18 +127,15 @@ async function actForCurrentPhase(page) {
     // first visibility check can otherwise end the turn with zero develop
     // ticks recorded).
     await page.waitForTimeout(DEVELOP_TICK_SETTLE_MS);
-    await page.click("[data-action='develop-end-turn']").catch(() => undefined);
+    await clickIfPresent(page, "[data-action='develop-end-turn']", CONSOLE_REPORT);
     return;
   }
-  if (await isVisible(page, ".auction-screen-role-button")) {
-    // Sit Out is the third role button (Buy, Sell, Sit Out); this keeps the
-    // human out of trading while the auction clock still runs to completion.
-    const roleButtons = await page.$$(".auction-screen-role-button");
-    const sitOut = roleButtons[2] ?? roleButtons[0];
-    if (sitOut !== undefined) {
-      await sitOut.click().catch(() => undefined);
-    }
-  }
+  // Sit Out by its semantic data-role hook (auction_screen.tsx), not a
+  // positional index into the role-button list: an earlier version picked
+  // "the third role button" by array position, which silently breaks (picks
+  // the wrong role, or nothing) the moment the auction screen's button order
+  // changes -- an implementation-coupled requirement, not a behavioral one.
+  await clickIfPresent(page, '[data-action="auction-role"][data-role="out"]', CONSOLE_REPORT);
 }
 
 //============================================

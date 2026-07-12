@@ -57,6 +57,8 @@
 // stay unit-testable against a fake page.
 
 import {
+  actAndWaitProgress,
+  clickRequired,
   directionToward,
   OVERWORLD_AVATAR,
   walkOverworldAvatarToCell,
@@ -701,42 +703,91 @@ export function planCommitsBudget(plan) {
  * without this split every out-of-work turn was miscounted as truncated.
  *
  * Truncation is never a failure -- this deliberately calls report.log, not
- * report.fail.
+ * report.fail -- but the end-turn click itself is REQUIRED and VERIFIED: a
+ * missing/unclickable control, or a click that lands but never actually ends
+ * the develop phase, is a real failure and is reported as such (the same
+ * required-and-verified contract driveAuction's role commit uses; see
+ * docs/WALKTHROUGH_GUIDE.md's failure taxonomy). Before this fix the click
+ * was a bare `page.click()` with no verification and an unconditional
+ * `return true`, so a swallowed click here silently claimed a turn was
+ * truncated when the phase never actually ended -- the same silent-noop-
+ * then-assume defect class WP-H fixed in the auction driver.
  *
  * @param page - The Playwright page.
  * @param report - The walk report (see walkthrough_report.mjs).
- * @param deps - `{ truncateReserveTicks }`; the reserve floor is optional and
- *   defaults to DEVELOP_TRUNCATE_RESERVE_TICKS.
+ * @param deps - `{ truncateReserveTicks, readProjection, truncateVerifyBudgetMs }`.
+ *   `readProjection` is required once the reserve is actually breached (used
+ *   to verify the end-turn click's effect); `truncateReserveTicks` is
+ *   optional and defaults to DEVELOP_TRUNCATE_RESERVE_TICKS;
+ *   `truncateVerifyBudgetMs` overrides actAndWaitProgress's default budget (a
+ *   unit test injects a short budget so a genuine-stall test case does not
+ *   have to wait out the full default in real wall-clock time).
  * @param plan - The plan just decided for this loop iteration.
  * @param state - The marshalled develop GameState the plan was decided from
  *   (same read, so the tick check matches the decision).
- * @returns True once the turn was ended at the budget floor, false when the
- *   plan should run.
+ * @returns True once the turn was ended at the budget floor (or the required
+ *   click failed -- report.fail already recorded it, and the caller's own
+ *   report.hasFailed() check stops the run), false when the plan should run.
  */
 export async function maybeTruncateTurn(page, report, deps, plan, state) {
-  const { truncateReserveTicks = DEVELOP_TRUNCATE_RESERVE_TICKS } = deps;
+  const {
+    truncateReserveTicks = DEVELOP_TRUNCATE_RESERVE_TICKS,
+    readProjection,
+    truncateVerifyBudgetMs,
+  } = deps;
   if (!shouldTruncate(state, truncateReserveTicks)) {
     return false;
   }
-  await page.click('[data-action="develop-end-turn"]');
   const phase = state.phase;
   const ticksRemaining = phase.kind === "develop" ? phase.payload.ticksRemaining : null;
+  const truncateContext = {
+    phaseKind: phase.kind,
+    ticksRemaining,
+    reserve: truncateReserveTicks,
+    planKind: plan.kind,
+  };
+  const advanced = await actAndWaitProgress(page, report, {
+    // Computed synchronously from the already-marshalled `state` (no extra
+    // read): the develop phase is confirmed by shouldTruncate's own gate.
+    beforeSnapshot: phase.kind,
+    snapshot: async (currentPage) => (await readProjection(currentPage)).phaseKind,
+    act: () =>
+      clickRequired(page, '[data-action="develop-end-turn"]', report, {
+        detail:
+          `tick-budget truncation guard (ticksRemaining=${ticksRemaining}, ` +
+          `reserve=${truncateReserveTicks})`,
+        extra: truncateContext,
+      }),
+    failureKind: "act_did_not_advance",
+    // ENGINE EVIDENCE: lastPhaseKind is the ACTUAL observed phaseKind after
+    // the verified click landed, distinguishing "the phase genuinely never
+    // left develop" (engine stall) from a missing UI control (which
+    // clickRequired above would already have failed on before this poll
+    // ever started).
+    failureMessage: (lastPhaseKind) =>
+      "maybeTruncateTurn: the develop-end-turn click at the tick-budget reserve landed, but " +
+      `the phase never left "develop" (last observed phaseKind: "${lastPhaseKind}"). This is ` +
+      "engine evidence, not a UI defect: suspect a stall in the develop-phase turn sequencer, " +
+      "not the UI.",
+    budgetMs: truncateVerifyBudgetMs,
+  });
+  if (!advanced) {
+    // report.fail already recorded the failure; the caller (activeDriveDevelop)
+    // returns immediately either way, and the orchestrator's report.hasFailed()
+    // check stops the whole run right after -- a click that never actually
+    // completed the turn must not be counted as a truncation.
+    return true;
+  }
   if (!planCommitsBudget(plan)) {
     // The turn was going to end on this plan anyway; ending it at the reserve
     // is the natural close, not a truncation. Logged for visibility, not counted.
-    report.log("info", "develop_turn_ended_at_budget_floor", {
-      ticksRemaining,
-      reserve: truncateReserveTicks,
-      planKind: plan.kind,
-    });
+    report.log("info", "develop_turn_ended_at_budget_floor", truncateContext);
     return true;
   }
   report.counters.truncatedTurns += 1;
   report.log("warn", "develop_plan_truncated", {
-    ticksRemaining,
-    reserve: truncateReserveTicks,
+    ...truncateContext,
     truncatedTurns: report.counters.truncatedTurns,
-    planKind: plan.kind,
   });
   return true;
 }

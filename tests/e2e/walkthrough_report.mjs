@@ -21,6 +21,7 @@ import path from "node:path";
 export const FAILURE_KINDS = Object.freeze([
   "phase_timeout",
   "act_did_not_advance",
+  "required_control_missing",
   "walk_stall",
   "decision_gesture_mismatch",
   "unknown_plan_kind",

@@ -193,6 +193,18 @@ best bid against the best ask (store included, at a fixed band around
 crossed. The auction ends when its tick budget is spent or no further trade
 is possible; `turn.ts` then advances to the next good or phase.
 
+Each window's payload also carries `AuctionPayload.status`, an OBSERVATIONAL
+field fed by `GameState.roundLedger`: the per-player, per-good round ledger
+(`previous`, `usage`, `spoilage`, `production`, `eventDelta`, `held`) recorded
+as applied at every goods-mutating seam in [turn.ts](../src/engine/turn.ts),
+plus the colony verdict. It backs the status/accounting beat the UI renders
+before each good's auction floor. It records; it decides nothing -- no auction
+rule reads it, and adding it changed no engine decision (pinned by
+[tests/test_replay_determinism.mjs](../tests/test_replay_determinism.mjs)). The
+recording seams, the category split, the reconciliation identity, and the
+ledger boundary are specified in [RULE_SOURCES.md](RULE_SOURCES.md), "Auction
+status beat: recorded round ledger".
+
 ## Constants as rule authority
 
 [constants.ts](../src/engine/constants.ts) is the single source of truth for

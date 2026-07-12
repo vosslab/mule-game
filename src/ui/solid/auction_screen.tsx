@@ -1,126 +1,77 @@
-// Spatial auction scene as a SolidJS component.
+// Goods-auction shell: the container, the beat sequencer, and the intent layer.
 //
-// This replaces the abstract SVG price track with the original M.U.L.E. spatial
-// auction, rotated to a LANDSCAPE horizontal price axis: each player's species
-// AVATAR stands in its own horizontal lane, and its x position is DERIVED from
-// the engine's authoritative participant price (avatars are presentation only).
-// Buyers advance rightward from the left as they raise their bid, sellers
-// advance leftward from the right as they lower their ask; when a buyer and
-// seller cross (meet at the same price x), the engine records a trade and a
-// goods glyph animates between the pair (or the store edge, for store trades).
-// The store buy price anchors the left track end and the store sell price the
-// right end.
+// The auction owns the WHOLE 16:10 stage. game_screen.tsx hides #game-hud and
+// flex-fills #game-panel for the auction phase (the `game-hud-hidden` /
+// `game-panel-filled` seam, mirroring the proven `game-map-filled` idiom), so
+// `.auction-screen` below is handed the full stage box and hands it straight to
+// the arena slot. The arena SVG's viewBox (960x600, src/ui/scenes/auction_geometry.ts)
+// is 16:10 too, so it fills that box exactly with no letterbox band.
 //
-// State vs motion split (the plan's architecture): reactivity owns STATE and
-// imperative transforms own 60fps MOTION.
-//   - Reactive (Solid signals -> DOM): the price-marker token dots (`cx` snaps
-//     per tick, `cy` is the fixed lane), store band lines, per-avatar
-//     `data-role`, the crisp price readout, and the trade log.
-//   - Imperative (scene-manager rAF, refs, transform writes): each avatar
-//     group's `translate(...)` is eased toward its price-derived target x every
-//     animation frame; the walk-cycle frame swaps while an avatar is moving;
-//     trade goods/flash glyphs are created and moved in the trade layer.
-// Under emulated `prefers-reduced-motion: reduce` the avatars SNAP to their
-// price-derived x with no interpolation and hold the frame-1 idle pose, and a
-// trade shows an instant flash with no travel. No CSS transitions are used for
-// avatar motion, so a reduced-motion render carries no tween artifacts.
+// This file is the SHELL, not the composition. It owns:
+//   - beat sequencing (declare at tick 0 -> live -> finished),
+//   - the reduced-motion signal, read once at mount and on every media change,
+//   - keyboard price intent, and the on-screen intent buttons,
+//   - the DOM overlays that float over the arena (declare, finished, hint,
+//     aria-live announcer),
+//   - the selector contract the walkthrough harness drives the game through.
 //
-// Selector contract for the auction playwright specs: `.auction-track-svg`, one
-// `.auction-track-token` circle per participant in playerId order carrying a
-// reactive price `cx` and a fixed lane `cy`, exactly one
-// `.auction-track-store-buy-line` and one `.auction-track-store-sell-line`, the
-// `.auction-screen-role-button` role choices, and the `.auction-screen-trade-log`
-// panel. `.auction-avatar` groups carry `data-actor="player-N"`, `data-role`, a
-// per-frame price `data-x`, and a fixed lane `data-y`; the arena root carries
-// `data-reduced-motion`; the trade layer carries a monotonic `data-flash-count`.
-// The landscape rotation moved the price-driven coordinate from `cy`/`data-y`
-// (the old vertical track) to `cx`/`data-x`; tests/playwright/game_flow.spec.mjs
-// and tests/playwright/auction_scene.spec.mjs are updated to poll the new axis.
+// The composition itself -- the price runway, the store rails, the lane rows,
+// the player dock, the status/accounting beat -- lives in sibling lanes
+// (auction_arena.tsx, auction_dock.tsx, auction_status.tsx), which implement the
+// prop contracts in src/ui/scenes/auction_props.ts. `AuctionArena` is the single
+// full-stage SVG and composes the dock inside its own viewBox, so the shell
+// hands it the payload, the reduced-motion flag, and the live players (the only
+// source of the dock's money and units columns) and stays out of the geometry.
 //
-// Slot -> species mapping (fixed until species selection lands): player slots
-// 0..3 map to SPECIES_BY_SLOT below (humanoid, gollumer, mechtron, packer), the
-// first four silhouette-distinct species in SPECIES_NAMES. Documented here so a
-// later species-select milestone replaces this fixed map with a player choice.
+// SELECTOR CONTRACT (tests/e2e/walkthrough_auction.mjs is the only external UI
+// contract this game has; breaking it still stops the walkthrough cold, but
+// it now fails LOUD, not silent: clickRequired (tests/e2e/walkthrough_helpers.mjs)
+// throws `required_control_missing` within about a second, naming the exact
+// missing selector, instead of the old silent-swallow behavior that used to
+// deadlock the walkthrough sweep to its 4000-tick cap):
+//   - data-action="auction-role" + data-role="buyer|seller|out": all three
+//     rendered, visible, and CLICKABLE from tick 0's FIRST FRAME. Nothing may
+//     cover them -- the declare overlay carries them itself, and the tutorial
+//     hint above is pointer-events: none.
+//   - data-action="auction-intent-up" / "auction-intent-down": while the window
+//     is live.
+//   - data-action="auction-continue": while the window is finished (a skipped
+//     window is created already finished, so it advances immediately).
+//   - .auction-screen[data-reduced-motion] and the trade layer's monotonic
+//     .auction-trade-layer[data-flash-count] back the behavior safety net in
+//     tests/playwright/auction_scene.spec.mjs.
+//
+// Controls: ArrowRight raises the price and ArrowLeft lowers it -- the axis the
+// avatars actually walk (cheap wall left, expensive wall right). ArrowUp and
+// ArrowDown stay bound as aliases so the older gesture keeps working. Intent is
+// a HELD state, so keydown sets a direction, keyup releases to "hold", and OS
+// auto-repeat is ignored. The listener lives on the shell for the whole auction
+// rather than only while the window is live: `set_auction_intent` merely records
+// the participant's intent (src/engine/auction.ts), so a key held down through
+// the opening role choice carries into the window instead of being dropped on
+// the beat change.
 
-import { For, Show, Switch, Match, onMount, onCleanup, createSignal, createEffect } from "solid-js";
+import { For, Show, onMount, onCleanup, createSignal } from "solid-js";
 import type { JSX } from "solid-js";
-import type {
-  Action,
-  AuctionPayload,
-  AuctionParticipant,
-  AuctionRole,
-  AuctionTrade,
-} from "../../engine/game_state";
+import type { Action, AuctionPayload, AuctionRole } from "../../engine/game_state";
 import type { GameStore } from "../game_store";
 import { HUMAN_ID } from "../game_driver";
-import { notifyAuctionCommit, onSceneFrame } from "../scenes/scene_manager";
-import { priceToTrackY, easeToward } from "../scenes/auction_tween";
-import { buildSpriteDefsMarkup, playerColor, resourceIconSymbolId } from "../sprites";
-import type { SpeciesName } from "../sprites/sprites_species";
-import {
-  speciesSymbolId,
-  pickSpeciesFrameId,
-  buildSpeciesSpriteDefsMarkup,
-} from "../sprites/sprites_species";
-import { arenaSymbolId, buildArenaSpriteDefsMarkup } from "../sprites/sprites_arena";
+import { notifyAuctionCommit } from "../scenes/scene_manager";
+import { AuctionArena } from "../scenes/auction_arena";
+import { AuctionStatusLayer } from "../scenes/auction_status";
 import { TutorialHint } from "./tutorial_hint";
 
-/** Length (SVG units) of the horizontal price axis, left (store buy) to right (store sell). */
-const TRACK_LENGTH = 480;
-/** Breadth (SVG units) across the stacked player lanes, top to bottom. */
-const TRACK_BREADTH = 260;
-/** Number of player lanes down the arena breadth (one horizontal lane per player). */
-const PLAYER_LANES = 4;
-/** Rendered size of a species avatar in SVG units. */
-const AVATAR_SIZE = 44;
-/** Rendered size of a flying goods-unit glyph in SVG units. */
-const GOODS_SIZE = 16;
-/** Rendered size of a trade-flash burst in SVG units. */
-const FLASH_SIZE = 28;
-/** SVG namespace for imperatively created trade-layer elements. */
-const SVG_NS = "http://www.w3.org/2000/svg";
-/** Store's sentinel participant id in a trade (matches AUCTION_STORE_ID). */
-const STORE_ID = 4;
+/** The three roles, in the order the buttons render (Buy, Sell, Sit Out). */
+const ROLE_CHOICES: readonly { readonly role: AuctionRole; readonly label: string }[] = [
+  { role: "buyer", label: "Buy" },
+  { role: "seller", label: "Sell" },
+  { role: "out", label: "Sit Out" },
+];
 
-/** Number of most recent trades to show in the trade flash list. */
-const RECENT_TRADE_COUNT = 5;
+/** Which beat of one good's auction window is on screen. */
+type AuctionBeat = "declare" | "live" | "finished";
 
-/** Avatar easing rate per second; larger converges to the target y faster. */
-const TWEEN_RATE = 11;
-/** Snap-to-target threshold (SVG units) below which an avatar is "arrived". */
-const ARRIVAL_EPSILON = 0.4;
-/** Walk-cycle frame-swap cadence in milliseconds while an avatar is moving. */
-const WALK_FRAME_MS = 140;
-/** Duration a flying goods glyph takes to travel between the trading pair. */
-const GOODS_TRAVEL_MS = 420;
-/** How long a trade-flash burst stays on screen before it is removed. */
-const FLASH_MS = 320;
-
-/**
- * Fixed slot -> species map used until species selection lands. Player slots
- * 0..3 (playerId order) take the first four silhouette-distinct species; a later
- * milestone replaces this with the player's chosen species.
- */
-const SPECIES_BY_SLOT: readonly SpeciesName[] = ["humanoid", "gollumer", "mechtron", "packer"];
-
-/** The interactive mode the auction scene shows. */
-type AuctionMode = "finished" | "role-choice" | "track";
-
-/** A point in arena SVG coordinates. */
-interface Point {
-  readonly x: number;
-  readonly y: number;
-}
-
-/** One goods glyph in flight between a trading pair, updated each frame. */
-interface FlyingGood {
-  readonly el: SVGUseElement;
-  readonly from: Point;
-  readonly to: Point;
-  elapsed: number;
-}
-
-/** Props for the auction scene. */
+/** Props for the auction shell. */
 export interface AuctionScreenProps {
   /** The live game store, for dispatch and current-state reads. */
   readonly store: GameStore;
@@ -130,52 +81,22 @@ export interface AuctionScreenProps {
 
 //============================================
 /**
- * Center y of a player's lane. Lanes divide the arena breadth evenly, one per
- * player, so each avatar keeps a stable horizontal row and walks left-to-right
- * along it as its price changes.
+ * The price direction a key gesture asks for, or undefined for a key this
+ * screen does not bind. Right/Up raise, Left/Down lower: right is the primary,
+ * taught gesture because a rising price walks the avatar rightward along the
+ * runway; up/down are compatibility aliases for the pre-landscape control.
  *
- * @param slot - Player slot (playerId, 0..3).
- * @returns The lane center y in arena units.
+ * @param key - The KeyboardEvent `key` value.
+ * @returns "up" to raise, "down" to lower, or undefined when unbound.
  */
-function laneCenterY(slot: number): number {
-  return (TRACK_BREADTH * (slot + 0.5)) / PLAYER_LANES;
-}
-
-//============================================
-/**
- * The sideline "line judge" spot where an out participant parks: a spectator
- * position beside the price track, off the trading lanes, so a sitting-out
- * player watches the action rather than standing on the price axis. This mirrors
- * planet_mule, where a non-participating player is drawn off the price track and
- * shows no price figure (view/AuctionPainter.java:188-215).
- *
- * This helper is the single seam the landscape-rotation task edits. Because it
- * returns a full arena point derived from the arena dimensions and the player's
- * slot, rotating the track (price now advancing left-to-right instead of the
- * old top-to-bottom) only rewrote this one function, not every avatar-placement
- * call site. For the landscape track the sideline runs along the bottom edge,
- * with judges staggered across by slot so they line up without overlapping.
- *
- * @param slot - Player slot (playerId, 0..3).
- * @returns The judge spot center in arena units.
- */
-function sidelineSpot(slot: number): Point {
-  // Hug the bottom edge so the avatar sits fully inside the arena, below the track.
-  const y = TRACK_BREADTH - AVATAR_SIZE / 2;
-  // Stagger judges across the sideline, one reserved band per slot.
-  const x = (TRACK_LENGTH * (slot + 0.5)) / PLAYER_LANES;
-  return { x, y };
-}
-
-//============================================
-/**
- * The species a player slot renders until species selection lands.
- *
- * @param slot - Player slot (playerId, 0..3).
- * @returns The slot's fixed species.
- */
-function speciesForSlot(slot: number): SpeciesName {
-  return SPECIES_BY_SLOT[slot] ?? "humanoid";
+function intentForKey(key: string): "up" | "down" | undefined {
+  if (key === "ArrowRight" || key === "ArrowUp") {
+    return "up";
+  }
+  if (key === "ArrowLeft" || key === "ArrowDown") {
+    return "down";
+  }
+  return undefined;
 }
 
 //============================================
@@ -194,13 +115,13 @@ function prefersReducedMotion(): boolean {
 
 //============================================
 /**
- * Render the auction scene: header, crisp price readout, and whichever
- * interactive mode the current payload calls for. The arena root carries
- * `data-reduced-motion` so a browser test can confirm the emulated preference
- * reached the scene.
+ * Render the goods-auction screen: the full-stage arena slot with the beat's
+ * overlay floating over it. The root carries `data-reduced-motion` so a browser
+ * test can confirm the emulated preference reached the scene, and `data-beat`
+ * so a capture driver can tell the beats apart without reading engine state.
  *
  * @param props - Carries the store and the auction payload accessor.
- * @returns The auction scene element.
+ * @returns The auction screen element.
  */
 export function AuctionScreen(props: AuctionScreenProps): JSX.Element {
   const dispatch = (action: Action): void => props.store.dispatch(action);
@@ -218,57 +139,208 @@ export function AuctionScreen(props: AuctionScreenProps): JSX.Element {
     onCleanup(() => mediaQuery.removeEventListener("change", onChange));
   });
 
-  const mode = (): AuctionMode => {
+  const setIntent = (intent: "up" | "down" | "hold"): void => {
+    dispatch({ type: "set_auction_intent", playerId: HUMAN_ID, intent });
+  };
+
+  onMount(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      // Intent is a held state, so OS auto-repeat is redundant: the first
+      // keydown already set the direction.
+      if (event.repeat) {
+        return;
+      }
+      const direction = intentForKey(event.key);
+      if (direction === undefined) {
+        return;
+      }
+      event.preventDefault();
+      setIntent(direction);
+    };
+    const onKeyUp = (event: KeyboardEvent): void => {
+      if (intentForKey(event.key) !== undefined) {
+        setIntent("hold");
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keyup", onKeyUp);
+    onCleanup(() => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keyup", onKeyUp);
+    });
+  });
+
+  // The beat this good's window is on. A skipped window is created already
+  // finished, so it lands on "finished" and offers Continue immediately, with
+  // no declare step -- the engine ran no trading phase for it at all.
+  const beat = (): AuctionBeat => {
     const payload = props.payload();
     if (payload.finished) {
       return "finished";
     }
-    // At the opening tick the human confirms or overrides the engine's
-    // auto-assigned role before the clock runs; committing a role starts the
-    // clock, which advances the tick and swaps this to the live arena.
     if (payload.tick === 0) {
-      return "role-choice";
+      return "declare";
     }
-    return "track";
+    return "live";
   };
 
   return (
-    <div class="auction-screen" data-reduced-motion={reducedMotion() ? "true" : "false"}>
-      <TutorialHint
-        kind="auction"
-        message="Choose Buy, Sell, or Sit Out for this good -- your avatar walks the price track as you raise or lower your offer."
-      />
-      <div class="auction-screen-header">
-        <span class="auction-screen-good">{`Auction: ${props.payload().good}`}</span>
-        <span class="auction-screen-ticks">{`Ticks left: ${props.payload().ticksRemaining}`}</span>
+    <div
+      class="auction-screen"
+      data-reduced-motion={reducedMotion() ? "true" : "false"}
+      data-beat={beat()}
+    >
+      <div class="auction-arena-slot">
+        {/* Keyed on the good so each window opens with avatars snapped to their
+            new band rather than tweening across from the last good's prices. */}
+        <Show when={props.payload().good} keyed>
+          {(_good) => (
+            <AuctionArena
+              payload={props.payload}
+              reducedMotion={reducedMotion}
+              players={() => props.store.state.players}
+            />
+          )}
+        </Show>
+        <Show when={beat() === "declare"}>
+          <DeclareOverlay
+            payload={props.payload}
+            dispatch={dispatch}
+            reducedMotion={reducedMotion}
+          />
+        </Show>
+        <Show when={beat() === "live"}>
+          <IntentControls setIntent={setIntent} />
+        </Show>
+        <Show when={beat() === "finished"}>
+          <FinishedOverlay payload={props.payload} dispatch={dispatch} />
+        </Show>
       </div>
-      <Switch>
-        <Match when={mode() === "finished"}>
-          <FinishedPanel dispatch={dispatch} />
-        </Match>
-        <Match when={mode() === "role-choice"}>
-          <RolePanel dispatch={dispatch} />
-        </Match>
-        <Match when={mode() === "track"}>
-          <ArenaPanel payload={props.payload} dispatch={dispatch} reducedMotion={reducedMotion} />
-        </Match>
-      </Switch>
+      <p class="auction-screen-announcer" aria-live="polite">
+        {announceBeat(props.payload())}
+      </p>
     </div>
   );
 }
 
 //============================================
 /**
- * Finished panel: a completion message and a Continue button that ends the
- * auction (the scene manager also auto-advances after a pause).
+ * The screen-reader line for the current beat. Deliberately keyed to the good
+ * and the beat rather than the live price, so a polite live region announces
+ * the four moments that matter instead of chattering on every tick.
  *
- * @param props - Carries the dispatch function.
- * @returns The finished panel element.
+ * @param payload - The current good's auction payload.
+ * @returns The sentence to announce.
  */
-function FinishedPanel(props: { readonly dispatch: (action: Action) => void }): JSX.Element {
+function announceBeat(payload: AuctionPayload): string {
+  if (payload.skipped) {
+    return `${payload.good}: no trade possible this round.`;
+  }
+  if (payload.finished) {
+    return `${payload.good} auction complete.`;
+  }
+  if (payload.tick === 0) {
+    return `${payload.good} auction: choose Buy, Sell, or Sit Out.`;
+  }
+  return `${payload.good} auction under way. Right arrow raises your price, left arrow lowers it.`;
+}
+
+//============================================
+/**
+ * Declare overlay: the Buy / Sell / Sit Out choice, floating over the live
+ * arena at the opening tick. Choosing declares the human's role for this good
+ * and notifies the scene manager that the auction clock may start (even when
+ * the choice is to sit out).
+ *
+ * The three role buttons are the walkthrough harness's tick-0 contract: they
+ * render on the first frame of the window (this overlay is plain markup gated
+ * on a payload field, not on any timer, effect, or fetch), and nothing floats
+ * above them, so a harness click always lands. The status/accounting beat
+ * (`AuctionStatusLayer`) renders here in the SAME document flow, ABOVE
+ * these buttons in reading order, never absolutely positioned on top of them
+ * in the stacking order.
+ *
+ * @param props - Carries the payload accessor, the dispatch function, and the
+ *   reduced-motion flag the status layer needs to snap its bars.
+ * @returns The declare overlay element.
+ */
+function DeclareOverlay(props: {
+  readonly payload: () => AuctionPayload;
+  readonly dispatch: (action: Action) => void;
+  readonly reducedMotion: () => boolean;
+}): JSX.Element {
+  const choose = (role: AuctionRole): void => {
+    props.dispatch({ type: "set_auction_role", playerId: HUMAN_ID, role });
+    notifyAuctionCommit();
+  };
   return (
-    <div class="auction-screen-panel auction-screen-finished-panel">
-      <p class="auction-screen-finished-message">Round of trading complete.</p>
+    <div class="auction-overlay auction-declare-overlay">
+      <p class="auction-overlay-title">{`${props.payload().good} auction`}</p>
+      <AuctionStatusLayer
+        status={() => props.payload().status}
+        reducedMotion={props.reducedMotion}
+      />
+      <p class="auction-overlay-hint">Choose your side for this good.</p>
+      {/* The hint rides INSIDE the declare card rather than floating over the
+          arena. As a corner-pinned overlay it sat in the top band, where it
+          covered the good's own title and emblem, crowded the going price it was
+          floating next to, and clipped the dock's column header -- badly enough
+          at 1280x800 to cut the header's glyphs in half. There is no free corner
+          on this screen to move it to; every region is carrying something. The
+          card, though, is the one surface with room, and it is showing at exactly
+          the beat the hint is for. It leaves with the card on the first commit,
+          so the live market is never taught over. */}
+      <TutorialHint
+        kind="auction"
+        message="Hold the Right Arrow to raise your price, the Left Arrow to lower it."
+      />
+      <div class="auction-role-choices">
+        <For each={ROLE_CHOICES}>
+          {(entry) => (
+            <button
+              type="button"
+              class="auction-screen-button auction-screen-role-button"
+              data-action="auction-role"
+              data-role={entry.role}
+              onClick={() => choose(entry.role)}
+            >
+              {entry.label}
+            </button>
+          )}
+        </For>
+      </div>
+    </div>
+  );
+}
+
+//============================================
+/**
+ * Finished overlay: the window's closing summary and a Continue button that
+ * ends the good (the scene manager also auto-advances after a pause). A skipped
+ * window says so plainly rather than showing an empty trade summary -- the
+ * engine ran no trading phase for it.
+ *
+ * @param props - Carries the payload accessor and the dispatch function.
+ * @returns The finished overlay element.
+ */
+function FinishedOverlay(props: {
+  readonly payload: () => AuctionPayload;
+  readonly dispatch: (action: Action) => void;
+}): JSX.Element {
+  const summary = (): string => {
+    const payload = props.payload();
+    if (payload.skipped) {
+      return `No ${payload.good} to trade this round.`;
+    }
+    const units = payload.trades.length;
+    if (units === 0) {
+      return "Round of trading complete. No units changed hands.";
+    }
+    return `Round of trading complete. ${units} unit${units === 1 ? "" : "s"} traded.`;
+  };
+  return (
+    <div class="auction-overlay auction-finished-overlay">
+      <p class="auction-overlay-title">{summary()}</p>
       <button
         type="button"
         class="auction-screen-button auction-screen-continue-button"
@@ -283,635 +355,34 @@ function FinishedPanel(props: { readonly dispatch: (action: Action) => void }): 
 
 //============================================
 /**
- * Role-choice bar: Buy / Sell / Sit Out buttons. Choosing declares the human's
- * role for this good and notifies the scene manager that the auction clock may
- * start (even when the choice is to sit out).
+ * The live window's price-intent controls: press-and-hold Raise / Lower buttons
+ * for pointer and touch input, mirroring the ArrowRight / ArrowLeft keys the
+ * shell binds. Each fires on pointerdown and releases on pointerup, leave, or
+ * cancel, so a dragged-off touch still releases the hold.
  *
- * @param props - Carries the dispatch function.
- * @returns The role-choice panel element.
+ * @param props - Carries the intent setter.
+ * @returns The intent control bar.
  */
-function RolePanel(props: { readonly dispatch: (action: Action) => void }): JSX.Element {
-  const roles: readonly { readonly role: AuctionRole; readonly label: string }[] = [
-    { role: "buyer", label: "Buy" },
-    { role: "seller", label: "Sell" },
-    { role: "out", label: "Sit Out" },
-  ];
-  const choose = (role: AuctionRole): void => {
-    props.dispatch({ type: "set_auction_role", playerId: HUMAN_ID, role });
-    notifyAuctionCommit();
-  };
-  return (
-    <div class="auction-screen-panel auction-screen-role-panel">
-      <p class="auction-screen-role-hint">Choose your side for this good's auction.</p>
-      <For each={roles}>
-        {(entry) => (
-          <button
-            type="button"
-            class="auction-screen-button auction-screen-role-button"
-            data-action="auction-role"
-            data-role={entry.role}
-            onClick={() => choose(entry.role)}
-          >
-            {entry.label}
-          </button>
-        )}
-      </For>
-    </div>
-  );
-}
-
-//============================================
-/**
- * Live arena panel: the crisp price readout, the spatial price arena, the trade
- * log, and the up/down price-intent controls (keyboard held-arrows plus
- * press-and-hold touch buttons). Keyboard intent is edge-driven to match the
- * engine's discrete up/down/hold intent model: keydown sets the held direction,
- * keyup releases to hold, and OS auto-repeat is ignored. This keeps the scene
- * fully keyboard-playable without a per-frame poller, since the engine, not the
- * keyboard, advances the avatar position (through the price it derives from).
- *
- * @param props - Carries the payload accessor, dispatch, and reduced-motion
- *   accessor.
- * @returns The arena panel fragment.
- */
-function ArenaPanel(props: {
-  readonly payload: () => AuctionPayload;
-  readonly dispatch: (action: Action) => void;
-  readonly reducedMotion: () => boolean;
+function IntentControls(props: {
+  readonly setIntent: (intent: "up" | "down" | "hold") => void;
 }): JSX.Element {
-  const setIntent = (intent: "up" | "down" | "hold"): void => {
-    props.dispatch({ type: "set_auction_intent", playerId: HUMAN_ID, intent });
-  };
-
-  onMount(() => {
-    // Intent is a held state, so ignore OS key auto-repeat: the first keydown
-    // set the intent and repeats are redundant. Keyup releases back to "hold".
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.repeat) {
-        return;
-      }
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        setIntent("up");
-      } else if (event.key === "ArrowDown") {
-        event.preventDefault();
-        setIntent("down");
-      }
-    };
-    const onKeyUp = (event: KeyboardEvent): void => {
-      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-        setIntent("hold");
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("keyup", onKeyUp);
-    onCleanup(() => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("keyup", onKeyUp);
-    });
-  });
-
   return (
-    <>
-      <PriceReadout payload={props.payload} />
-      <div class="auction-screen-panel auction-screen-track-panel">
-        <PriceArena payload={props.payload} reducedMotion={props.reducedMotion} />
-      </div>
-      <TradeLog payload={props.payload} />
-      <div class="auction-screen-intent-controls">
-        <IntentButton
-          label="Up"
-          className="auction-screen-intent-up"
-          dataAction="auction-intent-up"
-          onPress={() => setIntent("up")}
-          onRelease={() => setIntent("hold")}
-        />
-        <IntentButton
-          label="Down"
-          className="auction-screen-intent-down"
-          dataAction="auction-intent-down"
-          onPress={() => setIntent("down")}
-          onRelease={() => setIntent("hold")}
-        />
-      </div>
-    </>
-  );
-}
-
-//============================================
-/**
- * Crisp price readout: the good name, the store's live buy/sell quotes, and
- * each player's current price and role. Rendered as high-contrast, monospace,
- * right-aligned text so the numbers stay readable and column-aligned as they
- * move, addressing the art gate's price-readability criterion.
- *
- * @param props - Carries the auction payload accessor.
- * @returns The price-readout element.
- */
-function PriceReadout(props: { readonly payload: () => AuctionPayload }): JSX.Element {
-  const money = (amount: number): string => `$${amount}`;
-  return (
-    <div class="auction-price-readout" aria-live="polite">
-      <div class="auction-price-store">
-        <span class="auction-price-good-name">{props.payload().good}</span>
-        <span class="auction-price-store-quote">{`store buy ${money(props.payload().storeBuyPrice)}`}</span>
-        <span class="auction-price-store-quote">{`store sell ${money(props.payload().storeSellPrice)}`}</span>
-      </div>
-      <ul class="auction-price-players">
-        <For each={props.payload().participants}>
-          {(participant) => (
-            <li class="auction-price-player" data-actor-readout={`player-${participant.playerId}`}>
-              <span
-                class="auction-price-swatch"
-                style={{ "background-color": playerColor(participant.playerId) }}
-              />
-              <span class="auction-price-role">{roleLabel(participant.role)}</span>
-              <span class="auction-price-value">
-                {participant.role === "out" ? "--" : money(participant.price)}
-              </span>
-            </li>
-          )}
-        </For>
-      </ul>
-    </div>
-  );
-}
-
-//============================================
-/**
- * The spatial price arena SVG: arena chrome backdrop, the store buy/sell band
- * lines and bracket, the central horizontal price axis, one price-marker token
- * dot per participant (reactive `cx`), one species avatar per participant (imperatively
- * tweened), and the trade-animation layer on top. The avatar tween loop and the
- * trade animations run off the scene manager's rAF via `onSceneFrame`.
- *
- * @param props - Carries the payload accessor and reduced-motion accessor.
- * @returns The arena `<svg>` element.
- */
-function PriceArena(props: {
-  readonly payload: () => AuctionPayload;
-  readonly reducedMotion: () => boolean;
-}): JSX.Element {
-  const axisY = TRACK_BREADTH / 2;
-  // Map a price to an x on the horizontal track: the store buy quote (floor)
-  // anchors the left end (x = 0) and the store sell quote (ceiling) the right
-  // end (x = TRACK_LENGTH). Reuses the tested vertical mapping (floor -> length,
-  // ceiling -> 0) and flips it, so a rising price walks an avatar rightward.
-  const priceToX = (price: number): number =>
-    TRACK_LENGTH -
-    priceToTrackY(price, props.payload().priceFloor, props.payload().priceCeiling, TRACK_LENGTH);
-
-  // An avatar's target position: an out participant parks at its sideline judge
-  // spot (below the track); a buyer or seller stands in its lane at its price.
-  const avatarTarget = (participant: AuctionParticipant): Point =>
-    participant.role === "out"
-      ? sidelineSpot(participant.playerId)
-      : { x: priceToX(participant.price), y: laneCenterY(participant.playerId) };
-
-  // Imperative avatar state, indexed by player slot (playerId 0..3). The token
-  // dots stay reactive; only the avatar groups tween.
-  const avatarGroups: (SVGGElement | undefined)[] = [];
-  const avatarSprites: (SVGUseElement | undefined)[] = [];
-  const avatarX: number[] = [];
-
-  // Trade-animation layer state.
-  let tradeLayer: SVGGElement | undefined;
-  const flyingGoods: FlyingGood[] = [];
-  const flashTimers = new Set<number>();
-  let flashCount = 0;
-  let lastTradeCount = props.payload().trades.length;
-
-  // Frame-loop bookkeeping for the walk-cycle clock.
-  let lastNow = 0;
-  let walkClockMs = 0;
-  let walkFrame: 1 | 2 = 1;
-
-  //------------------------------------------
-  // Register an avatar's refs and snap it to its current price-derived y so it
-  // never flashes at the SVG origin before the first frame runs.
-  const registerAvatar = (slot: number, group: SVGGElement, sprite: SVGUseElement): void => {
-    avatarGroups[slot] = group;
-    avatarSprites[slot] = sprite;
-    const payload = props.payload();
-    const participant = payload.participants[slot];
-    if (participant === undefined) {
-      return;
-    }
-    const target = avatarTarget(participant);
-    avatarX[slot] = target.x;
-    writeAvatarTransform(group, target.x, target.y);
-  };
-
-  //------------------------------------------
-  // The store's edge position for a store-side trade: the store sells at the
-  // ceiling (right end) and buys at the floor (left end), both on the central
-  // horizontal axis.
-  const storePosition = (side: "buy" | "sell"): Point => {
-    const payload = props.payload();
-    const price = side === "sell" ? payload.storeSellPrice : payload.storeBuyPrice;
-    return { x: priceToX(price), y: axisY };
-  };
-
-  //------------------------------------------
-  // A trade participant's current arena position: a player's tweened avatar
-  // position, or the store edge for the store sentinel id.
-  const actorPosition = (id: number, side: "buy" | "sell"): Point => {
-    if (id === STORE_ID) {
-      return storePosition(side);
-    }
-    const payload = props.payload();
-    const participant = payload.participants[id];
-    const x =
-      avatarX[id] ?? (participant !== undefined ? priceToX(participant.price) : TRACK_LENGTH / 2);
-    return { x, y: laneCenterY(id) };
-  };
-
-  //------------------------------------------
-  // Spawn the animation for one executed trade: a flash at the buyer, and
-  // (unless reduced motion) a goods glyph flying from seller to buyer. The
-  // monotonic flash counter records that the animation path ran.
-  const spawnTradeAnimation = (trade: AuctionTrade): void => {
-    const layer = tradeLayer;
-    if (layer === undefined) {
-      return;
-    }
-    const buyerPos = actorPosition(trade.buyerId, "buy");
-    const sellerPos = actorPosition(trade.sellerId, "sell");
-    flashCount += 1;
-    layer.setAttribute("data-flash-count", String(flashCount));
-    addFlash(layer, buyerPos);
-    if (!props.reducedMotion()) {
-      addFlyingGood(layer, props.payload().good, sellerPos, buyerPos);
-    }
-  };
-
-  //------------------------------------------
-  // Add a short-lived flash burst at a point, removed after FLASH_MS.
-  const addFlash = (layer: SVGGElement, at: Point): void => {
-    const flash = document.createElementNS(SVG_NS, "use");
-    flash.setAttribute("href", `#${arenaSymbolId("trade-flash")}`);
-    flash.setAttribute("class", "auction-trade-flash-burst");
-    flash.setAttribute("x", (at.x - FLASH_SIZE / 2).toFixed(2));
-    flash.setAttribute("y", (at.y - FLASH_SIZE / 2).toFixed(2));
-    flash.setAttribute("width", String(FLASH_SIZE));
-    flash.setAttribute("height", String(FLASH_SIZE));
-    layer.appendChild(flash);
-    const timer = window.setTimeout(() => {
-      flash.remove();
-      flashTimers.delete(timer);
-    }, FLASH_MS);
-    flashTimers.add(timer);
-  };
-
-  //------------------------------------------
-  // Add a goods glyph starting at the seller, to be eased toward the buyer by
-  // the frame loop.
-  const addFlyingGood = (
-    layer: SVGGElement,
-    good: AuctionPayload["good"],
-    from: Point,
-    to: Point,
-  ): void => {
-    const glyph = document.createElementNS(SVG_NS, "use");
-    glyph.setAttribute("href", `#${resourceIconSymbolId(good)}`);
-    glyph.setAttribute("class", "auction-trade-goods");
-    glyph.setAttribute("width", String(GOODS_SIZE));
-    glyph.setAttribute("height", String(GOODS_SIZE));
-    glyph.setAttribute("x", (from.x - GOODS_SIZE / 2).toFixed(2));
-    glyph.setAttribute("y", (from.y - GOODS_SIZE / 2).toFixed(2));
-    layer.appendChild(glyph);
-    flyingGoods.push({ el: glyph, from, to, elapsed: 0 });
-  };
-
-  //------------------------------------------
-  // Advance every flying goods glyph by one frame; remove those that arrived.
-  const updateFlyingGoods = (deltaMs: number): void => {
-    for (let index = flyingGoods.length - 1; index >= 0; index -= 1) {
-      const good = flyingGoods[index];
-      if (good === undefined) {
-        continue;
-      }
-      good.elapsed += deltaMs;
-      const progress = Math.min(1, good.elapsed / GOODS_TRAVEL_MS);
-      const x = good.from.x + (good.to.x - good.from.x) * progress;
-      const y = good.from.y + (good.to.y - good.from.y) * progress;
-      good.el.setAttribute("x", (x - GOODS_SIZE / 2).toFixed(2));
-      good.el.setAttribute("y", (y - GOODS_SIZE / 2).toFixed(2));
-      if (progress >= 1) {
-        good.el.remove();
-        flyingGoods.splice(index, 1);
-      }
-    }
-  };
-
-  //------------------------------------------
-  // One animation frame: ease each avatar toward its price-derived y (or snap
-  // under reduced motion), swap walk frames while moving, and advance goods.
-  const onFrameTick = (now: number): void => {
-    const deltaMs = lastNow === 0 ? 0 : now - lastNow;
-    lastNow = now;
-    const deltaSeconds = deltaMs / 1000;
-    const payload = props.payload();
-    const reduced = props.reducedMotion();
-
-    // Advance the shared walk-cycle clock, toggling the stride frame.
-    walkClockMs += deltaMs;
-    if (walkClockMs >= WALK_FRAME_MS) {
-      walkClockMs = 0;
-      walkFrame = walkFrame === 1 ? 2 : 1;
-    }
-
-    for (const participant of payload.participants) {
-      const slot = participant.playerId;
-      const target = avatarTarget(participant);
-      const group = avatarGroups[slot];
-      const sprite = avatarSprites[slot];
-
-      // An out participant is a static spectator: snap to its sideline judge
-      // spot and stand still (frame 1, no walk cycle).
-      if (participant.role === "out") {
-        avatarX[slot] = target.x;
-        if (group !== undefined) {
-          writeAvatarTransform(group, target.x, target.y);
-        }
-        if (sprite !== undefined) {
-          const frameId = `#${pickSpeciesFrameId(speciesForSlot(slot), 1, reduced)}`;
-          if (sprite.getAttribute("href") !== frameId) {
-            sprite.setAttribute("href", frameId);
-          }
-        }
-        continue;
-      }
-
-      // A buyer or seller keeps its lane y and eases horizontally toward its price.
-      const current = avatarX[slot] ?? target.x;
-      const next = reduced
-        ? target.x
-        : easeToward(current, target.x, deltaSeconds, TWEEN_RATE, ARRIVAL_EPSILON);
-      avatarX[slot] = next;
-      const moving = !reduced && next !== target.x;
-
-      if (group !== undefined) {
-        writeAvatarTransform(group, next, target.y);
-      }
-      if (sprite !== undefined) {
-        const desiredFrame: 1 | 2 = moving ? walkFrame : 1;
-        const frameId = `#${pickSpeciesFrameId(speciesForSlot(slot), desiredFrame, reduced)}`;
-        if (sprite.getAttribute("href") !== frameId) {
-          sprite.setAttribute("href", frameId);
-        }
-      }
-    }
-
-    updateFlyingGoods(deltaMs);
-  };
-
-  //------------------------------------------
-  // Tear down: remove any in-flight goods, clear flash timers.
-  const teardownAnimations = (): void => {
-    for (const good of flyingGoods) {
-      good.el.remove();
-    }
-    flyingGoods.length = 0;
-    for (const timer of flashTimers) {
-      window.clearTimeout(timer);
-    }
-    flashTimers.clear();
-  };
-
-  onMount(() => {
-    const unsubscribe = onSceneFrame(onFrameTick);
-    onCleanup(() => {
-      unsubscribe();
-      teardownAnimations();
-    });
-  });
-
-  // Trades are additive; when the log grows, animate each newly-appended trade.
-  createEffect(() => {
-    const trades = props.payload().trades;
-    if (trades.length > lastTradeCount) {
-      for (let index = lastTradeCount; index < trades.length; index += 1) {
-        const trade = trades[index];
-        if (trade !== undefined) {
-          spawnTradeAnimation(trade);
-        }
-      }
-      lastTradeCount = trades.length;
-    }
-  });
-
-  return (
-    <svg
-      class="auction-track-svg"
-      viewBox={`0 0 ${TRACK_LENGTH} ${TRACK_BREADTH}`}
-      role="img"
-      aria-label="Auction price arena"
-    >
-      <g
-        innerHTML={
-          buildSpriteDefsMarkup() + buildSpeciesSpriteDefsMarkup() + buildArenaSpriteDefsMarkup()
-        }
+    <div class="auction-intent-controls">
+      <IntentButton
+        label="Lower"
+        className="auction-screen-intent-down"
+        dataAction="auction-intent-down"
+        onPress={() => props.setIntent("down")}
+        onRelease={() => props.setIntent("hold")}
       />
-      <use
-        href={`#${arenaSymbolId("backdrop")}`}
-        x={0}
-        y={0}
-        width={TRACK_LENGTH}
-        height={TRACK_BREADTH}
+      <p class="auction-intent-legend">Left arrow lowers, right arrow raises</p>
+      <IntentButton
+        label="Raise"
+        className="auction-screen-intent-up"
+        dataAction="auction-intent-up"
+        onPress={() => props.setIntent("up")}
+        onRelease={() => props.setIntent("hold")}
       />
-      <StoreBandBracket
-        buyX={priceToX(props.payload().storeBuyPrice)}
-        sellX={priceToX(props.payload().storeSellPrice)}
-      />
-      <line x1={0} y1={axisY} x2={TRACK_LENGTH} y2={axisY} class="auction-track-axis" />
-      <line
-        x1={priceToX(props.payload().storeBuyPrice)}
-        y1={0}
-        x2={priceToX(props.payload().storeBuyPrice)}
-        y2={TRACK_BREADTH}
-        class="auction-track-store-buy-line"
-      />
-      <line
-        x1={priceToX(props.payload().storeSellPrice)}
-        y1={0}
-        x2={priceToX(props.payload().storeSellPrice)}
-        y2={TRACK_BREADTH}
-        class="auction-track-store-sell-line"
-      />
-      <For each={props.payload().participants}>
-        {(participant) => (
-          <Show when={participant.role !== "out"}>
-            <circle
-              class="auction-track-token"
-              cx={priceToX(participant.price)}
-              cy={laneCenterY(participant.playerId)}
-              r={5}
-              fill={playerColor(participant.playerId)}
-            />
-          </Show>
-        )}
-      </For>
-      <For each={props.payload().participants}>
-        {(participant) => (
-          <Avatar
-            slot={participant.playerId}
-            participant={participant}
-            species={speciesForSlot(participant.playerId)}
-            register={registerAvatar}
-          />
-        )}
-      </For>
-      <g
-        class="auction-trade-layer"
-        data-flash-count="0"
-        ref={(el) => {
-          tradeLayer = el;
-        }}
-      />
-    </svg>
-  );
-}
-
-//============================================
-/**
- * The store's buy/sell band bracket: the arena-chrome band symbol stretched to
- * span the two store-quote x coordinates, layered behind the dashed band lines
- * as a shaded price zone. Buyers left of the store buy end and sellers right of
- * the store sell end are outside the store's spread.
- *
- * @param props - Carries the left (`buyX`, the store buy end) and right (`sellX`,
- *   the store sell end) band x coordinates.
- * @returns The band bracket `<use>` element, or nothing for a zero-width band.
- */
-function StoreBandBracket(props: { readonly buyX: number; readonly sellX: number }): JSX.Element {
-  const left = (): number => Math.min(props.buyX, props.sellX);
-  const width = (): number => Math.abs(props.sellX - props.buyX);
-  return (
-    <Show when={width() > 0}>
-      <use
-        href={`#${arenaSymbolId("store-band")}`}
-        x={left()}
-        y={0}
-        width={width()}
-        height={TRACK_BREADTH}
-      />
-    </Show>
-  );
-}
-
-/** Props for one avatar. */
-interface AvatarProps {
-  /** Player slot (playerId, 0..3): lane, species, and ref index. */
-  readonly slot: number;
-  /** The participant whose role tints the group's `data-role`. */
-  readonly participant: AuctionParticipant;
-  /** The species silhouette to render. */
-  readonly species: SpeciesName;
-  /** Called on mount with the group and sprite refs for the tween loop. */
-  readonly register: (slot: number, group: SVGGElement, sprite: SVGUseElement) => void;
-}
-
-//============================================
-/**
- * One player's species avatar: a `<g>` carrying the test hooks (`data-actor`,
- * reactive `data-role`, and the per-frame `data-x`/`data-y` the tween loop
- * writes) around a tintable `<use>` of the species walk symbol. The group's
- * `transform` and the sprite's `href` are written imperatively by the tween
- * loop; the initial pose is set on mount via `register`, so nothing here binds
- * them reactively.
- *
- * @param props - Carries the slot, participant, species, and register callback.
- * @returns The avatar `<g>` group.
- */
-function Avatar(props: AvatarProps): JSX.Element {
-  let groupEl: SVGGElement | undefined;
-  let spriteEl: SVGUseElement | undefined;
-  const color = playerColor(props.participant.playerId);
-  onMount(() => {
-    if (groupEl !== undefined && spriteEl !== undefined) {
-      props.register(props.slot, groupEl, spriteEl);
-    }
-  });
-  return (
-    <g
-      ref={(el) => {
-        groupEl = el;
-      }}
-      class="auction-avatar"
-      data-actor={`player-${props.participant.playerId}`}
-      data-role={props.participant.role}
-    >
-      <use
-        ref={(el) => {
-          spriteEl = el;
-        }}
-        class="auction-avatar-sprite"
-        href={`#${speciesSymbolId(props.species, 1)}`}
-        width={AVATAR_SIZE}
-        height={AVATAR_SIZE}
-        style={{ color }}
-      />
-    </g>
-  );
-}
-
-//============================================
-/**
- * Write an avatar group's transform so its center sits at (`centerX`, `centerY`),
- * and mirror both center coordinates onto `data-x` and `data-y` for browser
- * tests to poll. On the landscape track price drives `centerX`, so `data-x` is
- * the moving coordinate and `data-y` is the fixed lane; taking an explicit
- * center y (rather than deriving it from the lane) lets an out participant park
- * on the sideline, off its trading lane.
- *
- * @param group - The avatar group element.
- * @param centerX - The avatar's center x in arena units.
- * @param centerY - The avatar's center y in arena units.
- */
-function writeAvatarTransform(group: SVGGElement, centerX: number, centerY: number): void {
-  const x = centerX - AVATAR_SIZE / 2;
-  const y = centerY - AVATAR_SIZE / 2;
-  group.setAttribute("transform", `translate(${x.toFixed(2)}, ${y.toFixed(2)})`);
-  group.setAttribute("data-x", centerX.toFixed(1));
-  group.setAttribute("data-y", centerY.toFixed(1));
-}
-
-//============================================
-/**
- * Trade log: a flash line for a just-executed trade and a list of the most
- * recent trades, or an empty message when no trades have fired.
- *
- * @param props - Carries the auction payload accessor.
- * @returns The trade log panel element.
- */
-function TradeLog(props: { readonly payload: () => AuctionPayload }): JSX.Element {
-  const recent = (): AuctionTrade[] => props.payload().trades.slice(-RECENT_TRADE_COUNT).reverse();
-  const flash = (): string | null => {
-    const payload = props.payload();
-    const latest = payload.trades[payload.trades.length - 1];
-    if (latest !== undefined && latest.tick === payload.tick - 1) {
-      return `Traded ${latest.quantity} unit at $${latest.price}`;
-    }
-    return null;
-  };
-  return (
-    <div class="auction-screen-panel auction-screen-trade-log">
-      <Show when={recent().length === 0}>
-        <p class="auction-screen-trade-empty">No trades yet.</p>
-      </Show>
-      <Show when={flash()}>{(text) => <p class="auction-screen-trade-flash">{text()}</p>}</Show>
-      <Show when={recent().length > 0}>
-        <ul class="auction-screen-trade-list">
-          <For each={recent()}>
-            {(trade) => (
-              <li class="auction-screen-trade-item">
-                {`tick ${trade.tick}: ${trade.quantity} @ $${trade.price}`}
-              </li>
-            )}
-          </For>
-        </ul>
-      </Show>
     </div>
   );
 }
@@ -944,21 +415,4 @@ function IntentButton(props: {
       {props.label}
     </button>
   );
-}
-
-//============================================
-/**
- * A short role label for the price readout.
- *
- * @param role - The participant's auction role.
- * @returns The uppercase label to show.
- */
-function roleLabel(role: AuctionRole): string {
-  if (role === "buyer") {
-    return "BUY";
-  }
-  if (role === "seller") {
-    return "SELL";
-  }
-  return "OUT";
 }

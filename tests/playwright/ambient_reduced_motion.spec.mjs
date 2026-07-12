@@ -1,22 +1,33 @@
 // Ambient animation reduced-motion gate.
 //
-// Confirms the river-tile shimmer, installed-M.U.L.E. idle bob, and
-// auction-trade-pop keyframes (src/style.css) are each wrapped in
-// `@media (prefers-reduced-motion: no-preference)`: under emulated reduced
-// motion, `getComputedStyle(...).animationName` reads "none" for all three;
-// under no-preference motion, each resolves to its real keyframe name. This
-// is a direct test of the actual gating mechanism (the media query), rather
-// than a `data-reduced-motion` attribute that could drift from the CSS it is
-// meant to describe.
+// Confirms the river-tile shimmer and installed-M.U.L.E. idle bob keyframes
+// (src/style.css) are each wrapped in `@media (prefers-reduced-motion:
+// no-preference)`: under emulated reduced motion,
+// `getComputedStyle(...).animationName` reads "none" for both; under
+// no-preference motion, each resolves to its real keyframe name. This is a
+// direct test of the actual gating mechanism (the media query), rather than a
+// `data-reduced-motion` attribute that could drift from the CSS it is meant
+// to describe.
 //
 // Selector/fixture contract: depends on the `?demo=map` fixture
 // (src/ui/solid/map_demo.tsx: river tile at row 1 / col 4, a placed
 // M.U.L.E. at row 0 / col 0 -- see visual_render.spec.mjs's identical anchor
 // comment) and map_layer.tsx's `.terrain-tile-use` / `.mule-installed-glyph`
-// CSS hook classes. The trade-pop case does not drive a live auction (that is
-// a slow, multi-phase path already covered by auction_scene.spec.mjs); it
-// injects one `.auction-trade-flash-burst` element directly, which is enough
-// to exercise the global CSS rule the real trade-flash burst also matches.
+// CSS hook classes.
+//
+// The trade-flash burst is deliberately NOT covered here. Its entrance pop
+// used to be a CSS keyframe this file could probe the same way, but
+// auction_trade_fx.ts now drives the pop from a per-frame JS-written SVG
+// `transform` attribute instead (see that module's addFlash/advance and the
+// bug-fix comment in src/style.css above .auction-trade-flash-burst), and
+// only a live `attachTradeFx` handle -- mounted by auction_arena.tsx during a
+// real auction -- ever writes that attribute. This file's `?demo=map`
+// fixture has no such handle, so an element injected here can never pop, by
+// construction, regardless of what is asserted about it. The reduced-motion
+// half of that behavior (the flash and banner appear instantly, with no
+// flying-goods glyph) is already covered against a real trade in
+// auction_scene.spec.mjs ("reduced motion shows the trade flash and banner
+// instantly, with no flying goods glyph").
 
 import { test, expect } from "@playwright/test";
 
@@ -32,19 +43,6 @@ async function animationNameOf(page, selector) {
     }
     return getComputedStyle(el).animationName;
   }, selector);
-}
-
-/** Append a throwaway SVG `<use class="auction-trade-flash-burst">` to the page. */
-async function injectTradeFlashBurst(page) {
-  await page.evaluate(() => {
-    const svgNs = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNs, "svg");
-    svg.setAttribute("id", "ambient-spec-trade-flash-host");
-    const use = document.createElementNS(svgNs, "use");
-    use.setAttribute("class", "auction-trade-flash-burst");
-    svg.appendChild(use);
-    document.body.appendChild(svg);
-  });
 }
 
 test("ambient animations run under no-preference motion", async ({ page }) => {
@@ -63,10 +61,6 @@ test("ambient animations run under no-preference motion", async ({ page }) => {
     '.map-svg g[data-row="0"][data-col="0"] .mule-installed-glyph',
   );
   expect(muleAnimation).toBe("mule-idle-bob");
-
-  await injectTradeFlashBurst(page);
-  const tradeAnimation = await animationNameOf(page, ".auction-trade-flash-burst");
-  expect(tradeAnimation).toBe("auction-trade-pop");
 });
 
 test("ambient animations are static under reduced motion", async ({ page }) => {
@@ -85,8 +79,4 @@ test("ambient animations are static under reduced motion", async ({ page }) => {
     '.map-svg g[data-row="0"][data-col="0"] .mule-installed-glyph',
   );
   expect(muleAnimation).toBe("none");
-
-  await injectTradeFlashBurst(page);
-  const tradeAnimation = await animationNameOf(page, ".auction-trade-flash-burst");
-  expect(tradeAnimation).toBe("none");
 });

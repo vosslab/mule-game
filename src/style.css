@@ -440,10 +440,17 @@ body {
    rest to the board. `min(92cqw, 1400px)` queries #game-stage's size-query
    container directly rather than #game-panel's own shrink-to-fit box,
    mirroring the `.land-grant-panel` / `.map-svg` cqw pattern above. The
-   1400px cap is a sane upper bound only (kept above the map's 1200px so it
-   never binds at the required 1600x900 / 1200x1000 viewports and starves the
-   >=90%-of-stage-width coverage target); it does not need to match the
-   board's own cap since the panel sits in a different row.
+   1400px cap is a sane upper bound only: it never binds at either supported
+   viewport, so it cannot starve the >=90%-of-stage-width coverage target.
+   Checked, not assumed -- stage width equals viewport width at both supported
+   sizes (1280x800 nominal and 1024x640 minimum are exactly 16:10, the stage's
+   own ratio, so it fills with no letterbox), which puts 92cqw at 1177px and
+   942px respectively, both well under 1400px. `min()` takes the SMALLER term,
+   so a px cap can only bind on a stage LARGER than the supported range; it
+   cannot bite at the 1024x640 minimum. (The hazard at the small viewport runs
+   the other way: fixed-px text and minimums, which hold their absolute size
+   and so eat a larger fraction of a shorter stage.) It does not need to match
+   the board's own cap since the panel sits in a different row.
    `.land-auction-body` then spreads the plot/price, high-bidder/going-status,
    and remaining/controls groups across that width in three columns,
    preserving the original top-to-bottom reading order left-to-right. */
@@ -512,26 +519,42 @@ body {
    a button) has no natural reason to grow tall on its own -- so both axes
    are driven explicitly off #game-stage's container-query box (cqw/cqh,
    from #game-stage's container-type: size) rather than left to intrinsic
-   content height. `min-height: 84cqh` gives the panel a full-canvas-fill
-   footprint per docs/HUMAN_GUIDANCE.md rather than a narrow centered block,
-   and `justify-content: space-between` spreads the status/table/button
-   sections across that height instead of leaving one big blank gap at the
-   bottom. Width is 94cqw with no px cap (measured coverage at 1600x900
-   landed under 90% with a 1200px cap; dropped it rather than raise it
-   further, matching .production-panel's uncapped width). 84cqh (not the
-   plan's 85% height starting hypothesis) is a deliberate one-point trade for
-   a real bottom margin at the tall-window gate viewport (1200x1000):
-   #game-stage has overflow: hidden, so any margin there has to survive
-   future HUD growth or font-metrics drift without silently clipping the
-   Play Again button. 86cqh measured 0px margin there (flush with the stage
-   edge) and 85cqh measured only 0.5px (sub-pixel, effectively the same
-   risk); 84cqh measured a stable 8px margin across repeat runs, the first
-   value with real headroom, so it wins over hitting 85% exactly. See
-   tests/playwright/scoring_screen.spec.mjs's contained-in-stage assertions
-   for the regression guard. This replaces the old `max-width: 480px` cap
-   and the second `.scoring-panel { max-width: 640px }` override further
-   down this file (removed; the panel had two competing rules for the same
-   property, one seam now). */
+   content height. `min-height` gives the panel a full-canvas-fill footprint
+   per docs/HUMAN_GUIDANCE.md rather than a narrow centered block, and
+   `justify-content: space-between` spreads the status/table/button sections
+   across that height instead of leaving one big blank gap at the bottom.
+   Width is 94cqw with NO px cap, so width coverage is 94% of the stage at
+   every supported viewport. A px cap here would make the proportion depend on
+   the viewport: a 1200px cap would bind at 1280x800 (94cqw = 1203px, pinning
+   coverage at 93.75%) and not bind at all at 1024x640 (94cqw = 962px) -- one
+   rule, two different proportions. That is why it was dropped, matching
+   `.production-panel`'s uncapped width.
+
+   The height is the delicate one. #game-stage has overflow: hidden, so the
+   column (HUD + map row + this panel) must leave real bottom margin or the Play
+   Again button is silently CLIPPED rather than failing loudly.
+
+   84cqh once left only 0.4px of margin at the 1024x640 minimum, and was trimmed
+   to 82cqh as a stopgap to buy clearance. That trim had poor returns (two whole
+   cqh points bought 2.8px), which was the tell that the panel was never the real
+   constraint: the chrome above it was. #game-hud was rem-sized (a fixed 96px at
+   every viewport) and #game-map added a fixed 16px margin -- 112px of chrome
+   that was 14.0% of the 800px nominal stage but 17.5% of the 640px minimum one,
+   so the proportional panel below got space-clamped at the minimum viewport
+   first. Both are now sized in cqh (see the .hud and #game-map rules), holding
+   the chrome at a constant 14.0% of the stage, so the stopgap is retired and the
+   panel is back at its full-fill 84cqh.
+
+   Every term in the column is now proportional, so the leftover margin is a
+   constant share of the stage rather than a viewport-dependent one:
+   100cqh - 14cqh chrome - 84cqh panel = 2cqh, measured as 16.0px at 1280x800 and
+   12.8px at 1024x640 (was 0.4px there). The panel's own min-height still binds at
+   both -- its intrinsic content is well under it -- so the margin is real
+   headroom, not a rounding artifact. See tests/playwright/scoring_screen.spec.mjs's
+   contained-in-stage assertions for the regression guard. This replaces the old
+   `max-width: 480px` cap and the second `.scoring-panel { max-width: 640px }`
+   override further down this file (removed; the panel had two competing rules for
+   the same property, one seam now). */
 .scoring-panel {
   display: flex;
   flex-direction: column;
@@ -981,8 +1004,15 @@ button:focus-visible,
 #game-map {
   position: relative;
   /* Reserves room above the map's top tile row for .overworld-timer (art
-     gate round 3 POLISH: the timer bar previously overlapped the top row). */
-  margin-top: 16px;
+     gate round 3 POLISH: the timer bar previously overlapped the top row).
+     In cqh, not px, for the same reason the HUD row above it is: this margin is
+     the other half of the stage's non-scaling chrome budget, and a fixed 16px
+     here is 2.0% of the 800px nominal stage but 2.5% of the 640px minimum one.
+     2cqh holds it at 16px on the nominal stage and 12.8px on the minimum one --
+     the same share of the canvas either way. .overworld-timer's own top offset
+     and height are in the same unit so the bar keeps sitting exactly inside this
+     reserve rather than poking up into the HUD. */
+  margin-top: 2cqh;
 }
 
 .overworld-svg {
@@ -996,13 +1026,18 @@ button:focus-visible,
   pointer-events: none;
 }
 
+/* The bar lives in the reserve #game-map's top margin opens above the board, so
+   its offset and height are in the same container unit as that margin (2cqh /
+   1cqh): the bar then fills the reserve exactly at every viewport instead of
+   holding a fixed 16px offset that would overhang a shorter stage's smaller
+   reserve and touch the HUD above it. */
 .overworld-timer {
   position: absolute;
-  top: -16px;
+  top: -2cqh;
   left: 50%;
   transform: translateX(-50%);
   width: min(60vw, 360px);
-  height: 8px;
+  height: 1cqh;
   background-color: #22223a;
   border-radius: 4px;
   overflow: hidden;
@@ -1388,29 +1423,64 @@ button:focus-visible,
   font-weight: bold;
 }
 
+/* HUD row: sized in container units (cqh/cqw against #game-stage's size-query
+   box), not rem/px. This row renders on EVERY phase except the full-stage
+   auction, so its height is the first claim on the stage's vertical budget and
+   everything below it (board slot, phase panel) divides what is left.
+
+   It used to be rem-sized, which pinned it at 96px on every viewport: 12.0% of
+   the 800px nominal stage but 15.0% of the 640px minimum one. A chrome row whose
+   SHARE grows as the stage shrinks squeezes the proportional content below it at
+   the minimum viewport first -- and because #game-stage is overflow: hidden, the
+   squeeze does not fail loudly, it silently clips. .scoring-panel came within
+   0.4px of losing its Play Again button that way. Sizing the row in cqh holds it
+   at a CONSTANT 12% of the stage instead (96px at 1280x800, 76.8px at 1024x640),
+   so the phases below keep the same share of the canvas at every viewport.
+
+   Height budget, all cqh so it stays constant: .hud's 1.5cqh top and bottom
+   padding plus .hud-player's 9cqh min-height = 12cqh exactly.
+
+   The px terms are FLOORS (max()), never caps: a floor can only make text or a
+   row bigger than its proportional size, so it never clamps the composition the
+   way a fixed value does. They do not bind at any supported viewport (2.1cqh is
+   13.4px of text at the 1024x640 minimum, above the 12px legibility floor); they
+   only catch a stage shorter than the supported range. This mirrors the touch
+   -target floors on the auction's role buttons.
+
+   Reference: stage height = viewport height at both supported viewports (both are
+   exactly 16:10, so the stage fills with no letterbox). 1cqh = 8.0px at 1280x800
+   and 6.4px at 1024x640. Sizes that should track the text (swatch, inner gaps,
+   inner padding) are in `em`, so they inherit the font's floor for free. */
 .hud {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 1cqw;
   justify-content: center;
-  padding: 0.75rem;
+  padding: 1.5cqh 1cqw;
 }
 
 .hud-player {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  min-height: 56px; /* meets the min touch-target height on mobile */
-  padding: 0.5rem 0.75rem;
+  gap: 0.5em;
+  /* border-box so min-height IS the rendered row height, padding included. */
+  box-sizing: border-box;
+  /* 9cqh = 72px at 1280x800, the row's long-standing height. The 44px term is a
+     touch-target FLOOR for a stage shorter than the supported range; 9cqh wins
+     at every supported viewport (57.6px at the 1024x640 minimum). */
+  min-height: max(9cqh, 44px);
+  padding: 0.5em 0.75em;
   border-radius: 8px;
   background-color: #22223a;
-  font-size: 1rem;
+  /* 2.1cqh = 16.8px at 1280x800, 13.4px at 1024x640. The 12px term is the
+     legibility FLOOR: it never binds at a supported viewport. */
+  font-size: max(2.1cqh, 12px);
 }
 
 .hud-swatch {
   display: inline-block;
-  width: 1rem;
-  height: 1rem;
+  width: 1em;
+  height: 1em;
   border-radius: 50%;
 }
 
@@ -1424,115 +1494,599 @@ button:focus-visible,
 
 .hud-goods {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.5em;
 }
 
-/* Fills #game-stage (WP-6B): sized off the stage's own container-query box
-   (cqw/cqh, set by #game-stage's container-type: size in the rule above)
-   rather than a fixed max-width, so the readout/track/log stack spreads to
-   the stage width on every letterboxed viewport instead of sitting in a
-   narrow fixed column. */
+/* ==========================================================================
+   GOODS AUCTION -- stage slot
+   ==========================================================================
+   The auction owns the WHOLE 16:10 stage: it is not a board phase (absent
+   from game_screen.tsx's phaseShowsMap), so instead of parking a shrink-to-fit
+   column under an empty #game-map, the phase hides the HUD row, collapses the
+   empty map row, and lets #game-panel flex-fill the stage. That is the same
+   slot idiom the board phases already use (#game-stage #game-map.game-map-filled
+   above), applied one row down.
+
+   The three classes below are driven from game_screen.tsx's phaseOwnsFullStage:
+   `game-hud-hidden` on #game-hud and `game-panel-filled` on #game-panel. The
+   arena SVG's viewBox is 960x600 (src/ui/scenes/auction_geometry.ts) -- 16:10,
+   the stage's own ratio -- so it fills the freed box exactly, with no letterbox
+   band on either axis. */
+#game-stage #game-hud.game-hud-hidden {
+  display: none;
+}
+
+/* #game-map is the empty row between the (now hidden) HUD and the panel. It
+   still carries its 16px top margin, which would show as a dead band above a
+   full-stage auction, so collapse it with the HUD. The sibling combinator keys
+   off the class already pinned above rather than adding a third class for a row
+   that renders nothing during this phase. */
+#game-stage #game-hud.game-hud-hidden ~ #game-map {
+  display: none;
+}
+
+/* `align-self: stretch` overrides #game-stage's `align-items: center`, which
+   would otherwise shrink-wrap the panel to its content width; `flex: 1 1 auto`
+   plus `min-height: 0` gives it every row the HUD and map just gave up. */
+#game-stage #game-panel.game-panel-filled {
+  display: flex;
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-height: 0;
+}
+
+/* Positioning context for the overlays and the corner-pinned tutorial hint. */
 .auction-screen {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The arena slot takes the whole screen minus the announcer line; the arena SVG
+   fills it. Overlays (declare, finished, intent bar) position against this box. */
+.auction-arena-slot {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.auction-arena-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Beat overlays: the declare choice at tick 0 and the finished summary. Both
+   float over the live arena rather than replacing it, so the market stays on
+   screen while the human reads or decides.
+
+   The scrim is a SOLID plate, not the rgba(...0.92) it used to be: at 0.92 the
+   price ruler's gold gridline labels (a saturated color against a dark stage)
+   still read through at the ~8% that leaked, measured ghosting through the
+   declare and finished overlays alike (docs/active_plans/reports/
+   auction_visual_acceptance_final.md, beat 6). Solid #1a1a2e matches
+   .auction-arena-backdrop's own fill, so the plate reads as part of the same
+   dark surface rather than a separate translucent layer.
+
+   Load-bearing for the walkthrough harness: the role buttons inside the declare
+   overlay must be CLICKABLE on the window's first frame (see the selector
+   contract in auction_screen.tsx). Nothing may float above them -- the tutorial
+   hint is pointer-events: none, and no other overlay renders on the same beat. */
+/* EVERY size below is a container unit (cqh/cqw against #game-stage's size-query
+   box), never a fixed px or rem. Inside the 960x600 viewBox the SVG scales by one
+   uniform factor with the stage, so geometry ratios are scale-invariant. That
+   uniformity does NOT extend to these DOM overlays: a rem or px font stays the
+   same absolute size while the stage shrinks, so it eats a LARGER fraction of the
+   frame at the 1024x640 minimum than at the 1280x800 nominal -- which is how a DOM
+   overlay that looks right on a big screen crowds or overflows on a small one.
+   Sizing in cqh keeps the overlays proportional to the arena behind them.
+
+   The fixed-px values here are FLOORS, not caps: the touch-target floors on the
+   buttons (min-height / min-width) and, on every DOM-overlay font-size below, a
+   12px legibility floor wrapped as max(Ncqh, 12px) -- see the note on
+   .auction-overlay-title. Floors can only make a value bigger than its
+   proportional size, never clamp the composition. At 1280x800 the cqh term
+   wins and the overlay scales; at 1024x640 the px floor binds, holding the
+   control or text at the accessible minimum instead of shrinking below it.
+   That is the intended trade.
+
+   Reference: stage height = viewport height at both supported viewports (both are
+   exactly 16:10 and #game-stage is aspect-ratio 16/10, so it fills with no
+   letterbox). 1cqh = 8.0px at 1280x800 and 6.4px at 1024x640. */
+.auction-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1rem 3rem;
-  width: min(94cqw, 1400px);
+  gap: 1.2cqh;
+  padding: 1.6cqh 2.4cqh;
+  border-radius: 1.5cqh;
+  background-color: #1a1a2e;
+  border: 0.25cqh solid #4a4a68;
+  text-align: center;
 }
 
-.auction-screen-header {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  font-size: 1.1rem;
+/* max(Ncqh, 12px): the cqh term is the proportional size, the 12px term is a
+   legibility FLOOR that only binds if the cqh term ever fell below it. Every
+   DOM-overlay font-size in this beat-overlay block uses this idiom, matching
+   .hud-player's font-size rule; the cqh coefficient is unchanged by adding it. */
+.auction-overlay-title {
+  margin: 0;
+  font-size: max(2.3cqh, 12px);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ffd23f;
 }
 
-.auction-screen-panel {
+.auction-overlay-hint {
+  margin: 0;
+  font-size: max(1.9cqh, 12px);
+  color: #e6e6e6;
+}
+
+.auction-role-choices {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
+  gap: 1.4cqh;
 }
 
 .auction-screen-button {
+  /* Accessibility floors, not caps; see the block comment above. */
   min-height: 44px;
   min-width: 44px;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  border-radius: 8px;
+  padding: 2cqh 2.6cqh;
+  font-size: max(2cqh, 12px);
+  border-radius: 1cqh;
   border: none;
   cursor: pointer;
 }
 
-.auction-screen-role-panel {
-  gap: 0.75rem;
-}
-
-/* Scales to the stage box instead of a fixed pixel cap: whichever of the two
-   cqw/cqh terms binds first wins, same width-or-height-first technique
-   #game-stage itself uses above. height:auto then derives the other
-   dimension from the svg's own 480:260 viewBox ratio, so the arena is never
-   stretched off-ratio. The 37cqh term leaves headroom in the stage's height
-   budget for the header, price readout, trade log, and intent buttons that
-   share the same column (tuned down from an initial 56cqh, which overflowed
-   #game-stage's clipped box at the 1200x1000 letterboxed viewport -- see
-   WP-6B handoff measurements). */
-.auction-track-svg {
-  width: min(92cqw, calc(37cqh * 480 / 260));
-  height: auto;
-}
-
-.auction-track-axis {
-  stroke: #4a4a68;
-  stroke-width: 2;
-}
-
-.auction-track-store-buy-line,
-.auction-track-store-sell-line {
-  stroke: #e6e6e6;
-  stroke-width: 1;
-  stroke-dasharray: 6 4;
-}
-
-.auction-track-token {
-  stroke: #1a1a2e;
-  stroke-width: 1;
-}
-
-.auction-screen-trade-log {
-  width: 100%;
-}
-
-.auction-screen-trade-flash {
-  color: #ffd23f;
-  font-weight: bold;
-}
-
-.auction-screen-trade-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  text-align: center;
-}
-
-.auction-screen-intent-controls {
+/* Live-window intent bar: pinned to the bottom of the arena so the runway above
+   it stays clear. The legend between the two buttons teaches the horizontal
+   pair (left lowers, right raises), which is the gesture the avatars mirror. */
+.auction-intent-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  transform: translateX(-50%);
+  z-index: 2;
   display: flex;
-  gap: 1rem;
-  width: 100%;
-  justify-content: center;
+  align-items: center;
+  gap: 1.6cqh;
 }
 
 .auction-screen-intent-button {
-  min-height: 44px;
+  /* Accessibility floor, not a cap; see the block comment above. */
   min-width: 88px;
 }
 
-/* Spatial auction scene (M4). Avatar motion is driven by the scene-manager rAF
-   writing SVG transforms imperatively; no CSS transition is applied to the
-   avatar groups, so a reduced-motion render carries no tween artifacts. */
+/* The legend sits ON the timer bar, so its contrast used to be a function of
+   whatever the timer fill was doing underneath it: #b9b9c6 over the cyan fill
+   measured 1.43:1 -- the least readable text on the screen, and it is the only
+   on-screen instruction for the PRIMARY taught control. Giving it its own opaque
+   dark plate makes the ratio a property of the label instead of an accident of
+   what it is floating over: 14.9:1, regardless of the countdown behind it.
+   (docs/COLOR_CONTRAST_ACCESSIBILITY.md: fix by darkening the plate and
+   brightening the ink, never by desaturating.) */
+.auction-intent-legend {
+  margin: 0;
+  padding: 0.6cqh 1.2cqh;
+  border-radius: 0.8cqh;
+  background-color: #14142a;
+  font-size: max(1.9cqh, 12px);
+  color: #e8e8f5;
+}
+
+/* The tutorial hint is a shared component whose own rule is sized in rem and
+   capped at a fixed 480px (src/style.css's .tutorial-hint, used by five phases).
+   Left alone it would be the one non-scaling element in the auction slot, so it
+   is re-sized in container units HERE, scoped to .auction-screen, rather than by
+   editing the shared rule out from under the four other phases that use it. */
+.auction-screen .tutorial-hint {
+  max-width: 42cqw;
+  padding: 1cqh 1.4cqh;
+  gap: 1cqh;
+  border-radius: 0.8cqh;
+}
+
+/* 2.1cqh, not a smaller coefficient: it lands at 13.4px on the 1024x640 minimum
+   stage, holding the shared rule's 0.85rem (13.6px) legibility instead of
+   shrinking below it, and scales up to 16.8px at 1280x800. */
+.auction-screen .tutorial-hint-text {
+  font-size: max(2.1cqh, 12px);
+}
+
+.auction-screen .tutorial-hint-dismiss {
+  font-size: max(1.9cqh, 12px);
+  padding: 0.6cqh 1.2cqh;
+}
+
+/* Screen-reader line for the beat changes; the dock's money live region
+   (auction_dock.tsx) is separate. Visually hidden, never clipped out of
+   the accessibility tree. */
+.auction-screen-announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   AUCTION ARENA (src/ui/scenes/auction_arena.tsx)
+   Top band, store buy/sell rails, lane rows, best-bid/best-ask lines and their
+   crossing treatment, timer bar, avatar chrome.
+   ==========================================================================
+
+   Every length and font-size below is in SVG USER UNITS, not CSS px: these rules
+   only ever style elements inside the arena's 960x600 viewBox, where `px`
+   resolves in the local user-unit coordinate system (the same convention
+   `.town-facade-label` and `.auction-dock-*` already use). So the whole
+   composition scales by ONE uniform factor with the stage and nothing here can
+   become a fixed cap that beats a container unit. Reference scale: 1 user unit =
+   1.067 CSS px at the binding 1024x640 viewport, 1.333 CSS px at 1280x800, so a
+   12-unit font renders at 12.8px / 16px -- above the 12px legibility floor at
+   the SMALLEST supported stage, which is the only viewport that can fail.
+
+   Material language is the town facades' (see `.town-facade-*` above): flat
+   plates, a light keyline stroke, low-opacity worn seams, soft depth bands. Not
+   NES pixel art -- the NES screens are this screen's LAYOUT reference only. */
+
+.auction-arena-backdrop {
+  fill: #1a1a2e;
+}
+
+/* --- Top band: good identity, the going price, the clock, the FAST tell --- */
+
+.auction-top-band-plate {
+  fill: #101024;
+}
+
+.auction-emblem-badge {
+  fill: #14142a;
+  stroke: #45456a;
+  stroke-width: 1.5;
+}
+
+.auction-good-title {
+  fill: #f5f5ff;
+  font-family: system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.auction-good-subtitle {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+/* The single biggest number on the screen: the price the whole floor is
+   arguing about. Deliberately outsized -- this is the headline. */
+.auction-going-price {
+  fill: #ffd23f;
+  font-family: system-ui, sans-serif;
+  font-size: 44px;
+  font-weight: 800;
+}
+
+.auction-going-price-caption {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+}
+
+/* The clock now carries the band's right end on its own. It used to share that
+   end with a second copy of the good's emblem, which balanced the composition
+   with a shape that said nothing (see auction_arena.tsx's TopBand). 20px, not
+   the 16px it was: the weight the emblem was providing is returned as TYPE, so
+   the band's two ends balance on ink that means something. Still less than half
+   the going price's 44px -- the headline stays the headline. */
+.auction-tick-readout {
+  fill: #f5f5ff;
+  font-family: system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.auction-tick-caption {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.auction-fast-plate {
+  fill: #ffd23f;
+}
+
+/* Dark ink on the gold plate: 11.1:1, well past the WCAG AA text minimum
+   (docs/COLOR_CONTRAST_ACCESSIBILITY.md). */
+.auction-fast-text {
+  fill: #2a2000;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-anchor: middle;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auction-fast-indicator {
+    animation: auction-fast-pulse 0.9s ease-in-out infinite;
+  }
+}
+
+@keyframes auction-fast-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* --- The price runway: the dominant region, where position IS price --- */
+
+.auction-runway-plate {
+  fill: #22223a;
+}
+
+.auction-lane-stripe {
+  fill: #262640;
+}
+
+.auction-lane-separator {
+  stroke: #45456a;
+  stroke-width: 1;
+  opacity: 0.5;
+}
+
+/* The runway's ruler. Without it "position is price" is a claim rather than
+   something the player can read off the floor. */
+.auction-price-gridline line {
+  stroke: #45456a;
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+.auction-price-gridline-label {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* CHEAP / EXPENSIVE, the wall labels. Brightened from #8f8fb8, which measured
+   5.00:1 on the runway plate and 4.74:1 on a lane stripe -- AA, but under the
+   5.5:1 house target on both. #a8a8cc holds 6.37:1 against the darker of the two
+   while staying a quiet hint rather than shouting over the price ruler.
+   (docs/COLOR_CONTRAST_ACCESSIBILITY.md) */
+.auction-runway-hint {
+  fill: #a8a8cc;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+/* --- Store rails: the walls that ARE the band's edges --- */
+
+.auction-store-rail-plate {
+  fill: #262640;
+  stroke: #45456a;
+  stroke-width: 2;
+}
+
+.auction-store-rail-texture line {
+  stroke: #1a1a30;
+  stroke-width: 1;
+  opacity: 0.5;
+}
+
+/* The crate's FILL is supplied per-element by auction_arena.tsx, from the good's
+   own palette color (src/ui/sprites.ts's RESOURCE_ICON_FILLS), because the
+   resource symbols define a shape and no fill -- an unfilled `<use>` of one
+   paints black, which is how the store's stock came to render at 1.42:1 against
+   this rail. Filled, the four goods measure 5.8:1 (crystite) to 11.2:1 (energy).
+   The dark keyline separates crate from crate in a tall stack. */
+.auction-rail-crate {
+  stroke: #14142a;
+  stroke-width: 0.75;
+  opacity: 0.95;
+}
+
+/* The store's stock as an integer, at the head of each rail. The crate stack is
+   a scaled picture, and a scaled picture is at best approximate; this number is
+   the ground truth beside it, which is what lets the stack be decorative without
+   being able to mislead. 13.5:1 on the rail plate. */
+.auction-store-rail-stock {
+  fill: #f5f5ff;
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* The two ROTATED rail texts carry no font-size here on purpose: their size is
+   set from RAIL_QUOTE_FONT_SIZE / RAIL_LABEL_FONT_SIZE in
+   src/ui/scenes/auction_geometry.ts, as a presentation attribute, because that
+   module also computes WHERE each one sits across the rail -- and the column
+   width it places them by IS the font size. A size declared here would silently
+   win over the attribute (CSS beats presentation attributes) and slide the two
+   columns into each other, or back onto the strip where avatars stand. */
+.auction-store-rail-quote {
+  fill: #ffd23f;
+  font-family: system-ui, sans-serif;
+  font-weight: 800;
+}
+
+.auction-store-rail-label {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+/* --- Best bid / best ask, and the crossing treatment ---------------------
+
+   The two lines can and DO coincide: the engine trades when bid >= ask, so at
+   the instant of every trade both lines sit at the same x. No stroke width,
+   dash phase, or hue can separate two lines drawn at one coordinate. So the
+   lines carry the TRUTH (including their own convergence) and the PENNANTS
+   carry the legibility -- auction_arena.tsx holds them a guaranteed minimum
+   distance apart around the market midpoint, whatever the lines do.
+
+   Bid is cool (cyan) and ask is warm (amber): opposite hue families, so the two
+   sides stay separable under every common color-vision deficiency, and they
+   differ in lightness as well as hue. The dash phases are offset so that even
+   where the strokes overlap they interleave rather than blending into one solid
+   line. */
+
+.auction-bid-line {
+  stroke: #4fd8ff;
+  stroke-width: 2;
+  stroke-dasharray: 12 8;
+  opacity: 0.9;
+}
+
+.auction-ask-line {
+  stroke: #ffb35c;
+  stroke-width: 2;
+  stroke-dasharray: 12 8;
+  stroke-dashoffset: 10;
+  opacity: 0.9;
+}
+
+/* The market's header strip across the head of the runway: darker than the
+   runway plate (#22223a) and lighter than the top band (#101024), so it reads as
+   a shelf BETWEEN the two -- the market's own row, sitting on the players' floor
+   rather than being part of it. The keyline is the line the pennants stand on;
+   the two dashed price lines are the only things that cross it. */
+.auction-pennant-band-plate {
+  fill: #1b1b30;
+}
+
+.auction-pennant-band-edge {
+  stroke: #45456a;
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+/* A polyline, so `fill: none` is load-bearing rather than cosmetic: SVG fills an
+   open polyline by default, which would paint a filled wedge between the elbow's
+   two legs. */
+.auction-pennant-leader {
+  fill: none;
+  stroke: #8f8fb8;
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+.auction-pennant-plate {
+  fill: #14142a;
+  stroke: #45456a;
+  stroke-width: 1.5;
+}
+
+.auction-price-pennant[data-kind="bid"] .auction-pennant-plate {
+  stroke: #4fd8ff;
+}
+
+.auction-price-pennant[data-kind="ask"] .auction-pennant-plate {
+  stroke: #ffb35c;
+}
+
+.auction-pennant-label {
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.auction-price-pennant[data-kind="bid"] .auction-pennant-label {
+  fill: #4fd8ff;
+}
+
+.auction-price-pennant[data-kind="ask"] .auction-pennant-label {
+  fill: #ffb35c;
+}
+
+.auction-pennant-price {
+  fill: #f5f5ff;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* The market closing in: the pennants light up before the cross, so the player
+   sees the trade coming instead of only seeing it happen. */
+.auction-price-pennant[data-alert="true"] .auction-pennant-plate {
+  fill: #2a2440;
+  stroke-width: 2.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auction-price-pennant[data-alert="true"] {
+    animation: auction-pennant-alert 0.7s ease-in-out infinite;
+  }
+}
+
+@keyframes auction-pennant-alert {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+/* The crossing band: the gap itself, made into an object. Floored at a minimum
+   width in the component so it is still visible at a zero gap. */
+.auction-cross-band {
+  fill: #ffd23f;
+  opacity: 0.14;
+}
+
+.auction-cross-band[data-crossed="true"] {
+  fill: #8fd14f;
+  opacity: 0.26;
+}
+
+.auction-cross-caption {
+  fill: #ffd23f;
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.auction-cross-caption[data-crossed="true"] {
+  fill: #8fd14f;
+}
+
+/* --- Avatars: the players themselves, walking the price axis --------------
+
+   Motion is written imperatively by the scene-manager rAF (SVG transforms), so
+   NO CSS transition is applied to an avatar group. A reduced-motion render
+   therefore carries no tween artifacts: the loop snaps and the DOM agrees. */
+
 .auction-avatar {
   pointer-events: none;
 }
@@ -1542,102 +2096,418 @@ button:focus-visible,
   overflow: visible;
 }
 
-.auction-trade-goods,
-.auction-trade-flash-burst {
+.auction-avatar-price {
+  fill: #f5f5ff;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #1a1a2e;
+  stroke-width: 3;
+}
+
+/* --- A benched player -----------------------------------------------------
+
+   A benched player never shows a price -- a number over its head would read as a
+   live offer -- and it must not be mistakable for the floor-priced BUYER parked
+   one lane away at the same cheap wall.
+
+   The dim is applied to the SPRITE ALONE, not to the whole avatar group. Dimming
+   the group took the OUT tag down with it: rendered through a 0.34 group opacity
+   the tag measured 2.31:1, below even the WCAG AA floor, so the single cue that
+   a player was out was the least readable text on the screen. The cues now split
+   by job -- the sprite recedes (subtractive), while the bench and the chip are
+   opaque objects that assert the state (additive). An absence is something a
+   player has to NOTICE; an object is something they SEE. */
+.auction-avatar[data-role="out"] .auction-avatar-sprite {
+  opacity: 0.4;
+}
+
+/* The bench itself: the positive cue. No active trader ever stands on one. */
+.auction-avatar-bench {
+  fill: #14142a;
+  stroke-width: 2;
+  opacity: 0.95;
+}
+
+/* An opaque chip, so the OUT text carries its own background and its contrast
+   cannot be eaten by the runway, the lane stripe, or a dim. Ink measures 14.9:1
+   on this plate. The player-color keyline ties the chip to its lane, the same
+   dock-stripe/badge/avatar color chain the rest of the screen uses. */
+.auction-avatar-out-chip-plate {
+  fill: #14142a;
+  stroke-width: 2;
+}
+
+.auction-avatar-out-tag {
+  fill: #e8e8f5;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* --- Timer bar: the window's quiet-tick budget draining away --- */
+
+.auction-timer-track {
+  fill: #14142a;
+  stroke: #45456a;
+  stroke-width: 1;
+}
+
+.auction-timer-fill {
+  fill: #4fd8ff;
+  opacity: 0.75;
+}
+
+.auction-timer-label {
+  fill: #8f8fb8;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+/* ==========================================================================
+   AUCTION DOCK (src/ui/scenes/auction_dock.tsx)
+   Per-lane dock rows: swatch, species head, role, money, units, TRADED.
+   ========================================================================== */
+
+/* The dock is read-only display, drawn INSIDE the arena's <svg>: no pointer
+   interaction of its own, so it never intercepts a click meant for the
+   declare/finished overlays or the intent buttons layered above it. */
+.auction-dock {
   pointer-events: none;
 }
 
-/* Trade-pop polish: the burst still appears instantly
-   under reduced motion (auction_screen.tsx's addFlash runs unconditionally,
-   per the module doc's "a trade shows an instant flash with no travel"); only
-   this entrance pop is gated, matching every other ambient effect in this
-   file. */
-@media (prefers-reduced-motion: no-preference) {
-  .auction-trade-flash-burst {
-    /* fill-box + center: scale grows from the flash's own center, not the
-       SVG viewport's (0,0) origin CSS transforms default to on SVG elements. */
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: auction-trade-pop 0.3s ease-out;
-  }
+.auction-dock-panel {
+  fill: #22223a;
 }
 
-@keyframes auction-trade-pop {
-  from {
-    opacity: 0.4;
-    transform: scale(1.6);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* font-size below is a plain px value, not a CSS px: inside an SVG whose
+   ancestor establishes a viewBox, px resolves in that local user-unit
+   coordinate system (matches .town-facade-label's identical convention
+   above), so it scales with the stage exactly like the SVG's geometry does.
+   Mixed case, not uppercase: the three headers sit only 22-26 viewBox units
+   apart (auction_dock.tsx's MONEY_RIGHT_X/UNITS_RIGHT_X/TRADED_RIGHT_X), and
+   an uppercase transform widened "Qty"/"Trd" enough to visually run together
+   as "$QTYTRD" (caught in a rendered screenshot, not by eye alone). */
+.auction-dock-header-text {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
 }
 
-.auction-price-readout {
+.auction-dock-store-swatch {
+  fill: #ffd23f;
+}
+
+.auction-dock-store-label {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.auction-dock-badge {
+  stroke: #1a1a2e;
+  stroke-width: 1;
+}
+
+/* Species symbols fill with currentColor (sprites_species.ts's own doc); a
+   dark icon on the player-colored badge behind it reads as a two-tone
+   swatch-and-head glyph instead of disappearing into a same-color chip. */
+.auction-dock-badge-icon {
+  color: #1a1a2e;
+}
+
+.auction-dock-role-text {
+  fill: #c7c7e6;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* The money column is the row's most important value (a 4-digit figure must
+   stay legible at the 1024x640 minimum stage), so it carries the boldest
+   weight and largest size of the dock's data text. */
+.auction-dock-money-text {
+  fill: #e6e6e6;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auction-dock-data-text {
+  fill: #e6e6e6;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   AUCTION STATUS LAYER (src/ui/scenes/auction_status.tsx)
+   Tick-0 accounting: crate accounting, per-row usage bars, USAGE caption,
+   SURPLUS/SHORTAGE stamp, skipped-window treatment.
+   ========================================================================== */
+
+/* The status layer renders in-flow inside .auction-declare-overlay (see
+   auction_screen.tsx's DeclareOverlay), ABOVE the role buttons in reading
+   order and the DOM stacking order -- never absolutely positioned, so it can
+   never cover the buttons the walkthrough harness must click on tick 0.
+   Every size below is a container unit (cqh/cqw against #game-stage's
+   size-query box), matching the rest of this file's auction overlays; see
+   the block comment above .auction-overlay for why a fixed px/rem would
+   crowd the 1024x640 minimum stage. Text sizes hold at 1.9cqh, the same
+   coefficient .auction-overlay-hint already uses, which renders at 12.2px on
+   the 1024x640 minimum -- above the 12px floor. */
+.auction-status-layer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.8cqh;
   width: 100%;
-  font-family: "SF Mono", "Menlo", "Consolas", monospace;
-  color: #e6e6e6;
+  max-width: 78cqw;
 }
 
-.auction-price-store {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-  font-size: 0.95rem;
-}
-
-.auction-price-good-name {
+.auction-status-caption {
+  margin: 0;
+  font-size: max(1.9cqh, 12px);
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #ffd23f;
+  color: #9adfff;
 }
 
-.auction-price-store-quote {
-  color: #e6e6e6;
-}
-
-.auction-price-players {
-  display: grid;
-  /* Was a fixed 2-column grid, sized for the old 480px-capped panel; auto-fit
-     lets the up to 4 player rows spread across the wider stage-filled readout
-     instead of leaving the right half of the row empty. */
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.25rem 1.25rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.auction-status-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqh;
   width: 100%;
 }
 
-.auction-price-player {
-  display: grid;
-  grid-template-columns: 1rem 3ch 1fr;
+.auction-status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3cqh;
+  padding: 0.5cqh 0.8cqh;
+  border-radius: 0.6cqh;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.auction-status-row-head {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.95rem;
+  gap: 0.6cqw;
+  flex-wrap: wrap;
 }
 
-.auction-price-swatch {
-  width: 0.9rem;
-  height: 0.9rem;
+.auction-status-row-swatch {
+  display: inline-block;
+  width: 1.4cqh;
+  height: 1.4cqh;
   border-radius: 50%;
+  flex: 0 0 auto;
 }
 
-.auction-price-role {
-  font-size: 0.8rem;
-  color: #b9b9c6;
-}
-
-.auction-price-value {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+.auction-status-row-label {
+  font-size: max(1.9cqh, 12px);
   font-weight: bold;
+  color: #ffffff;
+}
+
+.auction-status-row-headline {
+  font-size: max(1.9cqh, 12px);
+  color: #d6d6e6;
+}
+
+.auction-status-bar-track {
+  display: flex;
+  width: 100%;
+  height: 0.9cqh;
+  border-radius: 0.45cqh;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.auction-status-step {
+  display: block;
+  height: 100%;
+  width: var(--step-width);
+}
+
+.auction-status-step-usage {
+  background-color: #ff8f5e;
+}
+
+.auction-status-step-spoilage {
+  background-color: #8a8a9c;
+}
+
+.auction-status-step-production {
+  background-color: #63e6a3;
+}
+
+.auction-status-step-event-gain {
+  background-color: #4fd8ff;
+}
+
+.auction-status-step-event-loss {
+  background-color: #ff5e7d;
+}
+
+/* Growing each bar segment from zero, staggered by step, tells the row's
+   story in sequence (usage, then spoilage, then production, then any event)
+   instead of dumping every number at once. Reduced motion renders every step
+   directly at its final --step-width (the inline custom property below), so
+   this rule is scoped to the non-reduced state only via the layer's own
+   data-reduced-motion attribute -- the same gating idiom .auction-screen
+   uses. The keyframes name only the `from` bound; the browser fills the `to`
+   bound from the element's own computed width, so each step still animates
+   to whatever --step-width its row set inline. */
+@keyframes auction-status-step-grow {
+  from {
+    width: 0;
+  }
+}
+
+.auction-status-layer:not([data-reduced-motion="true"]) .auction-status-step {
+  animation: auction-status-step-grow 0.5s ease-out both;
+}
+
+.auction-status-layer:not([data-reduced-motion="true"]) .auction-status-step-usage {
+  animation-delay: 0s;
+}
+
+.auction-status-layer:not([data-reduced-motion="true"]) .auction-status-step-spoilage {
+  animation-delay: 0.15s;
+}
+
+.auction-status-layer:not([data-reduced-motion="true"]) .auction-status-step-production {
+  animation-delay: 0.3s;
+}
+
+.auction-status-layer:not([data-reduced-motion="true"]) .auction-status-step-event-gain,
+.auction-status-layer:not([data-reduced-motion="true"]) .auction-status-step-event-loss {
+  animation-delay: 0.45s;
+}
+
+.auction-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5cqh 0.6cqw;
+}
+
+.auction-status-chip {
+  font-size: max(1.9cqh, 12px);
+  padding: 0.2cqh 0.6cqh;
+  border-radius: 0.6cqh;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #f2f2f2;
+}
+
+/* The SURPLUS/SHORTAGE stamp: absent entirely (no element rendered, not a
+   hidden one) when the good carries no colony verdict -- smithore and
+   crystite are always neutral, see ColonyVerdict's doc comment. The slight
+   rotation reads as a stamped notice, matching the FUN_VIBES load-bearing
+   rule that a playful touch is not a defect on its own. */
+.auction-status-verdict {
+  margin: 0.4cqh 0 0;
+  padding: 0.5cqh 1.4cqh;
+  font-size: max(2.2cqh, 12px);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 0.6cqh;
+  transform: rotate(-3deg);
+}
+
+.auction-status-verdict-surplus {
+  color: #0d1f14;
+  background-color: #63e6a3;
+  border: 0.2cqh solid #2f9e63;
+}
+
+.auction-status-verdict-shortage {
+  color: #2a0d10;
+  background-color: #ff8f8f;
+  border: 0.2cqh solid #c94b4b;
+}
+
+/* ==========================================================================
+   AUCTION TRADE FX (src/ui/scenes/auction_trade_fx.ts)
+   ==========================================================================
+   The flying goods glyph, the buyer flash, and the transient "UNITS TRADED n"
+   banner -- the payoff moment of the whole screen. auction_trade_fx.ts owns
+   the imperative trade layer that creates and removes these elements
+   (`.auction-trade-layer[data-flash-count]`, monotonic; see that module's
+   doc comment for the external test contract). Every element here is
+   created INSTANTLY by that controller regardless of the reduced-motion
+   preference; only the entrance-pop keyframes below are gated, so a reduced-
+   motion render still shows the flash and the banner, just without the pop. */
+.auction-trade-goods,
+.auction-trade-flash-burst,
+.auction-trade-banner {
+  pointer-events: none;
+}
+
+/* The flash burst carries NO CSS transform. Its entrance pop is driven from its
+   SVG `transform` attribute by auction_trade_fx.ts's advance() loop instead, and
+   that is a bug fix, not a preference: `transform-box: fill-box` on a `<use>`
+   positioned by x/y resolves the transform origin inside the element's LOCAL
+   box, which knows nothing about that placement, so the scale carried no
+   translation and flung the burst outward in proportion to the buyer's x
+   (measured 309px off the buyer, and clean off the stage at the band ceiling).
+   Driving the pop from `translate(cx,cy) scale(s)` keeps the burst pinned to the
+   buyer at every scale. Reduced motion is handled there too: the burst is
+   created at its resting scale and simply never grows. */
+
+@media (prefers-reduced-motion: no-preference) {
+  .auction-trade-banner {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: auction-trade-banner-pop 0.25s ease-out;
+  }
+}
+
+/* Scale only, never opacity. A fade-in makes the plate SEMI-TRANSPARENT for the
+   length of the pop, which makes the ink's contrast a function of whatever the
+   banner happens to be floating over -- sampled mid-pop at 2.97:1, below the AA
+   floor, against the darker crossing band. Text contrast must not depend on the
+   background of the moment, so the plate is opaque from its first frame and only
+   its size animates. */
+@keyframes auction-trade-banner-pop {
+  from {
+    transform: scale(0.85);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* Gold plate, matching the top band's going-price figure and the FAST
+   indicator (Planet-inspired flat plate, not an NES sprite): the banner
+   reuses this screen's own "important callout" color instead of inventing a
+   third one. Dark ink on an OPAQUE gold plate measures 11.1:1, well past the
+   5.5:1 house target (docs/COLOR_CONTRAST_ACCESSIBILITY.md).
+
+   The 16px ink and the plate height it sits in are both sized to the label
+   gutter the banner now occupies (auction_trade_fx.ts's BANNER_HEIGHT, derived
+   from auction_geometry.ts): 16 units of ink clear the 12-unit legibility floor
+   at the binding 1024x640 viewport with room to spare. */
+.auction-trade-banner-plate {
+  fill: #ffd23f;
+  stroke: #2a2000;
+  stroke-width: 1.5;
+}
+
+.auction-trade-banner-text {
+  fill: #2a2000;
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
 /* Title screen mode/species pickers: two ARIA

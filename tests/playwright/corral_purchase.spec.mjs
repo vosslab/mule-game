@@ -10,10 +10,11 @@
 // its [data-corral-panel]
 // root with role="dialog"/aria-modal, a reactive
 // data-corral-outcome="buyable|purchased|carrying|out_of_stock|insufficient_funds"
-// attribute, the .corral-purchase-figures dl (price/stock/funds), the
-// [data-corral-message] reason line, and its [data-corral-action="buy"|
-// "leave"|"dismiss"] buttons. Player 0 is always the human and always picks
-// first in round 1 (src/engine/land_grant.ts).
+// attribute, the .corral-purchase-figures dl with
+// [data-corral-figure="price"|"stock"|"funds"] naming each otherwise
+// structurally-identical dt/dd row, the [data-corral-message] reason line,
+// and its [data-corral-action="buy"|"leave"|"dismiss"] buttons. Player 0 is
+// always the human and always picks first in round 1 (src/engine/land_grant.ts).
 //
 // Town interaction model (docs/HUMAN_GUIDANCE.md "Town interaction model:
 // walk-in doors, attempt-then-confirm transactions"): walking through an open
@@ -47,8 +48,6 @@ const GAME_QUERY = "?seed=33&speed=2";
 const MAX_PASS_ITERATIONS = 50;
 /** Town cell column (row center) for seed 33's 5x9 board. */
 const TOWN_COL = 4;
-/** Poll intervals (ms) for catching a transient panel attribute. */
-const TIGHT_POLL = [20, 20, 20];
 /**
  * Real-ms duration of one directional hold used to cross the corral door's
  * walk-in entry line (town_layout.ts's DOOR_ENTER_Y sits only ~8px north of
@@ -82,23 +81,35 @@ async function passThroughLandGrant(page) {
  * Wait until the land-grant sweep cursor (src/engine/land_grant.ts) reaches
  * (targetRow, targetCol), then claim it with the same Enter key
  * `claim_current_plot` binds to (land_grant_panel.tsx).
+ *
+ * The cursor dwells on each cell for exactly one land-grant tick
+ * (LAND_GRANT_SWEEP_TICK_MS / speed, ~150ms real at this spec's speed=2)
+ * before advancing to the next free cell, cycling the board every ~44 ticks
+ * (~6.6s) when nothing is owned yet. `expect.poll(async () =>
+ * page.evaluate(...))` samples this by round-tripping through Node for every
+ * check: under full-suite CPU contention, Node's own event loop and the CDP
+ * channel both slow down independently of the page's own tick rate, so the
+ * round trip can end up taking longer than the ~150ms dwell window and miss
+ * every pass of the target cell for the full 20s timeout (confirmed via a
+ * temporary diagnostic: the sampled interval between successive polls grew
+ * from ~25ms early in an unloaded run to over 1000ms late in a loaded run,
+ * while the sweep cursor kept advancing on schedule underneath it).
+ * `page.waitForFunction` instead evaluates its predicate natively inside the
+ * page on every `requestAnimationFrame` (Playwright's default `polling:
+ * "raf"`), the same thread the game's own scene loop runs on, so the sample
+ * rate tracks the page's actual JS throughput instead of a separate,
+ * independently-throttled Node round trip -- it cannot fall behind the
+ * cursor's own tick rate the way the two-process poll can.
  */
 async function claimLandGrantPlotAt(page, targetRow, targetCol) {
-  const cursoredPlot = page.locator("#game-map .map-svg g.plot-cursor");
-  await expect
-    .poll(
-      async () => {
-        const row = await cursoredPlot.getAttribute("data-row");
-        const col = await cursoredPlot.getAttribute("data-col");
-        return `${row},${col}`;
-      },
-      {
-        timeout: 20_000,
-        intervals: TIGHT_POLL,
-        message: `sweep cursor never reached (${targetRow}, ${targetCol})`,
-      },
-    )
-    .toBe(`${targetRow},${targetCol}`);
+  await page.waitForFunction(
+    ({ row, col }) => {
+      const projection = window.muleGameState();
+      return projection.sweepRow === row && projection.sweepCol === col;
+    },
+    { row: targetRow, col: targetCol },
+    { timeout: 20_000 },
+  );
   await page.keyboard.press("Enter");
 }
 
@@ -149,13 +160,17 @@ function parseFigure(text) {
   return Number(text.replace("$", "").trim());
 }
 
-/** Read the corral panel's price, stock, and funds figures as numbers. */
+/**
+ * Read the corral panel's price, stock, and funds figures as numbers,
+ * addressed by data-corral-figure rather than DOM position (the three rows
+ * are structurally identical dt/dd pairs with nothing else to tell them
+ * apart -- corral_purchase_panel.tsx names each with data-corral-figure).
+ */
 async function readCorralFigures(panel) {
-  const figures = panel.locator(".corral-purchase-figure dd");
   const [priceText, stockText, fundsText] = await Promise.all([
-    figures.nth(0).textContent(),
-    figures.nth(1).textContent(),
-    figures.nth(2).textContent(),
+    panel.locator('[data-corral-figure="price"] dd').textContent(),
+    panel.locator('[data-corral-figure="stock"] dd').textContent(),
+    panel.locator('[data-corral-figure="funds"] dd').textContent(),
   ]);
   return {
     price: parseFigure(priceText),

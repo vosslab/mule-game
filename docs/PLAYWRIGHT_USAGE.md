@@ -1,5 +1,18 @@
 # Playwright usage
 
+<!--
+Local correction, re-applied after template propagation overwrote it: the
+"Visual render gate (repo-specific)" section at the end of this file. It
+documents `tests/pixel_metrics.mjs` and
+`tests/playwright/visual_render.spec.mjs`, which are live and still gate this
+repo's build; a propagation of the centrally-maintained template silently
+deleted the section from the working tree. It is restored here and will be
+clobbered again by the next propagation. The durable fix belongs upstream in
+the template repo that ships this file: the template needs a mechanism for
+repo-specific sections (or this content needs a repo-owned doc the template
+does not manage).
+-->
+
 How to use Playwright for browser automation and visual testing in this repo.
 
 ## Install

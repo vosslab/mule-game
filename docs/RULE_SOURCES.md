@@ -195,22 +195,48 @@ For every rule this project implements:
   matching "Sit Out" button, on top of Planet M.U.L.E.'s buyer/seller model. PM has no
   explicit third role: a non-participating player simply has `AuctionState.inAuction=false`.
   This is a user-approved addition for pacing (2026-07-09): a player who is done with a good
-  can sit it out and let the round finish faster, rather than being forced to hold on the track.
+  can sit it out and let the round finish faster, rather than being forced to hold a live price
+  for the rest of the window.
 - **Reference behavior (PM):** a non-participating player is drawn OFF the price track near the
   store and shows NO dollar figure. Verified in
   `OTHER_REPOS/planet_mule/data_decompiled/com/turborilla/mule/view/AuctionPainter.java`
   lines 188-215, where the price string `"$" + price` is painted only when `isInAuction()` is
   true. "No price shown" is PM's non-participation signal.
-- **Rendering and mechanics contract (this engine):** an `out` participant is excluded from
-  trading (skipped in `bestBid`/`bestAsk`, `src/engine/auction.ts`), and its price is frozen by
-  construction: `stepParticipantPrice` returns the participant unchanged when `role === "out"`,
-  regardless of a stale intent set before the player sat out, so `auctionTick` remains the single
-  price-movement authority. The same freeze applies to any seat, human or AI (AI already emits a
-  `hold` intent for the out role in `src/ai/auction_ai.ts`). In the UI
-  (`src/ui/solid/auction_screen.tsx`), an `out` participant shows the `OUT` label with no price
-  (an ASCII `--`) in the readout, draws no token dot on the price axis, and parks its avatar at a
-  sideline "line judge" spectator spot beside the track (`sidelineSpot`, the single layout seam a
-  future landscape-rotation task rewrites), matching PM's "off the track, no figure" treatment.
+- **Mechanics contract (this engine):** an `out` participant never trades and never moves in
+  price, both by construction rather than by a filter. It is absent from the matcher's books:
+  `rankedBids` admits only `role === "buyer"` and `rankedAsks` only `role === "seller"`
+  (`src/engine/auction.ts`), so an out seat is in neither list and cannot be matched. Its price is
+  frozen the same way: `stepParticipantPrice` returns the participant unchanged when
+  `role === "out"`, regardless of a stale intent set before the player sat out, so `auctionTick`
+  remains the single price-movement authority. The freeze applies to any seat, human or AI (the AI
+  also returns a `hold` intent for the out role, `src/ai/auction_ai.ts`). The role is declared with
+  the "Sit Out" button of the declare overlay (`ROLE_CHOICES`, `src/ui/solid/auction_screen.tsx`).
+- **Rendering contract (this engine):** the goods auction is a full-stage 16:10 composition in
+  which every participant stands in its own fixed lane on the runway and walks HORIZONTALLY to its
+  price (`src/ui/scenes/auction_arena.tsx`, geometry from `src/ui/scenes/auction_geometry.ts`).
+  There is no price readout and no separate price axis to hold a token: a participant's price is
+  the text tag riding above its own avatar (`auction-avatar-price`). An `out` participant is
+  rendered by three coordinated cues in `auction_arena.tsx`'s `Avatar`:
+  - It is benched at the runway's cheap edge in its own lane, with no price peg (`outParkingSpot`,
+    consumed by `avatarTarget`). The tween loop snaps it there and holds it on walk frame 1, so a
+    benched player visibly stands still while active traders walk.
+  - It carries an `OUT` chip where its price tag would be, never a number (a number over its head
+    would read as a live offer).
+  - Only its sprite dims (`.auction-avatar[data-role="out"] .auction-avatar-sprite`,
+    `src/style.css`); the bench plate and the chip keep full opacity and carry their own contrast.
+
+  In the player dock (`src/ui/scenes/auction_dock.tsx`) the same seat's role column reads `Out`
+  (`roleLabel`); the dock has no price column at all, so no price is shown there for any seat.
+- **Why this departs from the references:** PM signals non-participation purely by ABSENCE -- draw
+  the player off the track, print no figure -- and that signal does not survive this engine's
+  landscape recompose. Here the cheap edge of the runway is a legitimate place for a floor-priced
+  BUYER to stand, so "parked at the cheap wall with nothing over its head" is exactly what an
+  active trader can also look like, and an absence is something the player must notice rather than
+  see. This engine therefore keeps PM's subtractive cues (no figure, receded sprite) and adds two
+  positive objects no active trader ever has: the bench the player stands on, and the `OUT` chip.
+  The chip is a plate rather than bare text for a measured reason: dimming the whole avatar group
+  took the tag down with it and rendered it at 2.31:1, below the WCAG AA floor, making the one cue
+  that a player was out the least readable text on screen.
 
 ## Tournament deltas (recorded, not implemented)
 
@@ -784,6 +810,45 @@ rate once dynamic prices (WS-E-prices) pushed live quotes past 100.
   ever be dead (no seller and no below-critical buyer). The residual dead windows in the runner-up are
   purely the tighter idle timeout truncating a legitimate late trade, which the winning set avoids.
 
+### Sit-out fast-forward (`AUCTION_SIT_OUT_FACTOR`)
+
+- **What it is:** a PRESENTATION tunable, not a rule. `AUCTION_SIT_OUT_FACTOR = 10` lives in
+  [src/ui/scenes/scene_manager.ts](../src/ui/scenes/scene_manager.ts) (deliberately NOT in
+  `constants.ts`, which is reserved for numeric game rules), and `auctionTickMs(payload)` divides the
+  normal 500ms auction tick cadence by it while -- and only while -- the human has committed to the
+  current good AND their role is `out`. It changes the WALL-CLOCK pace at which ticks are dispatched;
+  it changes no engine decision. The window's trades, closing price, and outcome are identical with
+  and without it. Its purpose is that a human who declares Sit Out no longer spectates the remaining
+  AI-only ticks in real time.
+- **Self-cancelling:** the per-good commitment reset already in `scheduleAuction` drops the speedup
+  the moment a new good's auction begins uncommitted, so the factor cannot leak across windows.
+  `isAuctionFastForward()` exports whether the speedup is currently active, which is what the arena's
+  FAST indicator reads.
+- **Chosen by experiment, not assumption (2026-07-11, WP-FF):** a scratch Playwright driver drove one
+  scripted sit-out window at seed 1234 through 1x/3x/6x/10x builds of the constant, at true in-game
+  pace (no `?speed=` multiplier, which would compound with the factor and understate how fast the
+  window really runs for a player). All four factors produced an identical `trades` array and closing
+  price to the 1x baseline, and every trade's `data-flash-count` DOM increment was observed before the
+  next trade fired -- so the fastest factor tested was taken, over the 6x prior:
+
+  | factor | wall ms to window close | outcome identical to 1x | all trades flashed |
+  | ------ | ----------------------- | ----------------------- | ------------------ |
+  | 1      | 25503                   | y                       | y                  |
+  | 3      | 8491                    | y                       | y                  |
+  | 6      | 4251                    | y                       | y                  |
+  | 10     | 2544                    | y                       | y                  |
+
+- **It COMPOUNDS with `?speed=` (the trap):** `?speed=` multiplies the scaled real-time budget on top
+  of the factor; the two speed-ups compose rather than one overriding the other. `?speed=8` during a
+  sit-out window therefore yields roughly 6ms per tick -- too fast to observe, and too fast to
+  screenshot a trade before the next one lands. This has repeatedly misled agents into diagnosing a
+  "missing" or "instant" auction animation that was in fact rendering correctly at 80x. When
+  observing or capturing a sit-out window, use the factor alone and leave `?speed=` off. See
+  [USAGE.md](USAGE.md)'s URL-param section.
+- **Land auctions are untouched:** `scheduleLandAuction` has no per-good human-commitment concept, and
+  `auctionTickMs`'s formula reads `AuctionPayload` participant roles that the land-auction payload does
+  not carry.
+
 ### auction_ai and develop_ai retunes (follow-ons)
 
 - **`auction_ai.ts`** now derives its buy/sell decision from `auctionResourceCritical` (the same threshold
@@ -794,6 +859,65 @@ rate once dynamic prices (WS-E-prices) pushed live quotes past 100.
   out.
 - **`develop_ai.ts`** now estimates a M.U.L.E. purchase against the store's live `store.mulePrice` (dynamic
   since WS-E-mules) instead of the flat game-start seed `MULE_BASE_PRICE`.
+
+### Auction status beat: recorded round ledger (observational, not a rule)
+
+- **What it is:** `AuctionPayload.status` is an OBSERVATIONAL field carrying the pre-auction
+  status/accounting beat, with NES STATUS-screen semantics: the NES runs a STATUS screen (per-player
+  accounting, then the usage animation) before each good's auction floor, and this payload is what lets the
+  UI render that beat. It records; it decides nothing. No auction rule reads it, no RNG feeds it, and adding
+  it changed no band, role, price step, match, skip condition, or transfer rate. The reducer's decisions on
+  a frozen action log are byte-identical with and without it (verified in
+  [tests/test_replay_determinism.mjs](../tests/test_replay_determinism.mjs): deleting the new field from the
+  replayed final state reproduces the previous pinned hash exactly).
+- **Recorded, never reconstructed:** the per-player, per-good ledger
+  (`previous`, `usage`, `spoilage`, `production`, `eventDelta`, `held`) is written AS APPLIED at every seam
+  that moves a player's goods, rather than recomputed afterward from the rule constants. Recomputation would
+  still yield plausible numbers after a clamp or an event and so could silently disagree with what the player
+  just experienced (short-food consumption clamps to what the player actually had; events add, halve, or wipe
+  holdings). The recording seams are: develop-turn food consumption and the personal event's net goods delta
+  (`beginDevelopTurn` in [src/engine/turn.ts](../src/engine/turn.ts)); production yield, per-mule energy
+  drawn, spoilage lost, and the space-pirates crystite inventory wipe (`enterProduction`, same file, around
+  the `applySpoilage` call from [src/engine/economy.ts](../src/engine/economy.ts)). Personal-event deltas are
+  read as (post-event holding - pre-event holding), so a conditional or clamped effect is captured exactly as
+  applied instead of from the event's factor table.
+- **Where the recording lives, and why not in `events.ts`/`economy.ts`:** those two modules are pure
+  functions that RETURN values -- `addGood` and the Glac-Elves halving return a new `Player`; `applySpoilage`
+  returns a new `ResourceRecord`. Neither writes to the game state. The write happens in `turn.ts`, so that is
+  where the ledger records: recording inside `events.ts`/`economy.ts` would record a value that was computed
+  but not necessarily applied. One diff around the `applyPersonalEvent` call therefore covers EVERY
+  personal event that moves a holding -- present and future -- instead of needing a new hook per event.
+- **The category split (an event lands in exactly one bucket):** an event that reshapes a PLOT'S YIELD reaches
+  the player through `production`, because the engine applies it to the per-plot yields before they are summed
+  (colony pest devouring one food plot's harvest, planetquake halving mine output, pirates zeroing crystite
+  production). An event that reaches into a HOLDING is an `eventDelta` (the home-world package, the wandering
+  traveler's smithore, the Glac-Elves halving food, the pirates' crystite inventory wipe). Recording a
+  yield-shaping event in both buckets would double-count it and break the reconciliation; recording it in
+  neither would break it too. Both directions are pinned by test, including a forced pest round (production
+  bucket, zero event delta) and a forced pirate round (event-delta bucket).
+- **`fire_in_store` is deliberately outside the player ledger:** it burns the STORE's stock, not any player's
+  holding, so it moves no ledger cell. Auction trades are likewise outside the window (see the boundary below).
+- **Reconciliation:** `previous - usage - spoilage + production + eventDelta = held` holds EXACTLY, by
+  construction, because every mutating seam records. This is the point of the design: a seam added later and
+  not recorded breaks the identity loudly instead of producing a believable wrong number. It is asserted on
+  fully played rounds, including rounds carrying goods-mutating events, in
+  [tests/test_auction_status_payload.mjs](../tests/test_auction_status_payload.mjs).
+- **Ledger boundary (`previous` and `held`):** `previous` is the holding at round start, snapshotted when the
+  develop phase is entered -- the round's first goods-mutating seam, since land grant and land auction move
+  money and land but never goods. `held` is read LIVE from the player's holding at that good's auction-window
+  creation. Auction trades are NOT ledger entries, and no trades category is needed: each good is auctioned
+  exactly once per round in the fixed order, so no earlier window in the round can have traded the good being
+  auctioned, and the live holding at window creation is therefore still the post-production holding the
+  ledger reconciles to. The ledger resets every round.
+- **Colony verdict:** `surplus` when colony supply meets or exceeds colony need, `shortage` when it falls
+  short, from `computeColonyStats` in [src/engine/store.ts](../src/engine/store.ts). Supply exactly meeting
+  need reads as a surplus (the colony is covered, which is what the verdict answers). Food and energy carry a
+  modeled colony need and so take a verdict; smithore and crystite carry none and are ALWAYS null, showing no
+  stamp (user decision, 2026-07-11). The need is read one round ahead (`round + 1`), the same horizon the
+  auction's own role assignment already uses (`auctionResourceCritical` reads
+  `FOOD_REQUIREMENTS_BY_ROUND[min(round + 1, 12)]`, see "Food requirement index" above) and the same one the
+  round-boundary store recalc uses: this window is where the colony stocks up for the develop turns that come
+  next, so "is the colony covered?" is a question about the round ahead, not the round just played.
 
 ## Colony land auction: pricing, bidding, tie-break (WS-E-land)
 

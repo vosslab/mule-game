@@ -6,12 +6,24 @@ already shipped and [TODO.md](TODO.md) for the smaller task backlog.
 
 ## Near term
 
-- Goods-auction rebuild to the Planet M.U.L.E. `AuctionPainter` composition:
-  the user rejected the horizontal landscape track (2026-07-10) and wants the
-  auction rebuilt to match the reference painter's layout -- a vertical price
-  axis, per-player lanes, a buyer/seller meet line, a store price/stock meter,
-  and a bottom player dock. See [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md), "Goods
-  Auction (the trading floor)."
+- Goods auction rebuilt as a native 16:10 landscape recomposition
+  (2026-07-11). **Superseded, do not build:** the entry that stood here asked
+  for a vertical price axis with an `AuctionPainter`-shaped composition, after
+  the user rejected the 2026-07-10 horizontal track. That design was discarded
+  on 2026-07-11 and is not the target. The directive that replaced it: recompose
+  the auction natively for the landscape frame instead of centering a narrow
+  reference-shaped layout in a wide stage. The screen now fills the stage --
+  price runs left to right (cheap left, expensive right), buyers walk rightward
+  from the cheap wall and sellers leftward from the expensive wall, store rails
+  bound the runway at both edges, each player owns a horizontal lane row, a left
+  dock carries per-player role/money/units/traded, and a status/accounting beat
+  precedes each declare window. The NES auction screens remain the reference for
+  layout, interaction, and information hierarchy; the graphic treatment stays the
+  Planet-inspired modern look the town facades use. The rebuild has landed; the
+  visual-acceptance gate is the remaining close-out step. See
+  [SCREEN_DESIGNS.md](SCREEN_DESIGNS.md), "Goods Auction (the trading floor),"
+  `docs/CHANGELOG.md` 2026-07-11, and
+  [active_plans/active/auction_native_recompose.md](active_plans/active/auction_native_recompose.md).
 - Shipped: town rebuilt to the mode-composed horizontally scrolling street
   (WP-1A through WP-6D, closed 2026-07-11). The old street-of-doors grid town
   was replaced by a per-mode composed street -- a shared storefront catalog,

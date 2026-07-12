@@ -10,6 +10,17 @@ const PORT = process.env.PW_PORT ?? "4173";
 
 export default defineConfig({
   testDir: "tests/playwright",
+  // testDir is globbed by path, so a scratch spec or private lane-build
+  // directory sitting inside it gets collected as a durable test regardless
+  // of name. Exclude both shapes explicitly (docs/PLAYWRIGHT_TEST_STYLE.md).
+  testIgnore: ["**/_temp*", "**/dist_*/**"],
+  // Playwright CLEARS outputDir at the start of every run. Left at the
+  // default ("test-results/"), that clear silently deletes any other tool's
+  // artifacts parked under the same root (docs/E2E_TESTS.md's e2e drivers,
+  // walkthrough failure screenshots) -- it already destroyed 13 of 14 files
+  // from a concurrent capture run. Give Playwright its own subdirectory so
+  // it only ever clears what it owns.
+  outputDir: "test-results/playwright",
   timeout: 30_000,
   fullyParallel: true,
   reporter: [["list"]],

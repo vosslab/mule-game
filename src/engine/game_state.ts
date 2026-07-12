@@ -284,12 +284,66 @@ export interface AuctionTrade {
 }
 
 /**
+ * One player's per-good accounting for the pre-auction STATUS beat: the amounts
+ * recorded AS APPLIED at every seam that moved the good between round start and
+ * this good's auction-window creation.
+ *
+ * - `previous`: the player's holding of the good at round start.
+ * - `usage`: the amount consumed -- develop-turn food consumption for food, the
+ *   per-mule energy actually drawn at production for energy, zero otherwise.
+ * - `spoilage`: the amount lost to end-of-round decay.
+ * - `production`: the gross yield produced this round (already reflecting any
+ *   colony event that reshaped per-plot yields, since it is the applied amount).
+ * - `eventDelta`: the net change from events that move a HOLDING directly (the
+ *   home-world food/energy package, the wandering traveler's smithore, the
+ *   Glac-Elves halving food, the space pirates wiping crystite inventory).
+ * - `held`: the holding at this good's window creation.
+ *
+ * Because every mutating seam records, the identity
+ * `previous - usage - spoilage + production + eventDelta === held` holds
+ * exactly, and a missed seam shows up as a broken reconciliation rather than a
+ * plausible-but-wrong number. Observational only: nothing here feeds a rule.
+ */
+export interface AuctionStatusEntry {
+  readonly playerId: number;
+  readonly previous: number;
+  readonly usage: number;
+  readonly spoilage: number;
+  readonly production: number;
+  readonly eventDelta: number;
+  readonly held: number;
+}
+
+/**
+ * The colony's supply-vs-need verdict for the good being auctioned, derived
+ * from `computeColonyStats`: `"surplus"` when colony supply meets or exceeds
+ * colony need, `"shortage"` when it falls short. Always `null` for smithore and
+ * crystite -- the ores carry no modeled colony need, so they show no verdict
+ * (user decision 2026-07-11).
+ */
+export type ColonyVerdict = "surplus" | "shortage" | null;
+
+/**
+ * Pre-auction status/accounting snapshot for the good up for auction, mirroring
+ * the NES STATUS screen that runs before each good's auction floor: one
+ * accounting entry per player (in `players` order) plus the colony verdict.
+ * Assembled at window creation from the recorded round ledger
+ * (`GameState.roundLedger`) and `computeColonyStats`. Purely observational, so
+ * it is additive to `AuctionPayload` and changes no auction rule.
+ */
+export interface AuctionStatus {
+  readonly good: Resource;
+  readonly accounting: readonly AuctionStatusEntry[];
+  readonly verdict: ColonyVerdict;
+}
+
+/**
  * Auction phase sub-state and per-tick snapshot for the UI. Carries the good
  * up for auction, the tick clock, the per-good price band, the store's live
  * buy/sell quotes and remaining stock for the good, every player's live
- * participant standing, the running trade log, and whether the auction has
- * finished. The fixed good order is smithore, crystite, food, energy
- * (planet_mule's `Phase`/collection chaining order -- see
+ * participant standing, the running trade log, the pre-auction status snapshot,
+ * and whether the auction has finished. The fixed good order is smithore,
+ * crystite, food, energy (planet_mule's `Phase`/collection chaining order -- see
  * docs/RULE_SOURCES.md).
  *
  * These fields are all additive, so existing UI reads of `good`,
@@ -297,8 +351,9 @@ export interface AuctionTrade {
  * `storeSellPrice`, `storeStock`, `participants`, `trades`, and `finished`
  * keep working: `skipped` (the window ran no trading phase because the good was
  * unavailable or it was the last round), `priceStep` (the good's per-tick price
- * step, crystite 4 / others 1), and the trading-clock internals `idleTicks`,
- * `tradeCooldown`, and `runUnits`. `priceFloor`/`priceCeiling` are now the
+ * step, crystite 4 / others 1), the trading-clock internals `idleTicks`,
+ * `tradeCooldown`, and `runUnits`, and `status` (the observational accounting
+ * beat; see `AuctionStatus`). `priceFloor`/`priceCeiling` are now the
  * good's live store buy/sell quotes (band = [buyQuote, sellQuote]) rather than a
  * global [5, 100] band, so `priceFloor === storeBuyPrice` and
  * `priceCeiling === storeSellPrice`.
@@ -342,6 +397,13 @@ export interface AuctionPayload {
   readonly skipped: boolean;
   /** True once the window has ended; the driver then dispatches end_auction. */
   readonly finished: boolean;
+  /**
+   * The pre-auction accounting beat for this good: what every player started
+   * the round with, what the round did to it, what they hold now, and whether
+   * the colony is in surplus or shortage. Recorded, not reconstructed; see
+   * `AuctionStatus`. Present on every window, including a skipped one.
+   */
+  readonly status: AuctionStatus;
 }
 
 /**
@@ -484,6 +546,28 @@ export interface LandMarketState {
 }
 
 /**
+ * One player's accumulating ledger cell for one good, for the round in flight.
+ * `previous` is snapshotted from that player's holding when the develop phase
+ * is entered -- the round's first goods-mutating seam, since land grant and
+ * land auction move money and land but never goods, so the develop-entry
+ * holding IS the round-start holding. The four deltas start at zero and
+ * accumulate as each seam applies its change (develop food consumption and
+ * personal events; production yields, per-mule energy draw, spoilage, and the
+ * pirate crystite wipe). Read at each good's auction-window creation to build
+ * that good's `AuctionStatusEntry`. Serializable; observational only.
+ */
+export interface RoundLedgerCell {
+  readonly previous: number;
+  readonly usage: number;
+  readonly spoilage: number;
+  readonly production: number;
+  readonly eventDelta: number;
+}
+
+/** One player's round ledger: a `RoundLedgerCell` per good. */
+export type PlayerRoundLedger = Record<Resource, RoundLedgerCell>;
+
+/**
  * The complete, serializable game state.
  *
  * `seed` is the original seed the game was created with; `rngState` is the
@@ -502,6 +586,17 @@ export interface GameState {
   readonly players: readonly [Player, Player, Player, Player];
   readonly store: StoreState;
   readonly landMarket: LandMarketState;
+  /**
+   * The round-in-flight goods ledger, one `PlayerRoundLedger` per player in
+   * `players` order. Reset when the develop phase is entered and written at
+   * every seam that moves a player's goods during the round, so the auction's
+   * STATUS beat reports what the round ACTUALLY did rather than recomputing it
+   * from rule constants (a recomputation would diverge under clamped
+   * consumption and event effects). Read-only from the rules' point of view:
+   * `createAuctionPayload` reads it to build `AuctionPayload.status`, and no
+   * engine rule branches on it.
+   */
+  readonly roundLedger: readonly PlayerRoundLedger[];
   /**
    * The colony-event schedule, indexed by round: `colonyEventSchedule[round]`
    * is the event type scheduled for that round, or null when none is (index 0

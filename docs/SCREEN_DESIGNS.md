@@ -172,9 +172,12 @@ sits at a different distance on each screen:
   is only about a quarter of a tile. The scale says "see the whole colony and
   where your token sits in it," so you can plan land and movement.
 - **Auction - price scale (abstract, no map).** There is no world at all, just a
-  tall price axis with small tokens on it. The scale exists to give fine vertical
-  price resolution, not to depict space; the token's size is chosen so many
-  distinct prices fit between the store's floor and ceiling.
+  long price axis with small tokens on it. The scale exists to give fine price
+  resolution, not to depict space; the token's size is chosen so many distinct
+  prices fit between the store's floor and ceiling. The references run this axis
+  vertically and ours runs it horizontally (see "Goods Auction (the trading
+  floor)"), but the ratio is the point either way: the axis is the long dimension
+  of the frame, and the tokens stay small against it.
 
 So the town looms, the map surveys, and the auction abstracts - three different
 scales chosen by task, not one global zoom. A design that reused a single scale
@@ -488,8 +491,34 @@ See the dedicated walkthrough in
   prices ($97, $98), a store "$65" rail, and per-player units-traded counters.
 - **Contrast**: the price-axis, walk-to-meet mechanic is preserved in all three.
   The 1983/NES store rails are two crates; the remake draws a single side rail.
-  Our repo has already rotated this to a horizontal price track, so this is the
-  screen where our design most deliberately departs from the source.
+  All three run the price axis vertically because all three were composed for a
+  taller frame than ours; this is the screen where our design most deliberately
+  departs from the source.
+- **Our implementation** (rebuilt 2026-07-11): the auction is recomposed
+  **natively for the 16:10 landscape stage** rather than centering a narrow
+  NES-shaped layout inside a wide frame. The axis is rotated: **price runs left
+  to right** -- cheap at the left wall, expensive at the right -- so buyers walk
+  **rightward** from the cheap side as they raise their bids and sellers walk
+  **leftward** from the expensive side as they cut their asks, and a trade fires
+  where they converge. The store's two crate rails become **vertical walls
+  bounding the runway** at both edges (buy rail left, sell rail right), the best
+  bid and best ask are vertical dashed lines, and each player owns a **horizontal
+  lane row** instead of a vertical lane. A **left dock** carries each player's
+  role, money, units, and units traded on their own row; the top HUD hides for
+  the duration so the auction owns the whole stage. The status/accounting beat
+  runs as an overlay on the live arena before each declare window, and
+  ArrowLeft/ArrowRight are the primary taught controls because they match the
+  direction the avatars actually move.
+- **Our departure, stated plainly**: the NES auction screens are the reference for
+  **layout, interaction, and information hierarchy** -- which elements exist, how
+  they relate, and what the player reads where. Every NES relationship is
+  preserved: position is price, store rails bound the band, dashed lines mark the
+  live best bid and best ask, per-player role/money/units/traded stay visible, and
+  the going price, timer bar, and units-traded banner all keep their jobs. The
+  **graphic treatment** is not the NES's: it follows the Planet-inspired modern
+  look the town facades already use, and is deliberately **not** a NES pixel-art
+  reproduction. Reference for what to show and how it relates; our own look for
+  how it is drawn.
 
 ### Endgame
 
@@ -656,6 +685,15 @@ Each lane shows that player's offered price and, at the bottom, their units
 traded and current side; the store gauge shows the price level and the store's
 sell/buy numbers; the persistent HUD underneath keeps every player's money and
 goods on screen throughout.
+
+**How ours differs (2026-07-11).** All three references put price on the vertical
+axis because all three were composed for a taller frame. Our stage is 16:10
+landscape, so the axis is rotated: price runs left to right, buyers walk rightward
+and sellers leftward, the store's rails become the walls at either end of the
+runway, and each player gets a horizontal lane row. Read the stages above for the
+relationships -- what the status screen must tell you, why the declare choice is
+binary, how the walk resolves into a trade -- and see "Goods Auction (the trading
+floor)" above for how that same information is laid out on our landscape stage.
 
 ### The store in the supply-and-demand pricing
 

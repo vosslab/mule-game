@@ -32,7 +32,7 @@ current numbers); a version bump for the release cut is pending.
 ![Title screen with mode and species pickers, relaxed-timer toggle, and the New Game button](docs/screenshots/title_screen.png)
 ![Overworld map with textured terrain tiles and an outfitted M.U.L.E. for each player](docs/screenshots/overworld_map.png)
 ![Walkable town interior with the corral, outfit counters, and pub](docs/screenshots/town_interior.png)
-![Real-time spatial goods auction with buyer and seller avatars on the price track](docs/screenshots/auction_track.png)
+![Landscape goods auction with buyers and sellers walking a left-to-right price line between store rails, bid and ask markers, and a per-player dock](docs/screenshots/auction_arena.png)
 ![End-of-game scoring screen with ranked players, colony total, and Federation rating](docs/screenshots/scoring_screen.png)
 <!-- screenshots:end -->
 

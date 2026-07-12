@@ -99,6 +99,17 @@
 // assay_plot for player 0 at (0, 0) on their first develop turn), and both
 // RECORDED_ACTIONS and EXPECTED_STATE_HASH were re-pinned.
 //
+// Re-pinned for the auction STATUS beat: the ACTION LOG is unchanged, but
+// GameState gained `roundLedger` and AuctionPayload gained `status` -- the
+// recorded round ledger behind the auction's accounting beat. The ledger is
+// observational: it draws no randomness and no reducer branches on it, so the
+// replay's decisions and every other value in the final state are untouched.
+// Verified rather than assumed: replaying this log and hashing the final state
+// with `roundLedger` DELETED reproduces the previous pin
+// (412721506409658fd0e24b19dabfed2c593ea21c326ccb12e8ab70aaa6031ee6) byte for
+// byte, so only the added field moved the hash. Only EXPECTED_STATE_HASH was
+// re-pinned.
+//
 // Run via check_codebase.sh: node --import tsx --test tests/test_*.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -1413,7 +1424,7 @@ const RECORDED_ACTIONS = [
   { type: "end_auction" },
 ];
 
-const EXPECTED_STATE_HASH = "412721506409658fd0e24b19dabfed2c593ea21c326ccb12e8ab70aaa6031ee6";
+const EXPECTED_STATE_HASH = "595d6878ab1e4310b21ecd356fd318006ae8e008915af26406d653fc993bd84c";
 
 // Hash a final GameState for a compact drift signature. Stable across runs
 // because the reducer always builds state objects with the same key
