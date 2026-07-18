@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<!-- DESIGN HYPOTHESIS (cast level, artist_3 / Pell Karo).
+Persona: Pell Karo, maker of hard-enamel lapel pins and die-cut vinyl stickers.
+Influences: hard-enamel pins, cut-vinyl stickers, and mid-century transit and park
+pictograms. Every creature is one bold, die-cut-clean pictogram silhouette. The
+white halo and dark keyline become a polished metal rim around poured currentColor
+enamel. At 18 to 32 px, the cast bets on whole-body gesture, a purpose-built bottom
+edge, and one oversized enamel eye pair. Interiors stay nearly empty. Machine bodies
+use hard rectangles; organic bodies use curves. Frame 2 swings the whole pin so the
+silhouette communicates motion.
+SPHEROID: A startled saucer-orb hovers with three loose feelers, then bobs upward as all three sweep sideways. -->
+<defs>
+	<g id="spheroid-f1-shapes">
+		<ellipse cx="100" cy="92" rx="48" ry="42"/>
+		<ellipse cx="100" cy="126" rx="78" ry="30"/>
+		<polygon points="55,144 66,144 76,232 62,232"/>
+		<polygon points="95,148 105,148 108,246 94,246"/>
+		<polygon points="136,144 147,144 138,232 124,232"/></g>
+	<g id="spheroid-f1-face">
+		<ellipse cx="78" cy="93" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="122" cy="93" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="78" cy="95" r="7" fill="#141422"/>
+		<circle cx="122" cy="95" r="7" fill="#141422"/>
+		<circle cx="100" cy="120" r="9" fill="#141422"/>
+		<circle cx="100" cy="45" r="10" fill="#ffd23f"/></g>
+	<g id="spheroid-f1-draw">
+		<use href="#spheroid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="currentColor"/>
+		<use href="#spheroid-f1-face"/>
+	</g>
+	<g id="spheroid-f2-shapes">
+		<ellipse cx="100" cy="68" rx="48" ry="42"/>
+		<ellipse cx="100" cy="102" rx="78" ry="30"/>
+		<polygon points="58,120 69,118 96,206 82,210"/>
+		<polygon points="98,124 108,122 132,218 118,220"/>
+		<polygon points="137,118 148,116 160,202 146,204"/></g>
+	<g id="spheroid-f2-face">
+		<ellipse cx="78" cy="69" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="122" cy="69" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="78" cy="71" r="7" fill="#141422"/>
+		<circle cx="122" cy="71" r="7" fill="#141422"/>
+		<circle cx="100" cy="96" r="9" fill="#141422"/>
+		<circle cx="100" cy="21" r="10" fill="#ffd23f"/></g>
+	<g id="spheroid-f2-draw">
+		<use href="#spheroid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="currentColor"/>
+		<use href="#spheroid-f2-face"/>
+	</g>
+	<symbol id="spheroid-frame1" viewBox="0 0 200 320"><use href="#spheroid-f1-draw"/></symbol>
+	<symbol id="spheroid-frame2" viewBox="0 0 200 320"><use href="#spheroid-f2-draw"/></symbol>
+	<symbol id="spheroid-head" viewBox="0 0 120 120"><g transform="translate(-40,-22)"><use href="#spheroid-f1-draw"/></g></symbol>
+	<symbol id="spheroid-silhouette1" viewBox="0 0 200 320"><use href="#spheroid-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="spheroid-silhouette2" viewBox="0 0 200 320"><use href="#spheroid-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<!-- PREVIEW: ignored by generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<use href="#spheroid-frame1" width="100" height="160" x="0" y="0" style="color:#ff5a5f"/>
+<use href="#spheroid-frame2" width="100" height="160" x="100" y="0" style="color:#4fd8ff"/>
+</svg>

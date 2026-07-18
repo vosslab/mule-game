@@ -1,0 +1,55 @@
+<!-- The Expressionist. Personality drives geometry: rounded masses carry gentle and
+cheerful characters, hard angles carry sharp and stoic ones, and asymmetry carries sly or
+mournful emotion. Distinct bottom edges and one large facial gesture make each being readable
+at 18 to 32 px. Frame 2 displaces the feature most tied to each creature's temperament.
+Measured frame 1/frame 2 ink coverage: humanoid 61.7/68.0%, flapper 35.6/35.1%, bonzoid
+71.9/69.0%, gollumer 64.1/55.8%, spheroid 49.4/50.8%, leggite 59.0/58.8%, mechtron
+65.7/63.9%, packer 63.1/51.6%, mule 59.9/60.9%. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="mechtron-f1-shapes">
+		<rect x="40" y="72" width="120" height="135"/>
+		<rect x="48" y="43" width="16" height="33"/>
+		<rect x="136" y="43" width="16" height="33"/>
+		<rect x="48" y="207" width="35" height="79"/>
+		<rect x="117" y="207" width="35" height="79"/>
+	</g>
+	<g id="mechtron-f1-face">
+		<rect x="61" y="105" width="78" height="26" fill="#141422"/>
+		<circle cx="79" cy="118" r="8" fill="#ffffff"/>
+		<circle cx="121" cy="118" r="8" fill="#ffffff"/>
+	</g>
+	<g id="mechtron-f1-draw">
+		<use href="#mechtron-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="currentColor"/>
+		<use href="#mechtron-f1-face"/>
+	</g>
+	<g id="mechtron-f2-shapes">
+		<rect x="40" y="76" width="120" height="135"/>
+		<rect x="48" y="47" width="16" height="33"/>
+		<rect x="136" y="47" width="16" height="33"/>
+		<path d="M49 211 L84 211 L75 271 L40 271 Z"/>
+		<path d="M117 211 L152 211 L165 286 L130 286 Z"/>
+	</g>
+	<g id="mechtron-f2-face">
+		<rect x="61" y="109" width="78" height="26" fill="#141422"/>
+		<circle cx="79" cy="122" r="8" fill="#ffffff"/>
+		<circle cx="121" cy="122" r="8" fill="#ffffff"/>
+	</g>
+	<g id="mechtron-f2-draw">
+		<use href="#mechtron-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="currentColor"/>
+		<use href="#mechtron-f2-face"/>
+	</g>
+	<symbol id="mechtron-frame1" viewBox="0 0 200 320"><use href="#mechtron-f1-draw"/></symbol>
+	<symbol id="mechtron-frame2" viewBox="0 0 200 320"><use href="#mechtron-f2-draw"/></symbol>
+	<symbol id="mechtron-head" viewBox="0 0 130 130">
+		<g transform="translate(-35,-0)"><use href="#mechtron-f1-draw"/></g>
+	</symbol>
+	<symbol id="mechtron-silhouette1" viewBox="0 0 200 320"><use href="#mechtron-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="mechtron-silhouette2" viewBox="0 0 200 320"><use href="#mechtron-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<use href="#mechtron-frame1" width="200" height="320"/>
+</svg>

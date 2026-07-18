@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+<!-- ================================================================
+ARTIST 6, THE HERALD. Design hypothesis: heraldic charges solved
+sprite legibility six centuries ago; a beast on a banner must be
+identified across a battlefield, which is the same problem as an
+18 px sprite. Vocabulary: profile-first single-mass bodies;
+exaggerated attitude poses borrowed from blazonry (statant at rest;
+passant, volant, glissant, salient in motion); deep contour notches
+instead of interior detail; tapered limbs that end in emphatic
+points; one dominant diagonal axis in every frame 2. Faces are
+light eye shapes with dark pupils under one heavy lid or brow line
+that carries the personality word. Attitude, the tilt of the whole
+mass, reads at 18 px when anatomy does not.
+inkCoverage: TBD, filled after cast measurement.
+================================================================ -->
+
+	<!-- geometry: level hovering saucer, dome over wide brim, three knuckled tendril legs dangling -->
+	<g id="spheroid-f1-shapes">
+		<path d="M50,114 A50,50 0 0 1 150,114 Z"/>
+		<ellipse cx="100" cy="124" rx="70" ry="16"/>
+		<polygon points="51,129 35,163 46,196 38,228 58,196 49,165 65,131"/>
+		<polygon points="93,134 101,170 88,204 102,235 100,204 115,170 107,134"/>
+		<polygon points="135,129 151,161 142,194 160,224 154,194 165,163 149,131"/>
+	</g>
+
+	<!-- face: one enormous ringed porthole eye, dark pupil dead center, raised startled brow -->
+	<g id="spheroid-f1-face">
+		<circle cx="100" cy="96" r="23" fill="#141422"/>
+		<circle cx="100" cy="96" r="20" fill="#ffffff"/>
+		<circle cx="100" cy="96" r="8.5" fill="#141422"/>
+		<path d="M78,82 Q100,62 122,82 Q100,74 78,82 Z" fill="#141422"/>
+	</g>
+
+	<!-- draw: halo, ink, body, face stack -->
+	<g id="spheroid-f1-draw">
+		<use href="#spheroid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="currentColor"/>
+		<use href="#spheroid-f1-face"/>
+	</g>
+
+	<!-- frame 2 geometry: bob and heel, saucer risen 22 and rotated 8 degrees, legs swept trailing left -->
+	<g id="spheroid-f2-shapes">
+		<g transform="translate(0,-22) rotate(8,100,124)">
+			<path d="M50,114 A50,50 0 0 1 150,114 Z"/>
+			<ellipse cx="100" cy="124" rx="70" ry="16"/>
+		</g>
+		<polygon points="47,104 29,132 41,162 30,186 52,162 43,136 61,108"/>
+		<polygon points="91,114 69,142 81,174 64,200 92,174 83,146 105,118"/>
+		<polygon points="136,117 111,144 123,178 104,204 134,178 125,148 150,121"/>
+	</g>
+
+	<!-- face 2: same wide porthole eye riding the tilted dome, brow raised even higher -->
+	<g id="spheroid-f2-face">
+		<g transform="translate(0,-22) rotate(8,100,124)">
+			<circle cx="100" cy="96" r="23" fill="#141422"/>
+			<circle cx="100" cy="96" r="20" fill="#ffffff"/>
+			<circle cx="100" cy="96" r="8.5" fill="#141422"/>
+			<path d="M78,80 Q100,56 122,80 Q100,70 78,80 Z" fill="#141422"/>
+		</g>
+	</g>
+
+	<!-- draw 2: halo, ink, body, face stack -->
+	<g id="spheroid-f2-draw">
+		<use href="#spheroid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="currentColor"/>
+		<use href="#spheroid-f2-face"/>
+	</g>
+
+	<symbol id="spheroid-frame1" viewBox="0 0 200 320">
+		<use href="#spheroid-f1-draw"/>
+	</symbol>
+	<symbol id="spheroid-frame2" viewBox="0 0 200 320">
+		<use href="#spheroid-f2-draw"/>
+	</symbol>
+	<symbol id="spheroid-head" viewBox="0 0 100 100">
+		<g transform="translate(-50,-46)">
+			<use href="#spheroid-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="spheroid-silhouette1" viewBox="0 0 200 320">
+		<use href="#spheroid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="spheroid-silhouette2" viewBox="0 0 200 320">
+		<use href="#spheroid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+
+<!-- PREVIEW: everything below this line is ignored by the generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<rect x="0" y="110" width="200" height="100" fill="#7c9a4e"/>
+<rect x="0" y="210" width="200" height="110" fill="#22223a"/>
+
+<use href="#spheroid-frame1" width="20" height="32" x="14" y="30" style="color:#ff5a5f"/>
+<use href="#spheroid-frame2" width="20" height="32" x="44" y="30" style="color:#ff5a5f"/>
+<use href="#spheroid-head" width="18" height="18" x="76" y="44" style="color:#ff5a5f"/>
+<use href="#spheroid-frame1" width="11" height="18" x="104" y="44" style="color:#ff5a5f"/>
+<use href="#spheroid-frame2" width="11" height="18" x="122" y="44" style="color:#ff5a5f"/>
+
+<use href="#spheroid-frame1" width="20" height="32" x="14" y="130" style="color:#4fd8ff"/>
+<use href="#spheroid-frame2" width="20" height="32" x="44" y="130" style="color:#4fd8ff"/>
+<use href="#spheroid-head" width="18" height="18" x="76" y="144" style="color:#4fd8ff"/>
+<use href="#spheroid-frame1" width="11" height="18" x="104" y="144" style="color:#4fd8ff"/>
+<use href="#spheroid-frame2" width="11" height="18" x="122" y="144" style="color:#4fd8ff"/>
+
+<use href="#spheroid-frame1" width="20" height="32" x="14" y="230" style="color:#3aaa18"/>
+<use href="#spheroid-frame2" width="20" height="32" x="44" y="230" style="color:#3aaa18"/>
+<use href="#spheroid-head" width="18" height="18" x="76" y="244" style="color:#3aaa18"/>
+<use href="#spheroid-frame1" width="11" height="18" x="104" y="244" style="color:#f872e8"/>
+<use href="#spheroid-frame2" width="11" height="18" x="122" y="244" style="color:#f872e8"/>
+</svg>

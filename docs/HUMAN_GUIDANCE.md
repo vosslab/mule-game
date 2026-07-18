@@ -132,3 +132,55 @@ alone: lead with its category (Testing, UI, Docs, Engine) and describe what
 changed -- the files, the behavior, and the user-visible effect. Reference a
 related change by what it changed, so the entry stays clear long after the work
 that produced it is gone.
+
+Keep entries brief: a few lines each. Self-contained means the reader needs no
+other document, not that the entry carries the full narrative -- record the
+change and its reason, and let reports and specs hold the detail (maintainer,
+2026-07-16: entries were running overly long).
+
+## Specs stay minimal; mark rule provenance; agents add no lockdowns
+
+Keep production specs (art contracts, style contracts) minimal: state the
+human's asks, the characters or behavior being specified, and only the
+technical rules the pipeline mechanically needs. When recording a rule, mark
+where it came from -- a maintainer ask, or evidence (cite the report). An agent
+proposing a new constraint presents it to the human with its rationale instead
+of writing it into the spec.
+
+**Why:** the v1 alien art contract (2026-07) grew to 1264 lines through
+lockdown spec drift -- rules the human asked for (ground-contact axis, tank
+treads on the bonzoid) mixed with agent-invented mandates (a required gold
+accent on every creature, one universal "wide friendly smile", per-species
+numeric span tables) -- until four independent bake-off artists produced one
+identical design and the bake-off carried no decision information. The human
+diagnosed this on 2026-07-16: "no one asked for some of these lock downs...
+others were manifested by an overly aggressive agent."
+
+**How to apply:** before adding any rule to a spec, ask which of three bins it
+falls in: (1) the human asked for it (record it, attribute it), (2) evidence
+demands it (record it with the citation), (3) an agent thinks it is a good
+idea (do not write it; surface it as a proposal). For creative pipelines,
+prefer specifying WHO the characters are (identity, motion, personality) over
+HOW to draw them, and require each parallel artist to state a named design
+hypothesis -- assigned divergence is what makes multi-artist rounds
+informative.
+
+## Dispatch prompts and specs use positive phrasing plus omission
+
+Phrase instructions as "Do X" or "Use Y". Small LMs often mishandle negative
+phrasing and can flip a prohibition into the very action it names, producing
+poor code and egregious results. Watch for negative prompts in disguise
+("leave git to the manager" still plants "git"); the stronger move is to
+describe the wanted behavior and simply omit the unwanted tool or topic.
+Name an unwanted tool or failure mode only when the reader needs the warning
+to avoid a real, silent trap (for example the clipPath-renders-nothing trap
+in the art contract), and pair it with the positive replacement.
+
+**Why:** the maintainer stated this directly (2026-07-16), extending the
+"Prompt positively" core principle in [REPO_STYLE.md](REPO_STYLE.md): positive
+prompting plus omission is often stronger than a negative boundary.
+
+**How to apply:** when writing artist dispatch prompts, subagent tasks, or
+spec rules, state the wanted construction and the whitelist; let omission
+carry the rest. Reserve explicit warnings for traps that fail silently, and
+keep each warning next to its positive alternative.

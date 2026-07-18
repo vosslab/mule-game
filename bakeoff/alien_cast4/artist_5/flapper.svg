@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- FLAPPER: diamond head and beak, never a foot in sight - the whole
+	lower third of the canvas stays empty air. Frame 1 holds the wings in
+	a raised display V; frame 2 sweeps them into a full downstroke, the
+	least ambiguous flight silhouette change available. -->
+
+	<g id="flapper-f1-shapes">
+		<circle cx="100" cy="54" r="26"/>
+		<polygon points="84,74 116,74 100,100"/>
+		<polygon points="84,78 116,78 108,110 92,110"/>
+		<polygon points="70,110 130,110 116,168 84,168"/>
+		<polygon points="84,168 116,168 104,206 96,206"/>
+		<polygon points="84,120 20,40 10,70 30,110 70,150"/>
+		<polygon points="116,120 180,40 190,70 170,110 130,150"/>
+		<polygon points="88,168 96,168 92,178"/>
+		<polygon points="104,168 112,168 108,178"/>
+	</g>
+
+	<g id="flapper-f1-face">
+		<ellipse cx="88" cy="48" rx="10" ry="7" fill="#ffffff"/>
+		<ellipse cx="112" cy="46" rx="10" ry="7" fill="#ffffff"/>
+		<circle cx="90" cy="49" r="4" fill="#141422"/>
+		<circle cx="114" cy="47" r="4" fill="#141422"/>
+		<polygon points="76,36 100,32 96,40" fill="#141422"/>
+		<polygon points="104,34 128,38 120,44" fill="#141422"/>
+		<polygon points="94,94 106,94 100,102" fill="#ffd23f"/>
+	</g>
+
+	<g id="flapper-f1-draw">
+		<use href="#flapper-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="currentColor"/>
+		<use href="#flapper-f1-face"/>
+	</g>
+
+	<g id="flapper-f2-shapes">
+		<circle cx="104" cy="44" r="26"/>
+		<polygon points="88,64 120,64 104,90"/>
+		<polygon points="88,68 120,68 112,100 96,100"/>
+		<polygon points="74,100 134,100 120,158 88,158"/>
+		<polygon points="88,158 120,158 108,196 100,196"/>
+		<polygon points="88,120 19,180 12,150 44,110 76,130"/>
+		<polygon points="120,120 189,180 196,150 164,110 132,130"/>
+		<polygon points="92,158 100,158 96,168"/>
+		<polygon points="108,158 116,158 112,168"/>
+	</g>
+
+	<g id="flapper-f2-face">
+		<ellipse cx="92" cy="38" rx="10" ry="7" fill="#ffffff"/>
+		<ellipse cx="116" cy="36" rx="10" ry="7" fill="#ffffff"/>
+		<circle cx="94" cy="39" r="4" fill="#141422"/>
+		<circle cx="118" cy="37" r="4" fill="#141422"/>
+		<polygon points="80,26 104,22 100,30" fill="#141422"/>
+		<polygon points="108,24 132,28 124,34" fill="#141422"/>
+		<polygon points="98,84 110,84 104,92" fill="#ffd23f"/>
+	</g>
+
+	<g id="flapper-f2-draw">
+		<use href="#flapper-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="currentColor"/>
+		<use href="#flapper-f2-face"/>
+	</g>
+
+	<symbol id="flapper-frame1" viewBox="0 0 200 320">
+		<use href="#flapper-f1-draw"/>
+	</symbol>
+	<symbol id="flapper-frame2" viewBox="0 0 200 320">
+		<use href="#flapper-f2-draw"/>
+	</symbol>
+	<symbol id="flapper-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-8)"><use href="#flapper-f1-draw"/></g>
+	</symbol>
+	<symbol id="flapper-silhouette1" viewBox="0 0 200 320">
+		<use href="#flapper-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="flapper-silhouette2" viewBox="0 0 200 320">
+		<use href="#flapper-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

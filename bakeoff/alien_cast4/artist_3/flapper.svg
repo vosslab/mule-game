@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<!-- DESIGN HYPOTHESIS (cast level, artist_3 / Pell Karo).
+Persona: Pell Karo, maker of hard-enamel lapel pins and die-cut vinyl stickers.
+Influences: hard-enamel pins, cut-vinyl stickers, and mid-century transit and park
+pictograms. Every creature is one bold, die-cut-clean pictogram silhouette. The
+white halo and dark keyline become a polished metal rim around poured currentColor
+enamel. At 18 to 32 px, the cast bets on whole-body gesture, a purpose-built bottom
+edge, and one oversized enamel eye pair. Interiors stay nearly empty. Machine bodies
+use hard rectangles; organic bodies use curves. Frame 2 swings the whole pin so the
+silhouette communicates motion.
+FLAPPER: A crown-crested pterodactyl glides high, then drives both wings down in an imperious beat. -->
+<defs>
+	<g id="flapper-f1-shapes">
+		<polygon points="100,92 70,72 20,102 62,124 92,118"/>
+		<polygon points="104,92 132,64 182,88 142,118 110,118"/>
+		<ellipse cx="102" cy="116" rx="30" ry="54"/>
+		<path d="M112,78 Q138,44 164,58 L143,78 Z"/>
+		<polygon points="162,58 188,68 160,76"/>
+		<polygon points="128,50 142,24 150,58"/>
+		<polygon points="82,158 64,190 94,174"/>
+		<polygon points="118,158 138,190 108,174"/></g>
+	<g id="flapper-f1-face">
+		<ellipse cx="132" cy="61" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="153" cy="61" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="135" cy="63" r="7" fill="#141422"/>
+		<circle cx="156" cy="63" r="7" fill="#141422"/>
+		<polygon points="164,59 188,68 164,73" fill="#ffd23f"/></g>
+	<g id="flapper-f1-draw">
+		<use href="#flapper-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="currentColor"/>
+		<use href="#flapper-f1-face"/>
+	</g>
+	<g id="flapper-f2-shapes">
+		<polygon points="98,104 62,126 30,210 84,176 104,136"/>
+		<polygon points="108,104 144,124 174,208 120,174 102,136"/>
+		<ellipse cx="103" cy="121" rx="30" ry="52"/>
+		<path d="M112,83 Q140,48 164,62 L144,83 Z"/>
+		<polygon points="162,62 188,72 160,80"/>
+		<polygon points="130,54 144,28 150,62"/>
+		<polygon points="84,159 68,188 96,174"/>
+		<polygon points="120,158 140,188 110,174"/></g>
+	<g id="flapper-f2-face">
+		<ellipse cx="134" cy="65" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="154" cy="65" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="137" cy="67" r="7" fill="#141422"/>
+		<circle cx="157" cy="67" r="7" fill="#141422"/>
+		<polygon points="164,63 188,72 164,77" fill="#ffd23f"/></g>
+	<g id="flapper-f2-draw">
+		<use href="#flapper-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="currentColor"/>
+		<use href="#flapper-f2-face"/>
+	</g>
+	<symbol id="flapper-frame1" viewBox="0 0 200 320"><use href="#flapper-f1-draw"/></symbol>
+	<symbol id="flapper-frame2" viewBox="0 0 200 320"><use href="#flapper-f2-draw"/></symbol>
+	<symbol id="flapper-head" viewBox="0 0 120 120"><g transform="translate(-72,-18)"><use href="#flapper-f1-draw"/></g></symbol>
+	<symbol id="flapper-silhouette1" viewBox="0 0 200 320"><use href="#flapper-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="flapper-silhouette2" viewBox="0 0 200 320"><use href="#flapper-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<!-- PREVIEW: ignored by generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<use href="#flapper-frame1" width="100" height="160" x="0" y="0" style="color:#ff5a5f"/>
+<use href="#flapper-frame2" width="100" height="160" x="100" y="0" style="color:#4fd8ff"/>
+</svg>

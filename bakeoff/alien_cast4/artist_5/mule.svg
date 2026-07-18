@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- MULE: no face, per the contract. A rigid rectangular chassis with
+	exposed pivot joints, canted rigid ears, and four thin BigDog-style
+	jointed legs in two close pairs, leaving a 76-unit clear gap between
+	the front and rear pair. Frame 1 stands calm and vertical; frame 2
+	kicks the rear pair forward and the front pair back for the plod. -->
+
+	<g id="mule-f1-shapes">
+		<rect x="70" y="70" width="170" height="64" rx="8"/>
+		<circle cx="90" cy="134" r="10"/>
+		<circle cx="220" cy="134" r="10"/>
+		<circle cx="90" cy="70" r="6"/>
+		<circle cx="220" cy="70" r="6"/>
+		<polygon points="220,74 250,60 258,86 232,96"/>
+		<rect x="250" y="64" width="54" height="36" rx="6"/>
+		<polygon points="304,68 320,78 320,88 304,96"/>
+		<rect x="246" y="30" width="14" height="40" rx="4" transform="rotate(-18 253 50)"/>
+		<rect x="268" y="28" width="14" height="40" rx="4" transform="rotate(-8 275 48)"/>
+		<polygon points="70,84 46,70 40,90 66,100"/>
+		<rect x="30" y="64" width="20" height="30" rx="6"/>
+		<rect x="82" y="132" width="16" height="34" rx="4"/>
+		<polygon points="82,164 100,164 96,196 84,196"/>
+		<rect x="104" y="132" width="16" height="34" rx="4"/>
+		<polygon points="104,164 120,164 116,196 108,196"/>
+		<rect x="196" y="132" width="16" height="34" rx="4"/>
+		<polygon points="196,164 212,164 208,196 198,196"/>
+		<rect x="218" y="132" width="16" height="34" rx="4"/>
+		<polygon points="218,164 234,164 230,196 220,196"/>
+		<rect x="80" y="194" width="20" height="6" rx="2"/>
+		<rect x="102" y="194" width="20" height="6" rx="2"/>
+		<rect x="194" y="194" width="20" height="6" rx="2"/>
+		<rect x="216" y="194" width="20" height="6" rx="2"/>
+	</g>
+
+	<g id="mule-f1-trim">
+		<rect x="120" y="94" width="60" height="10" rx="3" fill="#ffd23f"/>
+	</g>
+
+	<g id="mule-f1-draw">
+		<use href="#mule-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="currentColor"/>
+		<use href="#mule-f1-trim"/>
+	</g>
+
+	<g id="mule-f2-shapes">
+		<rect x="68" y="72" width="170" height="64" rx="8"/>
+		<circle cx="88" cy="136" r="10"/>
+		<circle cx="218" cy="136" r="10"/>
+		<circle cx="88" cy="72" r="6"/>
+		<circle cx="218" cy="72" r="6"/>
+		<polygon points="218,76 248,64 256,90 230,98"/>
+		<rect x="248" y="68" width="54" height="36" rx="6"/>
+		<polygon points="302,72 318,82 318,92 302,100"/>
+		<rect x="244" y="34" width="14" height="40" rx="4" transform="rotate(-14 251 54)"/>
+		<rect x="266" y="32" width="14" height="40" rx="4" transform="rotate(-4 273 52)"/>
+		<polygon points="68,86 44,74 38,94 64,104"/>
+		<rect x="28" y="68" width="20" height="30" rx="6"/>
+		<rect x="84" y="136" width="16" height="30" rx="4"/>
+		<polygon points="84,166 102,166 110,198 90,198"/>
+		<rect x="106" y="136" width="16" height="30" rx="4"/>
+		<polygon points="106,166 122,166 128,198 110,198"/>
+		<rect x="192" y="136" width="16" height="30" rx="4"/>
+		<polygon points="192,166 208,166 200,198 182,198"/>
+		<rect x="214" y="136" width="16" height="30" rx="4"/>
+		<polygon points="214,166 230,166 222,198 204,198"/>
+		<rect x="88" y="196" width="20" height="6" rx="2"/>
+		<rect x="108" y="196" width="20" height="6" rx="2"/>
+		<rect x="180" y="196" width="20" height="6" rx="2"/>
+		<rect x="202" y="196" width="20" height="6" rx="2"/>
+	</g>
+
+	<g id="mule-f2-trim">
+		<rect x="118" y="96" width="60" height="10" rx="3" fill="#ffd23f"/>
+	</g>
+
+	<g id="mule-f2-draw">
+		<use href="#mule-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="currentColor"/>
+		<use href="#mule-f2-trim"/>
+	</g>
+
+	<symbol id="mule-frame1" viewBox="0 0 320 200">
+		<use href="#mule-f1-draw"/>
+	</symbol>
+	<symbol id="mule-frame2" viewBox="0 0 320 200">
+		<use href="#mule-f2-draw"/>
+	</symbol>
+	<symbol id="mule-silhouette1" viewBox="0 0 320 200">
+		<use href="#mule-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="mule-silhouette2" viewBox="0 0 320 200">
+		<use href="#mule-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

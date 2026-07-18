@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ================================================================
+ARTIST 6, THE HERALD. Design hypothesis: heraldic charges solved
+sprite legibility six centuries ago; a beast on a banner must be
+identified across a battlefield, which is the same problem as an
+18 px sprite. Vocabulary: profile-first single-mass bodies;
+exaggerated attitude poses borrowed from blazonry (statant at rest;
+passant, volant, glissant, salient in motion); deep contour notches
+instead of interior detail; tapered limbs that end in emphatic
+points; one dominant diagonal axis in every frame 2. Faces are
+light eye shapes with dark pupils under one heavy lid or brow line
+that carries the personality word. Attitude, the tilt of the whole
+mass, reads at 18 px when anatomy does not.
+inkCoverage: TBD, filled after cast measurement.
+================================================================ -->
+
+	<!-- geometry: tread slab with five ground cleats, turret torso, two raised mitten arms, antenna -->
+	<g id="bonzoid-f1-shapes">
+		<rect x="34" y="250" width="132" height="38" rx="19"/>
+		<rect x="40" y="280" width="14" height="20"/>
+		<rect x="66" y="280" width="14" height="20"/>
+		<rect x="92" y="280" width="14" height="20"/>
+		<rect x="118" y="280" width="14" height="20"/>
+		<rect x="144" y="280" width="14" height="20"/>
+		<rect x="60" y="118" width="80" height="150" rx="28"/>
+		<rect x="112" y="84" width="8" height="40"/>
+		<circle cx="116" cy="80" r="7"/>
+		<polygon points="54,214 84,200 60,118 36,128"/>
+		<circle cx="48" cy="112" r="20"/>
+		<circle cx="66" cy="99" r="9"/>
+		<polygon points="146,214 116,200 140,118 164,128"/>
+		<circle cx="152" cy="112" r="20"/>
+		<circle cx="134" cy="99" r="9"/>
+	</g>
+
+	<!-- face: unequal wide-open eyes, brows thrown high, big shouting mouth -->
+	<g id="bonzoid-f1-face">
+		<circle cx="82" cy="163" r="15" fill="#ffffff"/>
+		<circle cx="122" cy="160" r="9" fill="#ffffff"/>
+		<circle cx="84" cy="165" r="7" fill="#141422"/>
+		<circle cx="123" cy="161" r="4.5" fill="#141422"/>
+		<polygon points="64,136 96,129 97,137 65,144" fill="#141422"/>
+		<polygon points="108,132 134,136 133,144 109,140" fill="#141422"/>
+		<ellipse cx="101" cy="197" rx="16" ry="12" fill="#141422"/>
+	</g>
+
+	<!-- draw: halo, ink, body, face stack for frame 1 -->
+	<g id="bonzoid-f1-draw">
+		<use href="#bonzoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f1-face"/>
+	</g>
+
+	<!-- geometry frame 2: rolling charge, turret pitched forward, arms flung back, cleats phase shifted -->
+	<g id="bonzoid-f2-shapes">
+		<rect x="34" y="250" width="132" height="38" rx="19"/>
+		<rect x="53" y="280" width="14" height="20"/>
+		<rect x="79" y="280" width="14" height="20"/>
+		<rect x="105" y="280" width="14" height="20"/>
+		<rect x="131" y="280" width="14" height="20"/>
+		<rect x="60" y="118" width="80" height="150" rx="28" transform="rotate(11,100,268)"/>
+		<polygon points="122,126 134,120 112,94 102,100"/>
+		<circle cx="104" cy="95" r="7"/>
+		<polygon points="92,148 96,178 40,160 36,134"/>
+		<circle cx="44" cy="146" r="18"/>
+		<circle cx="54" cy="130" r="8"/>
+		<polygon points="94,196 98,224 46,222 42,196"/>
+		<circle cx="46" cy="210" r="18"/>
+		<circle cx="56" cy="190" r="8"/>
+	</g>
+
+	<!-- face frame 2: same manic face riding the forward pitch, mouth wider -->
+	<g id="bonzoid-f2-face" transform="rotate(11,100,268)">
+		<circle cx="82" cy="163" r="15" fill="#ffffff"/>
+		<circle cx="122" cy="160" r="9" fill="#ffffff"/>
+		<circle cx="84" cy="165" r="7" fill="#141422"/>
+		<circle cx="123" cy="161" r="4.5" fill="#141422"/>
+		<polygon points="64,136 96,129 97,137 65,144" fill="#141422"/>
+		<polygon points="108,132 134,136 133,144 109,140" fill="#141422"/>
+		<ellipse cx="101" cy="197" rx="17" ry="14" fill="#141422"/>
+	</g>
+
+	<!-- draw: halo, ink, body, face stack for frame 2 -->
+	<g id="bonzoid-f2-draw">
+		<use href="#bonzoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f2-face"/>
+	</g>
+
+	<symbol id="bonzoid-frame1" viewBox="0 0 200 320">
+		<use href="#bonzoid-f1-draw"/>
+	</symbol>
+	<symbol id="bonzoid-frame2" viewBox="0 0 200 320">
+		<use href="#bonzoid-f2-draw"/>
+	</symbol>
+	<symbol id="bonzoid-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-110)">
+			<use href="#bonzoid-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="bonzoid-silhouette1" viewBox="0 0 200 320">
+		<use href="#bonzoid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="bonzoid-silhouette2" viewBox="0 0 200 320">
+		<use href="#bonzoid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+
+<!-- PREVIEW: everything below this line is ignored by the generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<rect x="0" y="110" width="200" height="100" fill="#7c9a4e"/>
+<rect x="0" y="210" width="200" height="110" fill="#22223a"/>
+
+<use href="#bonzoid-frame1" width="20" height="32" x="14" y="30" style="color:#ff5a5f"/>
+<use href="#bonzoid-frame2" width="20" height="32" x="44" y="30" style="color:#ff5a5f"/>
+<use href="#bonzoid-head" width="18" height="18" x="76" y="44" style="color:#ff5a5f"/>
+<use href="#bonzoid-frame1" width="11" height="18" x="104" y="44" style="color:#ff5a5f"/>
+<use href="#bonzoid-frame2" width="11" height="18" x="122" y="44" style="color:#ff5a5f"/>
+
+<use href="#bonzoid-frame1" width="20" height="32" x="14" y="130" style="color:#4fd8ff"/>
+<use href="#bonzoid-frame2" width="20" height="32" x="44" y="130" style="color:#4fd8ff"/>
+<use href="#bonzoid-head" width="18" height="18" x="76" y="144" style="color:#4fd8ff"/>
+<use href="#bonzoid-frame1" width="11" height="18" x="104" y="144" style="color:#4fd8ff"/>
+<use href="#bonzoid-frame2" width="11" height="18" x="122" y="144" style="color:#4fd8ff"/>
+
+<use href="#bonzoid-frame1" width="20" height="32" x="14" y="230" style="color:#3aaa18"/>
+<use href="#bonzoid-frame2" width="20" height="32" x="44" y="230" style="color:#3aaa18"/>
+<use href="#bonzoid-head" width="18" height="18" x="76" y="244" style="color:#3aaa18"/>
+<use href="#bonzoid-frame1" width="11" height="18" x="104" y="244" style="color:#f872e8"/>
+<use href="#bonzoid-frame2" width="11" height="18" x="122" y="244" style="color:#f872e8"/>
+</svg>

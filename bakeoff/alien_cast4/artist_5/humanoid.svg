@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- HUMANOID: round head over an angular wedge torso - soft skull,
+	hard chassis. Confident akimbo-and-fist idle; frame 2 is a full
+	stride with the opposite arm and leg swapped high/low. Foot gap 88
+	units at rest, well clear of the 28-unit halo growth. -->
+
+	<g id="humanoid-f1-shapes">
+		<circle cx="100" cy="48" r="30"/>
+		<rect x="88" y="76" width="24" height="12"/>
+		<polygon points="58,88 142,88 126,182 74,182"/>
+		<polygon points="58,94 26,110 34,168 62,150"/>
+		<polygon points="142,94 176,60 190,84 156,120"/>
+		<circle cx="182" cy="70" r="16"/>
+		<polygon points="74,182 46,182 26,286 56,286"/>
+		<polygon points="126,182 154,182 174,286 144,286"/>
+		<rect x="20" y="282" width="42" height="20" rx="8"/>
+		<rect x="138" y="282" width="42" height="20" rx="8"/>
+	</g>
+
+	<g id="humanoid-f1-face">
+		<circle cx="88" cy="46" r="11" fill="#ffffff"/>
+		<circle cx="112" cy="46" r="11" fill="#ffffff"/>
+		<circle cx="90" cy="47" r="5.5" fill="#141422"/>
+		<circle cx="114" cy="47" r="5.5" fill="#141422"/>
+		<path d="M78,64 Q100,80 122,64 Q100,74 78,64 Z" fill="#141422"/>
+		<rect x="88" y="140" width="24" height="16" rx="4" fill="#ffd23f"/>
+	</g>
+
+	<g id="humanoid-f1-draw">
+		<use href="#humanoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="currentColor"/>
+		<use href="#humanoid-f1-face"/>
+	</g>
+
+	<g id="humanoid-f2-shapes">
+		<circle cx="104" cy="46" r="30"/>
+		<rect x="92" y="74" width="24" height="12"/>
+		<polygon points="62,86 146,86 130,180 78,180"/>
+		<polygon points="146,92 178,130 168,178 138,150"/>
+		<polygon points="62,92 30,66 20,90 52,124"/>
+		<circle cx="26" cy="76" r="14"/>
+		<polygon points="126,178 158,178 182,252 150,258"/>
+		<polygon points="78,178 46,178 16,230 56,266"/>
+		<rect x="140" y="246" width="44" height="20" rx="8"/>
+		<rect x="10" y="224" width="44" height="20" rx="8"/>
+	</g>
+
+	<g id="humanoid-f2-face">
+		<circle cx="92" cy="44" r="11" fill="#ffffff"/>
+		<circle cx="116" cy="44" r="11" fill="#ffffff"/>
+		<circle cx="94" cy="45" r="5.5" fill="#141422"/>
+		<circle cx="118" cy="45" r="5.5" fill="#141422"/>
+		<path d="M82,62 Q104,78 126,62 Q104,72 82,62 Z" fill="#141422"/>
+		<rect x="92" y="136" width="24" height="16" rx="4" fill="#ffd23f"/>
+	</g>
+
+	<g id="humanoid-f2-draw">
+		<use href="#humanoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="currentColor"/>
+		<use href="#humanoid-f2-face"/>
+	</g>
+
+	<symbol id="humanoid-frame1" viewBox="0 0 200 320">
+		<use href="#humanoid-f1-draw"/>
+	</symbol>
+	<symbol id="humanoid-frame2" viewBox="0 0 200 320">
+		<use href="#humanoid-f2-draw"/>
+	</symbol>
+	<symbol id="humanoid-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,0)"><use href="#humanoid-f1-draw"/></g>
+	</symbol>
+	<symbol id="humanoid-silhouette1" viewBox="0 0 200 320">
+		<use href="#humanoid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="humanoid-silhouette2" viewBox="0 0 200 320">
+		<use href="#humanoid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- GOLLUMER: a low wide mound, not a tall lean - deliberately a
+	different silhouette family from this cast's taller creatures. Bulge
+	prominence and lean direction flip side between frames for the ooze
+	read. A single half-lidded downcast eye, no gold: mournful doesn't
+	need bling. -->
+
+	<g id="gollumer-f1-shapes">
+		<rect x="30" y="250" width="140" height="54" rx="26"/>
+		<ellipse cx="100" cy="224" rx="76" ry="50"/>
+		<ellipse cx="48" cy="232" rx="34" ry="40"/>
+		<ellipse cx="150" cy="238" rx="26" ry="32"/>
+		<ellipse cx="78" cy="158" rx="58" ry="46"/>
+		<ellipse cx="120" cy="104" rx="40" ry="38"/>
+		<ellipse cx="168" cy="258" rx="18" ry="14"/>
+	</g>
+
+	<g id="gollumer-f1-face">
+		<ellipse cx="126" cy="104" rx="22" ry="16" fill="#ffffff"/>
+		<path d="M104,96 Q126,84 148,96 L148,102 Q126,92 104,102 Z" fill="#141422"/>
+		<circle cx="130" cy="108" r="8" fill="#141422"/>
+		<path d="M100,128 Q126,142 152,128 Q126,132 100,128 Z" fill="#141422"/>
+	</g>
+
+	<g id="gollumer-f1-draw">
+		<use href="#gollumer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="currentColor"/>
+		<use href="#gollumer-f1-face"/>
+	</g>
+
+	<g id="gollumer-f2-shapes">
+		<rect x="20" y="254" width="150" height="50" rx="24"/>
+		<ellipse cx="104" cy="228" rx="82" ry="46"/>
+		<ellipse cx="54" cy="236" rx="24" ry="30"/>
+		<ellipse cx="156" cy="230" rx="36" ry="38"/>
+		<ellipse cx="126" cy="164" rx="54" ry="42"/>
+		<ellipse cx="150" cy="118" rx="38" ry="34"/>
+		<ellipse cx="34" cy="260" rx="16" ry="13"/>
+	</g>
+
+	<g id="gollumer-f2-face">
+		<ellipse cx="156" cy="118" rx="22" ry="15" fill="#ffffff"/>
+		<path d="M134,110 Q156,98 178,110 L178,116 Q156,106 134,116 Z" fill="#141422"/>
+		<circle cx="160" cy="122" r="8" fill="#141422"/>
+		<path d="M124,142 Q156,156 182,142 Q156,146 124,142 Z" fill="#141422"/>
+	</g>
+
+	<g id="gollumer-f2-draw">
+		<use href="#gollumer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="currentColor"/>
+		<use href="#gollumer-f2-face"/>
+	</g>
+
+	<symbol id="gollumer-frame1" viewBox="0 0 200 320">
+		<use href="#gollumer-f1-draw"/>
+	</symbol>
+	<symbol id="gollumer-frame2" viewBox="0 0 200 320">
+		<use href="#gollumer-f2-draw"/>
+	</symbol>
+	<symbol id="gollumer-head" viewBox="0 0 120 120">
+		<g transform="translate(-66,-44)"><use href="#gollumer-f1-draw"/></g>
+	</symbol>
+	<symbol id="gollumer-silhouette1" viewBox="0 0 200 320">
+		<use href="#gollumer-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="gollumer-silhouette2" viewBox="0 0 200 320">
+		<use href="#gollumer-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- BONZOID: a solid tread slab (no split, unlike mechtron's two posts)
+	under a boxy chassis and a single stalk-mounted sensor lens - Johnny 5's
+	one binocular eye reads better at 18px than a crowded pair on this
+	narrow a head. Oversized asymmetric arms swap high/low between frames
+	for the manic flail. -->
+
+	<g id="bonzoid-f1-shapes">
+		<rect x="40" y="250" width="120" height="48" rx="20"/>
+		<rect x="54" y="140" width="92" height="110" rx="14"/>
+		<rect x="72" y="90" width="56" height="52" rx="10"/>
+		<rect x="96" y="70" width="8" height="22"/>
+		<circle cx="100" cy="66" r="12"/>
+		<polygon points="54,150 20,60 44,50 74,132"/>
+		<polygon points="18,50 30,40 46,54 34,66"/>
+		<polygon points="146,160 210,140 208,168 152,188"/>
+		<polygon points="206,132 226,124 228,148 210,158"/>
+	</g>
+
+	<g id="bonzoid-f1-face">
+		<circle cx="100" cy="66" r="9" fill="#ffffff"/>
+		<circle cx="101" cy="67" r="4.5" fill="#141422"/>
+		<rect x="88" y="160" width="24" height="18" rx="4" fill="#ffd23f"/>
+	</g>
+
+	<g id="bonzoid-f1-draw">
+		<use href="#bonzoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f1-face"/>
+	</g>
+
+	<g id="bonzoid-f2-shapes">
+		<rect x="36" y="252" width="120" height="48" rx="20"/>
+		<rect x="50" y="142" width="92" height="108" rx="14"/>
+		<rect x="68" y="92" width="56" height="50" rx="10"/>
+		<rect x="92" y="72" width="8" height="20"/>
+		<circle cx="96" cy="68" r="12"/>
+		<polygon points="50,152 20,220 44,232 70,158"/>
+		<polygon points="16,222 34,232 26,248 8,238"/>
+		<polygon points="142,158 190,70 214,80 168,178"/>
+		<polygon points="192,62 214,52 222,74 200,84"/>
+	</g>
+
+	<g id="bonzoid-f2-face">
+		<circle cx="96" cy="68" r="9" fill="#ffffff"/>
+		<circle cx="97" cy="69" r="4.5" fill="#141422"/>
+		<rect x="84" y="162" width="24" height="18" rx="4" fill="#ffd23f"/>
+	</g>
+
+	<g id="bonzoid-f2-draw">
+		<use href="#bonzoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f2-face"/>
+	</g>
+
+	<symbol id="bonzoid-frame1" viewBox="0 0 200 320">
+		<use href="#bonzoid-f1-draw"/>
+	</symbol>
+	<symbol id="bonzoid-frame2" viewBox="0 0 200 320">
+		<use href="#bonzoid-f2-draw"/>
+	</symbol>
+	<symbol id="bonzoid-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-30)"><use href="#bonzoid-f1-draw"/></g>
+	</symbol>
+	<symbol id="bonzoid-silhouette1" viewBox="0 0 200 320">
+		<use href="#bonzoid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="bonzoid-silhouette2" viewBox="0 0 200 320">
+		<use href="#bonzoid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

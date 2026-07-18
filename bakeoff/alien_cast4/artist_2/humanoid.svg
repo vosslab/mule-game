@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first because ground contact is
+the cheapest identity signal a player gets. Gold is a single warm dot per
+creature; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct; per creature numbers reported at run time.
+
+Humanoid: plucky everyman. Round helmet head, sturdy jerkin torso, arms
+honestly swinging. Frame 1 stands at attention; frame 2 mid stride with
+the left leg lifted high and the arms counter swinging. Gold: belt
+buckle. Ground: two feet with a leg split between them.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<g id="humanoid-f1-shapes">
+		<circle cx="100" cy="68" r="30"/>
+		<rect x="88" y="94" width="24" height="18"/>
+		<rect x="58" y="110" width="84" height="104" rx="18"/>
+		<rect x="32" y="118" width="30" height="76" rx="14"/>
+		<rect x="138" y="118" width="30" height="76" rx="14"/>
+		<rect x="64" y="216" width="28" height="76" rx="13"/>
+		<rect x="108" y="216" width="28" height="76" rx="13"/>
+	</g>
+	<g id="humanoid-f1-face">
+		<circle cx="87" cy="64" r="13" fill="#ffffff"/>
+		<circle cx="113" cy="64" r="13" fill="#ffffff"/>
+		<circle cx="90" cy="66" r="6" fill="#141422"/>
+		<circle cx="110" cy="66" r="6" fill="#141422"/>
+		<path d="M84,82 Q100,94 116,82 Q100,88 84,82 Z" fill="#141422"/>
+		<rect x="76" y="180" width="48" height="12" rx="3" fill="#ffd23f"/>
+	</g>
+	<g id="humanoid-f1-draw">
+		<use href="#humanoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="currentColor"/>
+		<use href="#humanoid-f1-face"/>
+	</g>
+
+	<g id="humanoid-f2-shapes">
+		<circle cx="100" cy="64" r="30"/>
+		<rect x="88" y="90" width="24" height="18"/>
+		<rect x="58" y="106" width="84" height="104" rx="18"/>
+		<rect x="32" y="118" width="30" height="72" rx="14" transform="rotate(-26 47 154)"/>
+		<rect x="138" y="118" width="30" height="72" rx="14" transform="rotate(26 153 154)"/>
+		<rect x="68" y="214" width="28" height="52" rx="13" transform="rotate(-42 82 240)"/>
+		<rect x="108" y="214" width="28" height="78" rx="13"/>
+	</g>
+	<g id="humanoid-f2-face">
+		<circle cx="87" cy="60" r="13" fill="#ffffff"/>
+		<circle cx="113" cy="60" r="13" fill="#ffffff"/>
+		<circle cx="90" cy="62" r="6" fill="#141422"/>
+		<circle cx="110" cy="62" r="6" fill="#141422"/>
+		<path d="M84,78 Q100,90 116,78 Q100,84 84,78 Z" fill="#141422"/>
+		<rect x="76" y="176" width="48" height="12" rx="3" fill="#ffd23f"/>
+	</g>
+	<g id="humanoid-f2-draw">
+		<use href="#humanoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="currentColor"/>
+		<use href="#humanoid-f2-face"/>
+	</g>
+
+	<symbol id="humanoid-frame1" viewBox="0 0 200 320"><use href="#humanoid-f1-draw"/></symbol>
+	<symbol id="humanoid-frame2" viewBox="0 0 200 320"><use href="#humanoid-f2-draw"/></symbol>
+	<symbol id="humanoid-head" viewBox="45 15 110 110"><use href="#humanoid-f1-draw"/></symbol>
+	<symbol id="humanoid-silhouette1" viewBox="0 0 200 320">
+		<use href="#humanoid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="humanoid-silhouette2" viewBox="0 0 200 320">
+		<use href="#humanoid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

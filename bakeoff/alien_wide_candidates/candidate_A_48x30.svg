@@ -127,9 +127,9 @@
 
   <rect class="page" width="1440" height="1160"/>
   <path d="M40 108 H1400" stroke="#c7b884" stroke-width="2"/>
-  <text id="study-title" class="title" x="54" y="62">CANDIDATE A · WIDE ALIEN STUDY</text>
-  <text class="subtitle" x="56" y="91">48 × 30 viewBox · broad NES-like mass · editable currentColor silhouettes · bilateral by construction</text>
-  <text class="subtitle" x="1195" y="62">TRUE SCALE: 48 × 30</text>
+  <text id="study-title" class="title" x="54" y="62">CANDIDATE A * WIDE ALIEN STUDY</text>
+  <text class="subtitle" x="56" y="91">48 x 30 viewBox * broad NES-like mass * editable currentColor silhouettes * bilateral by construction</text>
+  <text class="subtitle" x="1195" y="62">TRUE SCALE: 48 x 30</text>
   <rect x="1195" y="73" width="192" height="15" rx="7.5" fill="#18243a"/>
   <rect x="1195" y="73" width="48" height="15" rx="7.5" fill="#ffc857"/>
 
@@ -140,10 +140,10 @@
     <text class="descriptor" x="72" y="205">Centered panel-robot</text>
     <text class="descriptor" x="72" y="226">Wide sensor screen, integral pods,</text>
     <text class="descriptor" x="72" y="246">and a compact powered-hop frame.</text>
-    <text class="frame-label" x="390" y="157">FRAME 1 · READY</text>
+    <text class="frame-label" x="390" y="157">FRAME 1 * READY</text>
     <rect class="frame" x="370" y="166" width="350" height="219" rx="16"/>
     <g style="color:#ef6351"><use href="#mechtron-frame-1" x="370" y="166" width="350" height="219"/></g>
-    <text class="frame-label" x="790" y="157">FRAME 2 · POWER HOP</text>
+    <text class="frame-label" x="790" y="157">FRAME 2 * POWER HOP</text>
     <rect class="frame" x="770" y="166" width="350" height="219" rx="16"/>
     <g style="color:#ef6351"><use href="#mechtron-frame-2" x="770" y="166" width="350" height="219"/></g>
     <text class="strip-label" x="1160" y="165">PLAYER-COLOR PREVIEW</text>
@@ -162,10 +162,10 @@
     <text class="descriptor" x="72" y="495">Low three-eyed shield-creature</text>
     <text class="descriptor" x="72" y="516">Rounded trapezoid core with</text>
     <text class="descriptor" x="72" y="536">fins that rise as one contour.</text>
-    <text class="frame-label" x="390" y="447">FRAME 1 · FINS LOW</text>
+    <text class="frame-label" x="390" y="447">FRAME 1 * FINS LOW</text>
     <rect class="frame" x="370" y="456" width="350" height="219" rx="16"/>
     <g style="color:#4fd8ff"><use href="#bonzoid-frame-1" x="370" y="456" width="350" height="219"/></g>
-    <text class="frame-label" x="790" y="447">FRAME 2 · FINS RAISED</text>
+    <text class="frame-label" x="790" y="447">FRAME 2 * FINS RAISED</text>
     <rect class="frame" x="770" y="456" width="350" height="219" rx="16"/>
     <g style="color:#4fd8ff"><use href="#bonzoid-frame-2" x="770" y="456" width="350" height="219"/></g>
     <text class="strip-label" x="1160" y="455">PLAYER-COLOR PREVIEW</text>
@@ -183,11 +183,11 @@
     <text class="species" x="72" y="754">FLAPPER</text>
     <text class="descriptor" x="72" y="785">Kite-moth flyer</text>
     <text class="descriptor" x="72" y="806">The entire broad silhouette</text>
-    <text class="descriptor" x="72" y="826">moves visibly: down → raised.</text>
-    <text class="frame-label" x="390" y="737">FRAME 1 · WINGS DOWN</text>
+    <text class="descriptor" x="72" y="826">moves visibly: down -> raised.</text>
+    <text class="frame-label" x="390" y="737">FRAME 1 * WINGS DOWN</text>
     <rect class="frame" x="370" y="746" width="350" height="219" rx="16"/>
     <g style="color:#a8df35"><use href="#flapper-frame-1" x="370" y="746" width="350" height="219"/></g>
-    <text class="frame-label" x="790" y="737">FRAME 2 · WINGS RAISED</text>
+    <text class="frame-label" x="790" y="737">FRAME 2 * WINGS RAISED</text>
     <rect class="frame" x="770" y="746" width="350" height="219" rx="16"/>
     <g style="color:#a8df35"><use href="#flapper-frame-2" x="770" y="746" width="350" height="219"/></g>
     <text class="strip-label" x="1160" y="745">PLAYER-COLOR PREVIEW</text>
@@ -201,6 +201,6 @@
 
   <rect x="40" y="1000" width="1360" height="110" rx="22" fill="#18243a"/>
   <text x="72" y="1043" fill="#f6efd0" font-family="system-ui, sans-serif" font-size="18" font-weight="800" letter-spacing="0.7">EDITING CONTRACT</text>
-  <text x="72" y="1071" fill="#d8edf3" font-family="system-ui, sans-serif" font-size="15" font-weight="600">Use the six named 48 × 30 symbols as the source frames. Keep each outer path in currentColor; neutral panels and small accents stay inside its outline.</text>
-  <text x="72" y="1093" fill="#d8edf3" font-family="system-ui, sans-serif" font-size="15" font-weight="600">The study deliberately tests two distinct wide families: Mechtron’s panel machine, Bonzoid’s shield creature, and Flapper’s full-wing motion.</text>
+  <text x="72" y="1071" fill="#d8edf3" font-family="system-ui, sans-serif" font-size="15" font-weight="600">Use the six named 48 x 30 symbols as the source frames. Keep each outer path in currentColor; neutral panels and small accents stay inside its outline.</text>
+  <text x="72" y="1093" fill="#d8edf3" font-family="system-ui, sans-serif" font-size="15" font-weight="600">The study deliberately tests two distinct wide families: Mechtron's panel machine, Bonzoid's shield creature, and Flapper's full-wing motion.</text>
 </svg>

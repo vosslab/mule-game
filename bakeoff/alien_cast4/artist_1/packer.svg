@@ -1,0 +1,71 @@
+<!-- Brutalist Toy Box. Artist: industrial toy designer building alien figures as
+injection-molded playground equipment. Each creature from few large geometric primitives
+at clear seams. Readability at 18 to 32 px via: (1) unique envelope per creature,
+(2) distinct ground contact, (3) frame 2 motion displaces major masses.
+Influences: Playmobil, Soviet toy design, Charley Harper. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="packer-f1-shapes">
+		<ellipse cx="100" cy="145" rx="78" ry="100"/>
+		<rect x="50" y="240" width="14" height="32"/>
+		<rect x="78" y="242" width="14" height="32"/>
+		<rect x="108" y="242" width="14" height="32"/>
+		<rect x="136" y="240" width="14" height="32"/>
+		<rect x="44" y="268" width="24" height="14"/>
+		<rect x="72" y="270" width="24" height="14"/>
+		<rect x="104" y="270" width="24" height="14"/>
+		<rect x="132" y="268" width="24" height="14"/>
+	</g>
+	<g id="packer-f1-face">
+		<circle cx="78" cy="115" r="12" fill="#ffffff"/>
+		<circle cx="122" cy="115" r="12" fill="#ffffff"/>
+		<circle cx="81" cy="118" r="5" fill="#141422"/>
+		<circle cx="125" cy="118" r="5" fill="#141422"/>
+		<polygon points="70,148 130,148 125,162 75,162" fill="#ffffff"/>
+	</g>
+	<g id="packer-f1-draw">
+		<use href="#packer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="currentColor"/>
+		<use href="#packer-f1-face"/>
+	</g>
+	<g id="packer-f2-shapes">
+		<ellipse cx="100" cy="110" rx="78" ry="100"/>
+		<rect x="55" y="205" width="12" height="18"/>
+		<rect x="82" y="207" width="12" height="18"/>
+		<rect x="108" y="207" width="12" height="18"/>
+		<rect x="135" y="205" width="12" height="18"/>
+	</g>
+	<g id="packer-f2-face">
+		<circle cx="78" cy="80" r="12" fill="#ffffff"/>
+		<circle cx="122" cy="80" r="12" fill="#ffffff"/>
+		<circle cx="81" cy="83" r="5" fill="#141422"/>
+		<circle cx="125" cy="83" r="5" fill="#141422"/>
+		<polygon points="70,112 130,112 125,126 75,126" fill="#ffffff"/>
+	</g>
+	<g id="packer-f2-draw">
+		<use href="#packer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="currentColor"/>
+		<use href="#packer-f2-face"/>
+	</g>
+	<symbol id="packer-frame1" viewBox="0 0 200 320">
+		<use href="#packer-f1-draw"/>
+	</symbol>
+	<symbol id="packer-frame2" viewBox="0 0 200 320">
+		<use href="#packer-f2-draw"/>
+	</symbol>
+	<symbol id="packer-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-65)">
+			<use href="#packer-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="packer-silhouette1" viewBox="0 0 200 320">
+		<use href="#packer-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="packer-silhouette2" viewBox="0 0 200 320">
+		<use href="#packer-f2-shapes" fill="#141422"/>
+	</symbol>
+</defs>
+<use href="#packer-frame1" width="200" height="320"/>
+</svg>

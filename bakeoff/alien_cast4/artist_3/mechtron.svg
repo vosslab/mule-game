@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<!-- DESIGN HYPOTHESIS (cast level, artist_3 / Pell Karo).
+Persona: Pell Karo, maker of hard-enamel lapel pins and die-cut vinyl stickers.
+Influences: hard-enamel pins, cut-vinyl stickers, and mid-century transit and park
+pictograms. Every creature is one bold, die-cut-clean pictogram silhouette. The
+white halo and dark keyline become a polished metal rim around poured currentColor
+enamel. At 18 to 32 px, the cast bets on whole-body gesture, a purpose-built bottom
+edge, and one oversized enamel eye pair. Interiors stay nearly empty. Machine bodies
+use hard rectangles; organic bodies use curves. Frame 2 swings the whole pin so the
+silhouette communicates motion.
+MECHTRON: A deadpan block-machine stands on two posts, then sinks and heaves one post forward in a heavy step. -->
+<defs>
+	<g id="mechtron-f1-shapes">
+		<rect x="44" y="74" width="112" height="126" rx="4"/>
+		<rect x="58" y="34" width="84" height="58" rx="3"/>
+		<rect x="18" y="104" width="34" height="78" rx="3"/><rect x="148" y="104" width="34" height="78" rx="3"/>
+		<rect x="48" y="192" width="40" height="90" rx="3"/><rect x="112" y="192" width="40" height="90" rx="3"/></g>
+	<g id="mechtron-f1-face">
+		<rect x="70" y="52" width="60" height="22" rx="2" fill="#ffffff"/>
+		<rect x="78" y="58" width="13" height="10" fill="#141422"/><rect x="109" y="58" width="13" height="10" fill="#141422"/>
+		<rect x="88" y="124" width="24" height="24" fill="#ffd23f"/></g>
+	<g id="mechtron-f1-draw">
+		<use href="#mechtron-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="currentColor"/>
+		<use href="#mechtron-f1-face"/>
+	</g>
+	<g id="mechtron-f2-shapes">
+		<rect x="40" y="88" width="116" height="126" rx="4"/>
+		<rect x="56" y="48" width="84" height="58" rx="3"/>
+		<rect x="14" y="116" width="34" height="78" rx="3"/><rect x="148" y="116" width="34" height="78" rx="3"/>
+		<polygon points="48,204 90,204 78,282 38,282"/><polygon points="112,204 152,204 174,254 134,264"/></g>
+	<g id="mechtron-f2-face">
+		<rect x="68" y="66" width="60" height="22" rx="2" fill="#ffffff"/>
+		<rect x="76" y="72" width="13" height="10" fill="#141422"/><rect x="107" y="72" width="13" height="10" fill="#141422"/>
+		<rect x="86" y="138" width="24" height="24" fill="#ffd23f"/></g>
+	<g id="mechtron-f2-draw">
+		<use href="#mechtron-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="currentColor"/>
+		<use href="#mechtron-f2-face"/>
+	</g>
+	<symbol id="mechtron-frame1" viewBox="0 0 200 320"><use href="#mechtron-f1-draw"/></symbol>
+	<symbol id="mechtron-frame2" viewBox="0 0 200 320"><use href="#mechtron-f2-draw"/></symbol>
+	<symbol id="mechtron-head" viewBox="0 0 120 120"><g transform="translate(-40,-18)"><use href="#mechtron-f1-draw"/></g></symbol>
+	<symbol id="mechtron-silhouette1" viewBox="0 0 200 320"><use href="#mechtron-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="mechtron-silhouette2" viewBox="0 0 200 320"><use href="#mechtron-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<!-- PREVIEW: ignored by generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<use href="#mechtron-frame1" width="100" height="160" x="0" y="0" style="color:#ff5a5f"/>
+<use href="#mechtron-frame2" width="100" height="160" x="100" y="0" style="color:#4fd8ff"/>
+</svg>

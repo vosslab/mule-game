@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first. Gold as a single warm
+dot; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct.
+
+Bonzoid: manic little machine. Johnny 5 as a picture book toy. A wide
+tread rectangle at the bottom carries a rounded dome body; oversized
+arms fly up like the machine is cheering. Two slit eyes and eyebrow
+arches; a beam lamp glows on the chest. Frame 2 flings the arms wider,
+energy jumping out of the frame. Ground contact: one solid tread band
+(the anti mechtron signal, which is split posts). Gold: the chest lamp.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<g id="bonzoid-f1-shapes">
+		<rect x="30" y="250" width="140" height="44" rx="22"/>
+		<rect x="54" y="140" width="92" height="112" rx="28"/>
+		<rect x="18" y="110" width="30" height="88" rx="15" transform="rotate(-30 33 154)"/>
+		<rect x="152" y="110" width="30" height="88" rx="15" transform="rotate(30 167 154)"/>
+		<circle cx="22" cy="104" r="15"/>
+		<circle cx="178" cy="104" r="15"/>
+		<rect x="94" y="112" width="12" height="32" rx="6"/>
+		<circle cx="100" cy="108" r="10"/>
+	</g>
+	<g id="bonzoid-f1-face">
+		<rect x="68" y="170" width="22" height="14" rx="4" fill="#ffffff"/>
+		<rect x="110" y="170" width="22" height="14" rx="4" fill="#ffffff"/>
+		<circle cx="79" cy="178" r="5" fill="#141422"/>
+		<circle cx="121" cy="178" r="5" fill="#141422"/>
+		<path d="M64,164 Q79,152 92,164 Q79,158 64,164 Z" fill="#141422"/>
+		<path d="M108,164 Q121,152 136,164 Q121,158 108,164 Z" fill="#141422"/>
+		<path d="M70,200 Q100,224 130,200 Q100,214 70,200 Z" fill="#141422"/>
+		<circle cx="100" cy="224" r="13" fill="#ffd23f"/>
+	</g>
+	<g id="bonzoid-f1-draw">
+		<use href="#bonzoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f1-face"/>
+	</g>
+
+	<g id="bonzoid-f2-shapes">
+		<rect x="26" y="252" width="148" height="42" rx="22"/>
+		<rect x="54" y="142" width="92" height="110" rx="28"/>
+		<rect x="12" y="112" width="30" height="88" rx="15" transform="rotate(-52 27 156)"/>
+		<rect x="158" y="112" width="30" height="88" rx="15" transform="rotate(52 173 156)"/>
+		<circle cx="22" cy="94" r="14"/>
+		<circle cx="178" cy="94" r="14"/>
+		<rect x="94" y="112" width="12" height="32" rx="6" transform="rotate(18 100 128)"/>
+		<circle cx="114" cy="108" r="10"/>
+	</g>
+	<g id="bonzoid-f2-face">
+		<rect x="68" y="172" width="22" height="14" rx="4" fill="#ffffff"/>
+		<rect x="110" y="172" width="22" height="14" rx="4" fill="#ffffff"/>
+		<circle cx="79" cy="180" r="5" fill="#141422"/>
+		<circle cx="121" cy="180" r="5" fill="#141422"/>
+		<path d="M64,166 Q79,154 92,166 Q79,160 64,166 Z" fill="#141422"/>
+		<path d="M108,166 Q121,154 136,166 Q121,160 108,166 Z" fill="#141422"/>
+		<path d="M70,202 Q100,226 130,202 Q100,216 70,202 Z" fill="#141422"/>
+		<circle cx="100" cy="226" r="13" fill="#ffd23f"/>
+	</g>
+	<g id="bonzoid-f2-draw">
+		<use href="#bonzoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f2-face"/>
+	</g>
+
+	<symbol id="bonzoid-frame1" viewBox="0 0 200 320"><use href="#bonzoid-f1-draw"/></symbol>
+	<symbol id="bonzoid-frame2" viewBox="0 0 200 320"><use href="#bonzoid-f2-draw"/></symbol>
+	<symbol id="bonzoid-head" viewBox="45 140 110 110"><use href="#bonzoid-f1-draw"/></symbol>
+	<symbol id="bonzoid-silhouette1" viewBox="0 0 200 320">
+		<use href="#bonzoid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="bonzoid-silhouette2" viewBox="0 0 200 320">
+		<use href="#bonzoid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

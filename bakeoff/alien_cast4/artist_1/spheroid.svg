@@ -1,0 +1,63 @@
+<!-- Brutalist Toy Box. Artist: industrial toy designer building alien figures as
+injection-molded playground equipment. Each creature from few large geometric primitives
+at clear seams. Readability at 18 to 32 px via: (1) unique envelope per creature,
+(2) distinct ground contact, (3) frame 2 motion displaces major masses.
+Influences: Playmobil, Soviet toy design, Charley Harper. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="spheroid-f1-shapes">
+		<circle cx="100" cy="100" r="65"/>
+		<polygon points="68,162 74,162 70,200 62,240 56,240 64,200"/>
+		<polygon points="97,165 103,165 101,208 97,252 91,252 95,208"/>
+		<polygon points="126,162 132,162 136,200 142,240 136,240 130,200"/>
+	</g>
+	<g id="spheroid-f1-face">
+		<circle cx="82" cy="88" r="16" fill="#ffffff"/>
+		<circle cx="118" cy="88" r="16" fill="#ffffff"/>
+		<circle cx="82" cy="88" r="8" fill="#141422"/>
+		<circle cx="118" cy="88" r="8" fill="#141422"/>
+	</g>
+	<g id="spheroid-f1-draw">
+		<use href="#spheroid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="currentColor"/>
+		<use href="#spheroid-f1-face"/>
+	</g>
+	<g id="spheroid-f2-shapes">
+		<circle cx="110" cy="95" r="65"/>
+		<polygon points="78,155 84,155 68,195 52,235 46,235 62,195"/>
+		<polygon points="102,160 108,160 90,205 78,248 72,248 85,205"/>
+		<polygon points="128,152 134,152 118,195 105,238 99,238 112,195"/>
+	</g>
+	<g id="spheroid-f2-face">
+		<circle cx="92" cy="83" r="16" fill="#ffffff"/>
+		<circle cx="128" cy="83" r="16" fill="#ffffff"/>
+		<circle cx="92" cy="83" r="8" fill="#141422"/>
+		<circle cx="128" cy="83" r="8" fill="#141422"/>
+	</g>
+	<g id="spheroid-f2-draw">
+		<use href="#spheroid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="currentColor"/>
+		<use href="#spheroid-f2-face"/>
+	</g>
+	<symbol id="spheroid-frame1" viewBox="0 0 200 320">
+		<use href="#spheroid-f1-draw"/>
+	</symbol>
+	<symbol id="spheroid-frame2" viewBox="0 0 200 320">
+		<use href="#spheroid-f2-draw"/>
+	</symbol>
+	<symbol id="spheroid-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-28)">
+			<use href="#spheroid-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="spheroid-silhouette1" viewBox="0 0 200 320">
+		<use href="#spheroid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="spheroid-silhouette2" viewBox="0 0 200 320">
+		<use href="#spheroid-f2-shapes" fill="#141422"/>
+	</symbol>
+</defs>
+<use href="#spheroid-frame1" width="200" height="320"/>
+</svg>

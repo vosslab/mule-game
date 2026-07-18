@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+<!-- DESIGN HYPOTHESIS (cast level, artist_3 / Pell Karo).
+Persona: Pell Karo, maker of hard-enamel lapel pins and die-cut vinyl stickers.
+Influences: hard-enamel pins, cut-vinyl stickers, and mid-century transit and park
+pictograms. Every creature is one bold, die-cut-clean pictogram silhouette. The
+white halo and dark keyline become a polished metal rim around poured currentColor
+enamel. At 18 to 32 px, the cast bets on whole-body gesture, a purpose-built bottom
+edge, and one oversized enamel eye pair. Interiors stay nearly empty. Machine bodies
+use hard rectangles; organic bodies use curves. Frame 2 swings the whole pin so the
+silhouette communicates motion.
+MULE: A literal industrial mule is assembled from rigid enamel plates, with long ears,
+blunt muzzle, tail, horizontal cargo slab, exposed knee joints, and four daylight-separated
+legs. Frame 2 advances diagonal pairs in a patient plod. -->
+<defs>
+	<g id="mule-f1-shapes">
+		<rect x="78" y="66" width="160" height="62" rx="8"/><rect x="96" y="48" width="124" height="30" rx="4"/>
+		<polygon points="224,72 250,40 270,50 250,94"/><rect x="250" y="44" width="52" height="34" rx="8"/>
+		<polygon points="252,44 250,8 264,40"/><polygon points="272,44 288,10 286,48"/>
+		<polygon points="82,76 42,54 34,66 80,96"/>
+		<rect x="88" y="120" width="16" height="60" rx="5"/><rect x="126" y="120" width="16" height="60" rx="5"/>
+		<rect x="190" y="120" width="16" height="60" rx="5"/><rect x="224" y="120" width="16" height="60" rx="5"/>
+		<circle cx="96" cy="142" r="10"/><circle cx="134" cy="142" r="10"/><circle cx="198" cy="142" r="10"/><circle cx="232" cy="142" r="10"/>
+	</g>
+	<g id="mule-f1-draw">
+		<use href="#mule-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="currentColor"/>
+		<rect x="132" y="72" width="50" height="12" rx="2" fill="#ffd23f"/>
+	</g>
+	<g id="mule-f2-shapes">
+		<rect x="76" y="64" width="160" height="62" rx="8"/><rect x="94" y="46" width="124" height="30" rx="4"/>
+		<polygon points="222,70 248,38 268,48 248,92"/><rect x="248" y="42" width="52" height="34" rx="8"/>
+		<polygon points="250,42 248,6 262,38"/><polygon points="270,42 286,8 284,46"/>
+		<polygon points="80,74 38,66 34,78 78,94"/>
+		<polygon points="86,118 102,118 82,180 66,180"/><polygon points="124,118 140,118 156,168 140,174"/>
+		<polygon points="188,118 204,118 182,174 166,170"/><polygon points="222,118 238,118 256,180 240,180"/>
+		<circle cx="92" cy="140" r="10"/><circle cx="134" cy="140" r="10"/><circle cx="198" cy="140" r="10"/><circle cx="230" cy="140" r="10"/>
+	</g>
+	<g id="mule-f2-draw">
+		<use href="#mule-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="currentColor"/>
+		<rect x="130" y="70" width="50" height="12" rx="2" fill="#ffd23f"/>
+	</g>
+	<symbol id="mule-frame1" viewBox="0 0 320 200"><use href="#mule-f1-draw"/></symbol>
+	<symbol id="mule-frame2" viewBox="0 0 320 200"><use href="#mule-f2-draw"/></symbol>
+	<symbol id="mule-silhouette1" viewBox="0 0 320 200"><use href="#mule-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="mule-silhouette2" viewBox="0 0 320 200"><use href="#mule-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<!-- PREVIEW: ignored by generator -->
+<rect x="0" y="0" width="320" height="200" fill="#1a1a2e"/>
+<use href="#mule-frame1" width="160" height="100" x="0" y="0" style="color:#ff5a5f"/>
+<use href="#mule-frame2" width="160" height="100" x="160" y="0" style="color:#4fd8ff"/>
+</svg>

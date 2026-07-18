@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first. Gold as a single warm
+dot; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct.
+
+Gollumer: mournful gentle Hutt slug. Lopsided teardrop hunched forward,
+one hip bulging wider than the other, a droopy neck lump leaning off to
+one side, and a broad flat underside touching everywhere it sits.
+Frame 1 leans right; frame 2 leans left with the whole mass elongated
+forward. One big mournful eye with a gold iris (the round 1 finding: a
+gold iris survives 18 px as a warm dot). Ground: the whole underside,
+flat.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<g id="gollumer-f1-shapes">
+		<rect x="30" y="250" width="140" height="48" rx="22"/>
+		<ellipse cx="100" cy="200" rx="72" ry="56"/>
+		<circle cx="48" cy="232" r="28"/>
+		<circle cx="152" cy="234" r="26"/>
+		<ellipse cx="136" cy="132" rx="32" ry="38" transform="rotate(16 136 132)"/>
+		<circle cx="142" cy="88" r="28"/>
+		<circle cx="112" cy="112" r="22"/>
+	</g>
+	<g id="gollumer-f1-face">
+		<circle cx="132" cy="94" r="22" fill="#ffffff"/>
+		<circle cx="134" cy="95" r="13" fill="#ffd23f"/>
+		<circle cx="136" cy="96" r="6" fill="#141422"/>
+		<path d="M104,140 Q124,158 144,140 Q124,150 104,140 Z" fill="#141422"/>
+	</g>
+	<g id="gollumer-f1-draw">
+		<use href="#gollumer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="currentColor"/>
+		<use href="#gollumer-f1-face"/>
+	</g>
+
+	<g id="gollumer-f2-shapes">
+		<rect x="22" y="248" width="156" height="52" rx="24"/>
+		<ellipse cx="100" cy="210" rx="78" ry="52"/>
+		<circle cx="44" cy="232" r="28"/>
+		<circle cx="156" cy="240" r="26"/>
+		<ellipse cx="64" cy="140" rx="32" ry="38" transform="rotate(-14 64 140)"/>
+		<circle cx="58" cy="94" r="28"/>
+		<circle cx="88" cy="118" r="22"/>
+	</g>
+	<g id="gollumer-f2-face">
+		<circle cx="68" cy="100" r="22" fill="#ffffff"/>
+		<circle cx="70" cy="101" r="13" fill="#ffd23f"/>
+		<circle cx="72" cy="102" r="6" fill="#141422"/>
+		<path d="M56,146 Q76,164 96,146 Q76,156 56,146 Z" fill="#141422"/>
+	</g>
+	<g id="gollumer-f2-draw">
+		<use href="#gollumer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="currentColor"/>
+		<use href="#gollumer-f2-face"/>
+	</g>
+
+	<symbol id="gollumer-frame1" viewBox="0 0 200 320"><use href="#gollumer-f1-draw"/></symbol>
+	<symbol id="gollumer-frame2" viewBox="0 0 200 320"><use href="#gollumer-f2-draw"/></symbol>
+	<symbol id="gollumer-head" viewBox="50 40 110 110"><use href="#gollumer-f1-draw"/></symbol>
+	<symbol id="gollumer-silhouette1" viewBox="0 0 200 320">
+		<use href="#gollumer-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="gollumer-silhouette2" viewBox="0 0 200 320">
+		<use href="#gollumer-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

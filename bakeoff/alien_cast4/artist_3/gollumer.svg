@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<!-- DESIGN HYPOTHESIS (cast level, artist_3 / Pell Karo).
+Persona: Pell Karo, maker of hard-enamel lapel pins and die-cut vinyl stickers.
+Influences: hard-enamel pins, cut-vinyl stickers, and mid-century transit and park
+pictograms. Every creature is one bold, die-cut-clean pictogram silhouette. The
+white halo and dark keyline become a polished metal rim around poured currentColor
+enamel. At 18 to 32 px, the cast bets on whole-body gesture, a purpose-built bottom
+edge, and one oversized enamel eye pair. Interiors stay nearly empty. Machine bodies
+use hard rectangles; organic bodies use curves. Frame 2 swings the whole pin so the
+silhouette communicates motion.
+GOLLUMER: A gentle lopsided slug settles as one mournful mound, then pours its entire body forward. -->
+<defs>
+	<g id="gollumer-f1-shapes">
+		<path d="M28,282 L28,220 Q34,146 82,128 Q126,110 150,150 Q172,184 176,282 Z"/>
+		<ellipse cx="78" cy="132" rx="30" ry="44"/>
+		<ellipse cx="122" cy="146" rx="24" ry="34"/></g>
+	<g id="gollumer-f1-face">
+		<ellipse cx="68" cy="126" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="101" cy="126" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="66" cy="128" r="7" fill="#141422"/>
+		<circle cx="99" cy="128" r="7" fill="#141422"/>
+		<path d="M72,158 Q91,146 110,164 Q92,155 72,158 Z" fill="#141422"/></g>
+	<g id="gollumer-f1-draw">
+		<use href="#gollumer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="currentColor"/>
+		<use href="#gollumer-f1-face"/>
+	</g>
+	<g id="gollumer-f2-shapes">
+		<path d="M18,282 L18,232 Q30,170 82,146 Q136,122 168,168 Q184,194 190,250 Q168,238 148,254 Q120,282 18,282 Z"/>
+		<ellipse cx="90" cy="142" rx="34" ry="44"/>
+		<ellipse cx="132" cy="154" rx="24" ry="34"/></g>
+	<g id="gollumer-f2-face">
+		<ellipse cx="78" cy="137" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="112" cy="137" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="75" cy="139" r="7" fill="#141422"/>
+		<circle cx="109" cy="139" r="7" fill="#141422"/>
+		<path d="M82,170 Q102,157 122,176 Q102,166 82,170 Z" fill="#141422"/></g>
+	<g id="gollumer-f2-draw">
+		<use href="#gollumer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="currentColor"/>
+		<use href="#gollumer-f2-face"/>
+	</g>
+	<symbol id="gollumer-frame1" viewBox="0 0 200 320"><use href="#gollumer-f1-draw"/></symbol>
+	<symbol id="gollumer-frame2" viewBox="0 0 200 320"><use href="#gollumer-f2-draw"/></symbol>
+	<symbol id="gollumer-head" viewBox="0 0 120 120"><g transform="translate(-30,-72)"><use href="#gollumer-f1-draw"/></g></symbol>
+	<symbol id="gollumer-silhouette1" viewBox="0 0 200 320"><use href="#gollumer-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="gollumer-silhouette2" viewBox="0 0 200 320"><use href="#gollumer-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<!-- PREVIEW: ignored by generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<use href="#gollumer-frame1" width="100" height="160" x="0" y="0" style="color:#ff5a5f"/>
+<use href="#gollumer-frame2" width="100" height="160" x="100" y="0" style="color:#4fd8ff"/>
+</svg>

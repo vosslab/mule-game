@@ -41,7 +41,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 
 SVG_VIEWBOX = "0 0 200 320"
-HALO_STROKE_WIDTH = "40"
+HALO_STROKE_WIDTH = "28"
 INK_STROKE_WIDTH = "20"
 SHADE_OPACITY_MAX = 0.16
 HEAD_WINDOW_MIN_SIDE = 100
@@ -992,7 +992,11 @@ def check_color_budget(defs: ET.Element, palette: dict, species: str) -> list:
 #============================================
 
 def check_gold_accent_count(defs: ET.Element, species: str, palette: dict) -> list:
-	"""Verify each present face group carries exactly one gold accent shape.
+	"""Verify each present face group carries at most one gold accent shape.
+
+	Contract v2 makes the gold accent OPTIONAL (zero is fine); only the
+	cap of one per frame is mechanical law. The v1 exactly-one mandate was
+	spec drift and was removed.
 
 	Args:
 		defs (ET.Element): The <defs> element.
@@ -1000,8 +1004,8 @@ def check_gold_accent_count(defs: ET.Element, species: str, palette: dict) -> li
 		palette (dict): Token name to hex value, from load_palette_tokens.
 
 	Returns:
-		list: Violation dicts, one per frame whose face group is missing or
-			carries the wrong gold-accent count.
+		list: Violation dicts, one per frame whose face group carries more
+			than one gold accent.
 	"""
 	gold_hex = palette["gold"]
 	violations = []
@@ -1013,11 +1017,11 @@ def check_gold_accent_count(defs: ET.Element, species: str, palette: dict) -> li
 			element for element in face_group.iter()
 			if (element.get("fill") or "").lower() == gold_hex
 		]
-		if len(gold_elements) != 1:
+		if len(gold_elements) > 1:
 			violations.append({
 				"rule": "gold-accent-count",
 				"message": (
-					f"frame {frame_number}'s face group must carry exactly one "
+					f"frame {frame_number}'s face group may carry at most one "
 					f'gold ("{gold_hex}") accent shape, found {len(gold_elements)}'
 				),
 			})

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ================================================================
+ARTIST 6, THE HERALD. Design hypothesis: heraldic charges solved
+sprite legibility six centuries ago; a beast on a banner must be
+identified across a battlefield, which is the same problem as an
+18 px sprite. Vocabulary: profile-first single-mass bodies;
+exaggerated attitude poses borrowed from blazonry (statant at rest;
+passant, volant, glissant, salient in motion); deep contour notches
+instead of interior detail; tapered limbs that end in emphatic
+points; one dominant diagonal axis in every frame 2. Faces are
+light eye shapes with dark pupils under one heavy lid or brow line
+that carries the personality word. Attitude, the tilt of the whole
+mass, reads at 18 px when anatomy does not.
+inkCoverage: TBD, filled after cast measurement.
+================================================================ -->
+
+	<!-- geometry frame 1, statant: big cocked head, chest-out trapezoid
+		torso, fist on hip with elbow flared, other arm at the side,
+		short wide-planted legs with a 44 unit daylight split at the feet -->
+	<g id="humanoid-f1-shapes">
+		<ellipse cx="100" cy="78" rx="54" ry="50" transform="rotate(-4,100,78)"/>
+		<polygon points="58,122 142,122 128,236 72,236"/>
+		<polygon points="60,126 78,138 50,180 34,168"/>
+		<polygon points="34,168 50,180 68,212 52,222"/>
+		<circle cx="62" cy="216" r="13"/>
+		<polygon points="138,126 150,134 156,222 140,224"/>
+		<circle cx="148" cy="226" r="13"/>
+		<polygon points="74,226 96,224 74,292 48,288"/>
+		<polygon points="104,224 126,226 152,288 126,292"/>
+		<rect x="32" y="284" width="46" height="16" rx="8"/>
+		<rect x="122" y="284" width="46" height="16" rx="8"/>
+	</g>
+
+	<!-- face frame 1: wide light eyes, thin brow arcs floating high,
+		small open smile, whole face cocked with the chin-up head -->
+	<g id="humanoid-f1-face">
+		<g transform="rotate(-4,100,78)">
+			<ellipse cx="80" cy="84" rx="16" ry="12" fill="#ffffff"/>
+			<ellipse cx="120" cy="84" rx="16" ry="12" fill="#ffffff"/>
+			<circle cx="81" cy="82" r="7.5" fill="#141422"/>
+			<circle cx="119" cy="82" r="7.5" fill="#141422"/>
+			<path d="M64,58 Q80,45 96,55 Q80,53 64,58 Z" fill="#141422"/>
+			<path d="M104,55 Q120,45 136,58 Q120,53 104,55 Z" fill="#141422"/>
+			<path d="M84,106 Q100,128 116,106 Z" fill="#141422"/>
+		</g>
+	</g>
+
+	<!-- draw stack frame 1: halo, ink, body, face -->
+	<g id="humanoid-f1-draw">
+		<use href="#humanoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="currentColor"/>
+		<use href="#humanoid-f1-face"/>
+	</g>
+
+	<!-- geometry frame 2, passant: torso and head leaned into the walk,
+		lead leg planted forward, trailing heel peeled up with toe contact
+		at the ground line, lead arm punched forward, other arm swung back -->
+	<g id="humanoid-f2-shapes">
+		<ellipse cx="112" cy="75" rx="54" ry="50" transform="rotate(7,112,75)"/>
+		<polygon points="68,124 150,116 124,232 76,234"/>
+		<polygon points="130,126 160,120 168,140 142,150"/>
+		<circle cx="160" cy="132" r="13"/>
+		<polygon points="72,122 86,136 50,178 38,164"/>
+		<circle cx="46" cy="174" r="12"/>
+		<polygon points="102,222 128,218 158,288 132,292"/>
+		<rect x="128" y="284" width="46" height="16" rx="8"/>
+		<polygon points="78,224 102,222 76,282 54,274"/>
+		<polygon points="62,300 84,300 78,280 48,268 40,280"/>
+	</g>
+
+	<!-- face frame 2: same features leaning with the stride, pupils
+		pulled toward the direction of travel -->
+	<g id="humanoid-f2-face">
+		<g transform="rotate(7,112,75)">
+			<ellipse cx="92" cy="81" rx="16" ry="12" fill="#ffffff"/>
+			<ellipse cx="132" cy="81" rx="16" ry="12" fill="#ffffff"/>
+			<circle cx="95" cy="80" r="7.5" fill="#141422"/>
+			<circle cx="135" cy="80" r="7.5" fill="#141422"/>
+			<path d="M76,55 Q92,42 108,52 Q92,50 76,55 Z" fill="#141422"/>
+			<path d="M116,52 Q132,42 148,55 Q132,50 116,52 Z" fill="#141422"/>
+			<path d="M96,103 Q112,125 128,103 Z" fill="#141422"/>
+		</g>
+	</g>
+
+	<!-- draw stack frame 2: halo, ink, body, face -->
+	<g id="humanoid-f2-draw">
+		<use href="#humanoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="currentColor"/>
+		<use href="#humanoid-f2-face"/>
+	</g>
+
+	<symbol id="humanoid-frame1" viewBox="0 0 200 320">
+		<use href="#humanoid-f1-draw"/>
+	</symbol>
+	<symbol id="humanoid-frame2" viewBox="0 0 200 320">
+		<use href="#humanoid-f2-draw"/>
+	</symbol>
+	<symbol id="humanoid-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-24)">
+			<use href="#humanoid-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="humanoid-silhouette1" viewBox="0 0 200 320">
+		<use href="#humanoid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="humanoid-silhouette2" viewBox="0 0 200 320">
+		<use href="#humanoid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+
+<!-- PREVIEW: everything below this line is ignored by the generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<rect x="0" y="110" width="200" height="100" fill="#7c9a4e"/>
+<rect x="0" y="210" width="200" height="110" fill="#22223a"/>
+
+<use href="#humanoid-frame1" width="20" height="32" x="14" y="30" style="color:#ff5a5f"/>
+<use href="#humanoid-frame2" width="20" height="32" x="44" y="30" style="color:#ff5a5f"/>
+<use href="#humanoid-head" width="18" height="18" x="76" y="44" style="color:#ff5a5f"/>
+<use href="#humanoid-frame1" width="11" height="18" x="104" y="44" style="color:#ff5a5f"/>
+<use href="#humanoid-frame2" width="11" height="18" x="122" y="44" style="color:#ff5a5f"/>
+
+<use href="#humanoid-frame1" width="20" height="32" x="14" y="130" style="color:#4fd8ff"/>
+<use href="#humanoid-frame2" width="20" height="32" x="44" y="130" style="color:#4fd8ff"/>
+<use href="#humanoid-head" width="18" height="18" x="76" y="144" style="color:#4fd8ff"/>
+<use href="#humanoid-frame1" width="11" height="18" x="104" y="144" style="color:#4fd8ff"/>
+<use href="#humanoid-frame2" width="11" height="18" x="122" y="144" style="color:#4fd8ff"/>
+
+<use href="#humanoid-frame1" width="20" height="32" x="14" y="230" style="color:#3aaa18"/>
+<use href="#humanoid-frame2" width="20" height="32" x="44" y="230" style="color:#3aaa18"/>
+<use href="#humanoid-head" width="18" height="18" x="76" y="244" style="color:#3aaa18"/>
+<use href="#humanoid-frame1" width="11" height="18" x="104" y="244" style="color:#f872e8"/>
+<use href="#humanoid-frame2" width="11" height="18" x="122" y="244" style="color:#f872e8"/>
+</svg>

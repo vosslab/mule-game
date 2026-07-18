@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- SPHEROID: a compact lens-and-dome saucer, not a wide spread - the
+	shape that keeps it unmistakably apart from the flapper's wings. Three
+	thin legs hang straight in frame 1 and swing to one side like a
+	pendulum in frame 2, and never reach lower than y=266 on a 320-tall
+	canvas. -->
+
+	<g id="spheroid-f1-shapes">
+		<ellipse cx="100" cy="110" rx="70" ry="42"/>
+		<ellipse cx="100" cy="76" rx="34" ry="26"/>
+		<ellipse cx="100" cy="138" rx="54" ry="16"/>
+		<polygon points="58,136 48,136 24,240 38,244"/>
+		<polygon points="92,142 108,142 104,266 96,266"/>
+		<polygon points="142,136 152,136 176,240 162,244"/>
+		<circle cx="31" cy="246" r="8"/>
+		<circle cx="100" cy="270" r="9"/>
+		<circle cx="169" cy="246" r="8"/>
+	</g>
+
+	<g id="spheroid-f1-face">
+		<circle cx="100" cy="104" r="34" fill="#ffffff"/>
+		<circle cx="100" cy="106" r="15" fill="#141422"/>
+		<circle cx="92" cy="96" r="6" fill="#ffffff"/>
+		<circle cx="140" cy="130" r="7" fill="#ffd23f"/>
+	</g>
+
+	<g id="spheroid-f1-draw">
+		<use href="#spheroid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="currentColor"/>
+		<use href="#spheroid-f1-face"/>
+	</g>
+
+	<g id="spheroid-f2-shapes">
+		<ellipse cx="104" cy="104" rx="70" ry="42"/>
+		<ellipse cx="104" cy="70" rx="34" ry="26"/>
+		<ellipse cx="104" cy="132" rx="54" ry="16"/>
+		<polygon points="66,138 56,138 20,220 34,226"/>
+		<polygon points="98,144 114,144 130,254 116,258"/>
+		<polygon points="146,138 156,138 190,224 176,230"/>
+		<circle cx="27" cy="222" r="8"/>
+		<circle cx="123" cy="256" r="9"/>
+		<circle cx="183" cy="226" r="8"/>
+	</g>
+
+	<g id="spheroid-f2-face">
+		<circle cx="104" cy="98" r="34" fill="#ffffff"/>
+		<circle cx="104" cy="100" r="15" fill="#141422"/>
+		<circle cx="96" cy="90" r="6" fill="#ffffff"/>
+		<circle cx="144" cy="124" r="7" fill="#ffd23f"/>
+	</g>
+
+	<g id="spheroid-f2-draw">
+		<use href="#spheroid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="currentColor"/>
+		<use href="#spheroid-f2-face"/>
+	</g>
+
+	<symbol id="spheroid-frame1" viewBox="0 0 200 320">
+		<use href="#spheroid-f1-draw"/>
+	</symbol>
+	<symbol id="spheroid-frame2" viewBox="0 0 200 320">
+		<use href="#spheroid-f2-draw"/>
+	</symbol>
+	<symbol id="spheroid-head" viewBox="0 0 140 140">
+		<g transform="translate(-30,-40)"><use href="#spheroid-f1-draw"/></g>
+	</symbol>
+	<symbol id="spheroid-silhouette1" viewBox="0 0 200 320">
+		<use href="#spheroid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="spheroid-silhouette2" viewBox="0 0 200 320">
+		<use href="#spheroid-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

@@ -15,6 +15,12 @@ mule-game/
 |                          tests/playwright/ browser E2E specs, and
 |                          tests/e2e/ non-browser whole-system harnesses
 +- devel/                  Release, versioning, and changelog developer tools
++- bakeoff/                Alien art bake-off candidate content: per-round
+|                          artist casts (alien_bakeoff round-1 sets, alien_cast
+|                          round 2, alien_cast3, alien_cast4 model-version
+|                          lanes) and alien_wide_candidates; includes the
+|                          retained SVG board, split, and validation tools;
+|                          art moves to art/ only when a cast wins
 +- tools/                  Repo-local build/dev helper scripts
 +- docs/                   Documentation (this file's home)
 +- dist/                   Build output (generated, git ignored)

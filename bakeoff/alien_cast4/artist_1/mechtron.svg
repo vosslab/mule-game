@@ -1,0 +1,67 @@
+<!-- Brutalist Toy Box. Artist: industrial toy designer building alien figures as
+injection-molded playground equipment. Each creature from few large geometric primitives
+at clear seams. Readability at 18 to 32 px via: (1) unique envelope per creature,
+(2) distinct ground contact, (3) frame 2 motion displaces major masses.
+Influences: Playmobil, Soviet toy design, Charley Harper. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="mechtron-f1-shapes">
+		<rect x="55" y="30" width="90" height="40"/>
+		<rect x="25" y="65" width="150" height="115"/>
+		<rect x="40" y="180" width="35" height="100"/>
+		<rect x="125" y="180" width="35" height="100"/>
+		<rect x="28" y="272" width="50" height="28"/>
+		<rect x="122" y="272" width="50" height="28"/>
+	</g>
+	<g id="mechtron-f1-face">
+		<rect x="40" y="40" width="48" height="14" fill="#ffffff"/>
+		<rect x="112" y="40" width="48" height="14" fill="#ffffff"/>
+		<rect x="44" y="42" width="40" height="10" fill="#141422"/>
+		<rect x="116" y="42" width="40" height="10" fill="#141422"/>
+	</g>
+	<g id="mechtron-f1-draw">
+		<use href="#mechtron-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="currentColor"/>
+		<use href="#mechtron-f1-face"/>
+	</g>
+	<g id="mechtron-f2-shapes">
+		<polygon points="50,28 145,22 148,62 53,68"/>
+		<polygon points="20,62 172,55 178,172 25,180"/>
+		<polygon points="25,180 60,176 65,282 28,285"/>
+		<rect x="132" y="172" width="35" height="108"/>
+		<polygon points="18,275 72,268 75,300 15,300"/>
+		<rect x="125" y="272" width="50" height="28"/>
+	</g>
+	<g id="mechtron-f2-face">
+		<polygon points="38,36 88,32 89,46 39,50" fill="#ffffff"/>
+		<polygon points="112,30 160,26 161,40 113,44" fill="#ffffff"/>
+		<polygon points="42,38 84,34 85,44 43,48" fill="#141422"/>
+		<polygon points="116,32 156,28 157,38 117,42" fill="#141422"/>
+	</g>
+	<g id="mechtron-f2-draw">
+		<use href="#mechtron-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="currentColor"/>
+		<use href="#mechtron-f2-face"/>
+	</g>
+	<symbol id="mechtron-frame1" viewBox="0 0 200 320">
+		<use href="#mechtron-f1-draw"/>
+	</symbol>
+	<symbol id="mechtron-frame2" viewBox="0 0 200 320">
+		<use href="#mechtron-f2-draw"/>
+	</symbol>
+	<symbol id="mechtron-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,0)">
+			<use href="#mechtron-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="mechtron-silhouette1" viewBox="0 0 200 320">
+		<use href="#mechtron-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="mechtron-silhouette2" viewBox="0 0 200 320">
+		<use href="#mechtron-f2-shapes" fill="#141422"/>
+	</symbol>
+</defs>
+<use href="#mechtron-frame1" width="200" height="320"/>
+</svg>

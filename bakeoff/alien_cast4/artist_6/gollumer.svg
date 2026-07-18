@@ -2,46 +2,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
 <defs>
 
-	<!-- ==========================================================
-		GOLLUMER: hunched lopsided legless mass, bottom heavy.
-		Resting silhouette width 146 units (band 130 to 160) taken
-		across the low bulges. No leg split anywhere, so the bottom
-		edge is one broad seated slab: nothing else in the cast has
-		that base.
-		Asymmetry is the character and it is load bearing: frame 1
-		carries a tall crown lump leaning off to the RIGHT and a fat
-		bulge on the LEFT hip, so the left and right outlines never
-		agree. It is bottom heavy, which keeps it clear of the
-		spheroid's centered orb.
-		One large eye, set off center, carrying a solid gold iris:
-		the gold is the single warm accent shape and it survives 18
-		px as a colored dot inside the eye.
-		Frame 2 is a squash: the mass compresses and spreads, the
-		crown flops from the right over to the left, and the low
-		bulge swaps sides. The crown apex travels about 62 units.
-		========================================================== -->
+	<!-- ================================================================
+ARTIST 6, THE HERALD. Design hypothesis: heraldic charges solved
+sprite legibility six centuries ago; a beast on a banner must be
+identified across a battlefield, which is the same problem as an
+18 px sprite. Vocabulary: profile-first single-mass bodies;
+exaggerated attitude poses borrowed from blazonry (statant at rest;
+passant, volant, glissant, salient in motion); deep contour notches
+instead of interior detail; tapered limbs that end in emphatic
+points; one dominant diagonal axis in every frame 2. Faces are
+light eye shapes with dark pupils under one heavy lid or brow line
+that carries the personality word. Attitude, the tilt of the whole
+mass, reads at 18 px when anatomy does not.
+inkCoverage: TBD, filled after cast measurement.
+================================================================ -->
 
-	<!-- geometry: silhouette primitives only, no fill and no stroke -->
+	<!-- geometry: one lopsided teardrop hill, crest folded forward, flat unbroken belly -->
 	<g id="gollumer-f1-shapes">
-		<rect x="36" y="236" width="132" height="52" rx="24"/>
-		<ellipse cx="100" cy="226" rx="68" ry="54"/>
-		<ellipse cx="52" cy="238" rx="26" ry="34"/>
-		<ellipse cx="145" cy="248" rx="27" ry="32"/>
-		<ellipse cx="88" cy="162" rx="54" ry="48"/>
-		<ellipse cx="116" cy="112" rx="46" ry="44"/>
-		<ellipse cx="140" cy="60" rx="26" ry="36"/>
-		<circle cx="102" cy="74" r="22"/>
-		<circle cx="72" cy="94" r="24"/>
+		<path d="M 28,300
+			C 27,270 32,226 50,186
+			C 58,160 76,136 98,126
+			C 120,118 142,122 152,140
+			C 158,154 154,170 142,178
+			C 134,182 126,180 122,172
+			C 132,178 142,186 148,200
+			C 160,222 166,246 166,272
+			C 166,284 165,293 164,300
+			Z"/>
 	</g>
 
-	<!-- face: one big eye with a gold iris, one wide smile -->
+	<!-- face: heavy sad lids set low, pupils sunk beneath, small downturned mouth -->
 	<g id="gollumer-f1-face">
-		<circle cx="112" cy="112" r="32" fill="#ffffff"/>
-		<circle cx="116" cy="115" r="19" fill="#ffd23f"/>
-		<circle cx="118" cy="117" r="10" fill="#141422"/>
-		<path d="M68,166 Q104,210 140,166 Q104,172 68,166 Z" fill="#141422"/>
+		<circle cx="120" cy="214" r="12" fill="#ffffff"/>
+		<circle cx="146" cy="222" r="10" fill="#ffffff"/>
+		<circle cx="122" cy="220" r="5" fill="#141422"/>
+		<circle cx="147" cy="228" r="4.5" fill="#141422"/>
+		<ellipse cx="120" cy="205" rx="13" ry="10" fill="#141422"/>
+		<ellipse cx="146" cy="214" rx="11" ry="8.5" fill="#141422"/>
+		<path d="M 121,256 Q 133,246 145,257 Q 133,252 121,256 Z" fill="#141422"/>
 	</g>
 
+	<!-- draw stack: halo, ink, body color, face -->
 	<g id="gollumer-f1-draw">
 		<use href="#gollumer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
 			stroke-linejoin="round" stroke-linecap="round"/>
@@ -51,26 +52,32 @@
 		<use href="#gollumer-f1-face"/>
 	</g>
 
-	<!-- frame 2: the squash. Crown flops left and down, the body
-		widens and settles, the fat bulge moves to the right hip. -->
+	<!-- geometry frame 2: glissant ooze, mass stretched long and low, crest thrown back -->
 	<g id="gollumer-f2-shapes">
-		<rect x="28" y="228" width="148" height="60" rx="26"/>
-		<ellipse cx="100" cy="228" rx="74" ry="54"/>
-		<ellipse cx="50" cy="240" rx="26" ry="34"/>
-		<ellipse cx="146" cy="246" rx="28" ry="34"/>
-		<ellipse cx="94" cy="176" rx="60" ry="44"/>
-		<ellipse cx="102" cy="138" rx="52" ry="38"/>
-		<ellipse cx="84" cy="100" rx="32" ry="28"/>
-		<circle cx="140" cy="112" r="24"/>
+		<path d="M 26,300
+			C 26,276 32,248 46,226
+			C 52,216 58,208 64,202
+			C 56,200 48,196 42,186
+			C 37,178 39,170 47,166
+			C 60,162 74,168 84,180
+			C 100,192 118,206 136,220
+			C 152,232 164,246 170,262
+			C 174,274 175,287 174,300
+			Z"/>
 	</g>
 
+	<!-- face frame 2: same mournful lids, gaze dropped to the trail ahead -->
 	<g id="gollumer-f2-face">
-		<circle cx="102" cy="140" r="32" fill="#ffffff"/>
-		<circle cx="106" cy="143" r="19" fill="#ffd23f"/>
-		<circle cx="108" cy="145" r="10" fill="#141422"/>
-		<path d="M62,188 Q98,232 134,188 Q98,194 62,188 Z" fill="#141422"/>
+		<circle cx="124" cy="244" r="11" fill="#ffffff"/>
+		<circle cx="148" cy="252" r="10" fill="#ffffff"/>
+		<circle cx="126" cy="249" r="5" fill="#141422"/>
+		<circle cx="150" cy="256" r="4.5" fill="#141422"/>
+		<ellipse cx="124" cy="236" rx="12" ry="9" fill="#141422"/>
+		<ellipse cx="148" cy="245" rx="11" ry="8" fill="#141422"/>
+		<path d="M 125,276 Q 137,266 149,277 Q 137,272 125,276 Z" fill="#141422"/>
 	</g>
 
+	<!-- draw stack frame 2 -->
 	<g id="gollumer-f2-draw">
 		<use href="#gollumer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
 			stroke-linejoin="round" stroke-linecap="round"/>
@@ -86,8 +93,10 @@
 	<symbol id="gollumer-frame2" viewBox="0 0 200 320">
 		<use href="#gollumer-f2-draw"/>
 	</symbol>
-	<symbol id="gollumer-head" viewBox="47 74 120 120">
-		<use href="#gollumer-f1-draw"/>
+	<symbol id="gollumer-head" viewBox="0 0 110 110">
+		<g transform="translate(-77,-170)">
+			<use href="#gollumer-f1-draw"/>
+		</g>
 	</symbol>
 	<symbol id="gollumer-silhouette1" viewBox="0 0 200 320">
 		<use href="#gollumer-f1-shapes" fill="#141422"/>

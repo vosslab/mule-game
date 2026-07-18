@@ -1,0 +1,58 @@
+<!-- The Expressionist. Personality drives geometry: rounded masses carry gentle and
+cheerful characters, hard angles carry sharp and stoic ones, and asymmetry carries sly or
+mournful emotion. Distinct bottom edges and one large facial gesture make each being readable
+at 18 to 32 px. Frame 2 displaces the feature most tied to each creature's temperament.
+Measured frame 1/frame 2 ink coverage: humanoid 61.7/68.0%, flapper 35.6/35.1%, bonzoid
+71.9/69.0%, gollumer 64.1/55.8%, spheroid 49.4/50.8%, leggite 59.0/58.8%, mechtron
+65.7/63.9%, packer 63.1/51.6%, mule 59.9/60.9%. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+<defs>
+	<g id="mule-f1-shapes">
+		<rect x="95" y="50" width="142" height="62"/>
+		<path d="M61 57 L97 62 L97 101 L67 108 L43 91 L43 70 Z"/>
+		<polygon points="61,61 57,18 72,56"/>
+		<polygon points="78,59 83,16 91,62"/>
+		<rect x="28" y="73" width="31" height="22"/>
+		<polygon points="237,58 268,43 256,73"/>
+		<rect x="106" y="112" width="16" height="55"/>
+		<rect x="135" y="112" width="16" height="55"/>
+		<rect x="194" y="112" width="16" height="55"/>
+		<rect x="221" y="112" width="16" height="55"/>
+		<rect x="100" y="164" width="26" height="11"/>
+		<rect x="129" y="164" width="26" height="11"/>
+		<rect x="188" y="164" width="26" height="11"/>
+		<rect x="215" y="164" width="26" height="11"/>
+	</g>
+	<g id="mule-f1-draw">
+		<use href="#mule-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="currentColor"/>
+	</g>
+	<g id="mule-f2-shapes">
+		<rect x="94" y="51" width="142" height="62"/>
+		<path d="M60 59 L96 63 L96 102 L66 109 L42 92 L42 71 Z"/>
+		<polygon points="60,63 52,23 69,57"/>
+		<polygon points="77,61 88,21 90,64"/>
+		<rect x="27" y="74" width="31" height="22"/>
+		<polygon points="236,59 268,49 252,78"/>
+		<path d="M105 113 L121 113 L111 160 L92 173 L82 163 Z"/>
+		<path d="M136 113 L152 113 L164 169 L139 169 Z"/>
+		<path d="M194 113 L210 113 L220 169 L195 169 Z"/>
+		<path d="M220 113 L236 113 L226 160 L207 173 L197 163 Z"/>
+		<rect x="78" y="163" width="27" height="11"/>
+		<rect x="138" y="166" width="27" height="11"/>
+		<rect x="194" y="166" width="27" height="11"/>
+		<rect x="203" y="163" width="27" height="11"/>
+	</g>
+	<g id="mule-f2-draw">
+		<use href="#mule-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="currentColor"/>
+	</g>
+	<symbol id="mule-frame1" viewBox="0 0 320 200"><use href="#mule-f1-draw"/></symbol>
+	<symbol id="mule-frame2" viewBox="0 0 320 200"><use href="#mule-f2-draw"/></symbol>
+	<symbol id="mule-silhouette1" viewBox="0 0 320 200"><use href="#mule-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="mule-silhouette2" viewBox="0 0 320 200"><use href="#mule-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<use href="#mule-frame1" width="320" height="200"/>
+</svg>

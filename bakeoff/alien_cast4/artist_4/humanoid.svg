@@ -1,0 +1,67 @@
+<!-- The Expressionist. Personality drives geometry: rounded masses carry gentle and
+cheerful characters, hard angles carry sharp and stoic ones, and asymmetry carries sly or
+mournful emotion. Distinct bottom edges and one large facial gesture make each being readable
+at 18 to 32 px. Frame 2 displaces the feature most tied to each creature's temperament.
+Measured frame 1/frame 2 ink coverage: humanoid 61.7/68.0%, flapper 35.6/35.1%, bonzoid
+71.9/69.0%, gollumer 64.1/55.8%, spheroid 49.4/50.8%, leggite 59.0/58.8%, mechtron
+65.7/63.9%, packer 63.1/51.6%, mule 59.9/60.9%. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="humanoid-f1-shapes">
+		<circle cx="100" cy="54" r="31"/>
+		<path d="M59 91 Q100 68 141 91 L132 194 Q100 211 68 194 Z"/>
+		<path d="M66 94 L39 111 L42 188 L65 180 Z"/>
+		<path d="M134 94 L161 111 L158 188 L135 180 Z"/>
+		<path d="M75 194 L98 194 L92 284 L58 284 Z"/>
+		<path d="M102 194 L125 194 L142 284 L108 284 Z"/>
+		<ellipse cx="75" cy="286" rx="25" ry="11"/>
+		<ellipse cx="125" cy="286" rx="25" ry="11"/>
+	</g>
+	<g id="humanoid-f1-face">
+		<ellipse cx="87" cy="48" rx="11" ry="10" fill="#ffffff"/>
+		<ellipse cx="113" cy="48" rx="11" ry="10" fill="#ffffff"/>
+		<circle cx="90" cy="49" r="5" fill="#141422"/>
+		<circle cx="116" cy="49" r="5" fill="#141422"/>
+		<path d="M78 65 Q100 82 122 65 Q116 91 100 92 Q84 91 78 65" fill="#141422"/>
+		<polygon points="91,112 109,112 109,130 91,130" fill="#ffd23f"/>
+	</g>
+	<g id="humanoid-f1-draw">
+		<use href="#humanoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="currentColor"/>
+		<use href="#humanoid-f1-face"/>
+	</g>
+	<g id="humanoid-f2-shapes">
+		<circle cx="102" cy="52" r="31"/>
+		<path d="M61 89 Q101 67 141 91 L132 194 Q101 207 70 194 Z"/>
+		<path d="M68 94 L42 72 L31 145 L53 150 Z"/>
+		<path d="M136 94 L159 118 L174 189 L151 193 Z"/>
+		<path d="M74 194 L99 194 L73 286 L39 286 Z"/>
+		<path d="M104 194 L129 194 L157 282 L124 282 Z"/>
+		<ellipse cx="58" cy="288" rx="25" ry="11"/>
+		<ellipse cx="143" cy="284" rx="25" ry="11"/>
+	</g>
+	<g id="humanoid-f2-face">
+		<ellipse cx="89" cy="46" rx="11" ry="10" fill="#ffffff"/>
+		<ellipse cx="115" cy="46" rx="11" ry="10" fill="#ffffff"/>
+		<circle cx="92" cy="47" r="5" fill="#141422"/>
+		<circle cx="118" cy="47" r="5" fill="#141422"/>
+		<path d="M80 63 Q102 80 124 63 Q118 89 102 90 Q86 89 80 63" fill="#141422"/>
+		<polygon points="93,110 111,110 111,128 93,128" fill="#ffd23f"/>
+	</g>
+	<g id="humanoid-f2-draw">
+		<use href="#humanoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="currentColor"/>
+		<use href="#humanoid-f2-face"/>
+	</g>
+	<symbol id="humanoid-frame1" viewBox="0 0 200 320"><use href="#humanoid-f1-draw"/></symbol>
+	<symbol id="humanoid-frame2" viewBox="0 0 200 320"><use href="#humanoid-f2-draw"/></symbol>
+	<symbol id="humanoid-head" viewBox="0 0 130 130">
+		<g transform="translate(-35,-0)"><use href="#humanoid-f1-draw"/></g>
+	</symbol>
+	<symbol id="humanoid-silhouette1" viewBox="0 0 200 320"><use href="#humanoid-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="humanoid-silhouette2" viewBox="0 0 200 320"><use href="#humanoid-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<use href="#humanoid-frame1" width="200" height="320"/>
+</svg>

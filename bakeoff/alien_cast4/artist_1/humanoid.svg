@@ -1,0 +1,71 @@
+<!-- Brutalist Toy Box. Artist: industrial toy designer building alien figures as
+injection-molded playground equipment. Each creature from few large geometric primitives
+at clear seams. Readability at 18 to 32 px via: (1) unique envelope per creature,
+(2) distinct ground contact, (3) frame 2 motion displaces major masses.
+Influences: Playmobil, Soviet toy design, Charley Harper. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="humanoid-f1-shapes">
+		<circle cx="100" cy="52" r="30"/>
+		<polygon points="60,80 140,80 130,200 70,200"/>
+		<polygon points="32,88 60,80 62,172 35,178"/>
+		<polygon points="140,80 168,88 165,178 138,172"/>
+		<rect x="72" y="200" width="24" height="86"/>
+		<rect x="104" y="200" width="24" height="86"/>
+		<rect x="58" y="278" width="40" height="22"/>
+		<rect x="102" y="278" width="40" height="22"/>
+	</g>
+	<g id="humanoid-f1-face">
+		<ellipse cx="86" cy="46" rx="10" ry="8" fill="#ffffff"/>
+		<ellipse cx="114" cy="46" rx="10" ry="8" fill="#ffffff"/>
+		<circle cx="90" cy="46" r="4" fill="#141422"/>
+		<circle cx="118" cy="46" r="4" fill="#141422"/>
+	</g>
+	<g id="humanoid-f1-draw">
+		<use href="#humanoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f1-shapes" fill="currentColor"/>
+		<use href="#humanoid-f1-face"/>
+	</g>
+	<g id="humanoid-f2-shapes">
+		<circle cx="104" cy="50" r="30"/>
+		<polygon points="62,78 144,78 138,198 68,198"/>
+		<polygon points="44,78 62,78 72,168 48,172"/>
+		<polygon points="144,78 162,86 152,172 136,168"/>
+		<polygon points="48,198 76,198 88,288 55,288"/>
+		<polygon points="120,198 146,198 152,288 115,288"/>
+		<rect x="45" y="280" width="50" height="20"/>
+		<rect x="108" y="280" width="50" height="20"/>
+	</g>
+	<g id="humanoid-f2-face">
+		<ellipse cx="90" cy="44" rx="10" ry="8" fill="#ffffff"/>
+		<ellipse cx="118" cy="44" rx="10" ry="8" fill="#ffffff"/>
+		<circle cx="94" cy="44" r="4" fill="#141422"/>
+		<circle cx="122" cy="44" r="4" fill="#141422"/>
+	</g>
+	<g id="humanoid-f2-draw">
+		<use href="#humanoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#humanoid-f2-shapes" fill="currentColor"/>
+		<use href="#humanoid-f2-face"/>
+	</g>
+	<symbol id="humanoid-frame1" viewBox="0 0 200 320">
+		<use href="#humanoid-f1-draw"/>
+	</symbol>
+	<symbol id="humanoid-frame2" viewBox="0 0 200 320">
+		<use href="#humanoid-f2-draw"/>
+	</symbol>
+	<symbol id="humanoid-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-5)">
+			<use href="#humanoid-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="humanoid-silhouette1" viewBox="0 0 200 320">
+		<use href="#humanoid-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="humanoid-silhouette2" viewBox="0 0 200 320">
+		<use href="#humanoid-f2-shapes" fill="#141422"/>
+	</symbol>
+</defs>
+<use href="#humanoid-frame1" width="200" height="320"/>
+</svg>

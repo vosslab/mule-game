@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<!-- DESIGN HYPOTHESIS (cast level, artist_3 / Pell Karo).
+Persona: Pell Karo, maker of hard-enamel lapel pins and die-cut vinyl stickers.
+Influences: hard-enamel pins, cut-vinyl stickers, and mid-century transit and park
+pictograms. Every creature is one bold, die-cut-clean pictogram silhouette. The
+white halo and dark keyline become a polished metal rim around poured currentColor
+enamel. At 18 to 32 px, the cast bets on whole-body gesture, a purpose-built bottom
+edge, and one oversized enamel eye pair. Interiors stay nearly empty. Machine bodies
+use hard rectangles; organic bodies use curves. Frame 2 swings the whole pin so the
+silhouette communicates motion.
+PACKER: A cheerful cargo-monster crouches on four tiny feet, then lifts its entire enormous mass in a toad hop. -->
+<defs>
+	<g id="packer-f1-shapes">
+		<path d="M28,238 Q18,136 66,86 Q100,50 138,84 Q184,126 172,238 Q152,254 28,238 Z"/>
+		<rect x="36" y="230" width="20" height="48" rx="9"/><rect x="68" y="232" width="20" height="46" rx="9"/>
+		<rect x="112" y="232" width="20" height="46" rx="9"/><rect x="144" y="230" width="20" height="48" rx="9"/></g>
+	<g id="packer-f1-face">
+		<ellipse cx="76" cy="130" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="124" cy="130" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="76" cy="132" r="7" fill="#141422"/>
+		<circle cx="124" cy="132" r="7" fill="#141422"/>
+		<path d="M60,168 Q100,214 140,168 Q100,194 60,168 Z" fill="#141422"/>
+		<rect x="94" y="178" width="14" height="14" rx="2" fill="#ffd23f"/></g>
+	<g id="packer-f1-draw">
+		<use href="#packer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="currentColor"/>
+		<use href="#packer-f1-face"/>
+	</g>
+	<g id="packer-f2-shapes">
+		<path d="M28,190 Q18,88 66,38 Q100,10 138,36 Q184,78 172,190 Q152,206 28,190 Z"/>
+		<polygon points="42,184 24,226 58,200"/><polygon points="74,188 62,230 94,202"/>
+		<polygon points="112,188 106,230 138,200"/><polygon points="146,184 142,226 176,198"/></g>
+	<g id="packer-f2-face">
+		<ellipse cx="76" cy="82" rx="14" ry="16" fill="#ffffff"/>
+		<ellipse cx="124" cy="82" rx="14" ry="16" fill="#ffffff"/>
+		<circle cx="76" cy="84" r="7" fill="#141422"/>
+		<circle cx="124" cy="84" r="7" fill="#141422"/>
+		<path d="M60,120 Q100,166 140,120 Q100,146 60,120 Z" fill="#141422"/>
+		<rect x="94" y="130" width="14" height="14" rx="2" fill="#ffd23f"/></g>
+	<g id="packer-f2-draw">
+		<use href="#packer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="currentColor"/>
+		<use href="#packer-f2-face"/>
+	</g>
+	<symbol id="packer-frame1" viewBox="0 0 200 320"><use href="#packer-f1-draw"/></symbol>
+	<symbol id="packer-frame2" viewBox="0 0 200 320"><use href="#packer-f2-draw"/></symbol>
+	<symbol id="packer-head" viewBox="0 0 120 120"><g transform="translate(-40,-62)"><use href="#packer-f1-draw"/></g></symbol>
+	<symbol id="packer-silhouette1" viewBox="0 0 200 320"><use href="#packer-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="packer-silhouette2" viewBox="0 0 200 320"><use href="#packer-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<!-- PREVIEW: ignored by generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<use href="#packer-frame1" width="100" height="160" x="0" y="0" style="color:#ff5a5f"/>
+<use href="#packer-frame2" width="100" height="160" x="100" y="0" style="color:#4fd8ff"/>
+</svg>

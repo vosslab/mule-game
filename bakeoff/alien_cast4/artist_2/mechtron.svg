@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first. Gold as a single warm
+dot; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct.
+
+Mechtron: deadpan heavy machine. Rigid rectilinear slab body on two
+thick posts with a real black gap between them: the anti bonzoid signal
+(bonzoid rides one solid tread band). Small block head, short shoulder
+nubs (not swinging arms), a thin visor slit across the head with a gold
+strip lit inside. Frame 2 lifts one post off the ground, ponderous not
+agile. Gold: the visor strip.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<g id="mechtron-f1-shapes">
+		<rect x="68" y="32" width="64" height="44" rx="6"/>
+		<rect x="42" y="78" width="116" height="140" rx="8"/>
+		<rect x="24" y="90" width="22" height="48" rx="4"/>
+		<rect x="154" y="90" width="22" height="48" rx="4"/>
+		<rect x="52" y="218" width="30" height="82" rx="4"/>
+		<rect x="118" y="218" width="30" height="82" rx="4"/>
+	</g>
+	<g id="mechtron-f1-face">
+		<rect x="58" y="42" width="84" height="18" rx="4" fill="#ffffff"/>
+		<rect x="62" y="48" width="76" height="6" fill="#141422"/>
+		<rect x="62" y="51" width="76" height="2" fill="#ffd23f"/>
+		<circle cx="100" cy="140" r="9" fill="#141422"/>
+	</g>
+	<g id="mechtron-f1-draw">
+		<use href="#mechtron-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="currentColor"/>
+		<use href="#mechtron-f1-face"/>
+	</g>
+
+	<g id="mechtron-f2-shapes">
+		<rect x="74" y="30" width="64" height="44" rx="6"/>
+		<rect x="46" y="76" width="116" height="140" rx="8"/>
+		<rect x="28" y="88" width="22" height="48" rx="4"/>
+		<rect x="156" y="88" width="22" height="48" rx="4"/>
+		<rect x="52" y="218" width="30" height="56" rx="4" transform="rotate(-28 68 250)"/>
+		<rect x="118" y="218" width="30" height="82" rx="4"/>
+	</g>
+	<g id="mechtron-f2-face">
+		<rect x="62" y="40" width="84" height="18" rx="4" fill="#ffffff"/>
+		<rect x="66" y="46" width="76" height="6" fill="#141422"/>
+		<rect x="66" y="49" width="76" height="2" fill="#ffd23f"/>
+		<circle cx="104" cy="140" r="9" fill="#141422"/>
+	</g>
+	<g id="mechtron-f2-draw">
+		<use href="#mechtron-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="currentColor"/>
+		<use href="#mechtron-f2-face"/>
+	</g>
+
+	<symbol id="mechtron-frame1" viewBox="0 0 200 320"><use href="#mechtron-f1-draw"/></symbol>
+	<symbol id="mechtron-frame2" viewBox="0 0 200 320"><use href="#mechtron-f2-draw"/></symbol>
+	<symbol id="mechtron-head" viewBox="45 15 110 110"><use href="#mechtron-f1-draw"/></symbol>
+	<symbol id="mechtron-silhouette1" viewBox="0 0 200 320">
+		<use href="#mechtron-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="mechtron-silhouette2" viewBox="0 0 200 320">
+		<use href="#mechtron-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

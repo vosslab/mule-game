@@ -1,0 +1,57 @@
+<!-- The Expressionist. Personality drives geometry: rounded masses carry gentle and
+cheerful characters, hard angles carry sharp and stoic ones, and asymmetry carries sly or
+mournful emotion. Distinct bottom edges and one large facial gesture make each being readable
+at 18 to 32 px. Frame 2 displaces the feature most tied to each creature's temperament.
+Measured frame 1/frame 2 ink coverage: humanoid 61.7/68.0%, flapper 35.6/35.1%, bonzoid
+71.9/69.0%, gollumer 64.1/55.8%, spheroid 49.4/50.8%, leggite 59.0/58.8%, mechtron
+65.7/63.9%, packer 63.1/51.6%, mule 59.9/60.9%. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="spheroid-f1-shapes">
+		<ellipse cx="100" cy="100" rx="65" ry="31"/>
+		<ellipse cx="100" cy="75" rx="39" ry="40"/>
+		<path d="M60 120 L50 224 L65 224 L82 121 Z"/>
+		<path d="M91 125 L96 244 L111 244 L110 125 Z"/>
+		<path d="M122 121 L142 224 L157 224 L140 118 Z"/>
+	</g>
+	<g id="spheroid-f1-face">
+		<ellipse cx="85" cy="76" rx="16" ry="18" fill="#ffffff"/>
+		<ellipse cx="116" cy="76" rx="16" ry="18" fill="#ffffff"/>
+		<circle cx="88" cy="78" r="7" fill="#141422"/>
+		<circle cx="119" cy="78" r="7" fill="#141422"/>
+	</g>
+	<g id="spheroid-f1-draw">
+		<use href="#spheroid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f1-shapes" fill="currentColor"/>
+		<use href="#spheroid-f1-face"/>
+	</g>
+	<g id="spheroid-f2-shapes">
+		<ellipse cx="100" cy="70" rx="69" ry="29"/>
+		<ellipse cx="100" cy="47" rx="37" ry="36"/>
+		<path d="M56 89 L38 192 L53 196 L79 91 Z"/>
+		<path d="M91 96 L110 215 L125 211 L110 94 Z"/>
+		<path d="M126 89 L160 182 L175 175 L144 85 Z"/>
+	</g>
+	<g id="spheroid-f2-face">
+		<ellipse cx="85" cy="49" rx="16" ry="18" fill="#ffffff"/>
+		<ellipse cx="116" cy="49" rx="16" ry="18" fill="#ffffff"/>
+		<circle cx="88" cy="51" r="7" fill="#141422"/>
+		<circle cx="119" cy="51" r="7" fill="#141422"/>
+	</g>
+	<g id="spheroid-f2-draw">
+		<use href="#spheroid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#spheroid-f2-shapes" fill="currentColor"/>
+		<use href="#spheroid-f2-face"/>
+	</g>
+	<symbol id="spheroid-frame1" viewBox="0 0 200 320"><use href="#spheroid-f1-draw"/></symbol>
+	<symbol id="spheroid-frame2" viewBox="0 0 200 320"><use href="#spheroid-f2-draw"/></symbol>
+	<symbol id="spheroid-head" viewBox="0 0 130 130">
+		<g transform="translate(-35,-0)"><use href="#spheroid-f1-draw"/></g>
+	</symbol>
+	<symbol id="spheroid-silhouette1" viewBox="0 0 200 320"><use href="#spheroid-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="spheroid-silhouette2" viewBox="0 0 200 320"><use href="#spheroid-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<use href="#spheroid-frame1" width="200" height="320"/>
+</svg>

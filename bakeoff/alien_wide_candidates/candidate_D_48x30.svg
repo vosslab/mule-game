@@ -131,23 +131,23 @@
   </defs>
 
   <rect class="page" width="1600" height="900"/>
-  <text class="header" x="48" y="58">CANDIDATE D — WIDE 48×30 ALIEN STUDY</text>
+  <text class="header" x="48" y="58">CANDIDATE D - WIDE 48x30 ALIEN STUDY</text>
   <text class="subtitle" x="48" y="88">Editable wide-vector sprites inspired by the playful 2D-shape references and the landscape proportions of local M.U.L.E. character screens.</text>
   <text class="subtitle" x="48" y="112">Each pose uses one centered, closed currentColor silhouette; neutral panels and small gold accents stay secondary to player ownership color.</text>
 
   <g id="mechtron-card" transform="translate(40 140)">
     <rect class="card" width="500" height="670" rx="22"/>
     <text class="species-title" x="20" y="42">MECHTRON</text>
-    <text class="species-subtitle" x="20" y="66">centered panel robot · paired nubs and treads</text>
+    <text class="species-subtitle" x="20" y="66">centered panel robot * paired nubs and treads</text>
 
     <rect class="frame" x="20" y="90" width="220" height="160" rx="14"/>
     <rect class="frame-terrain" x="260" y="90" width="220" height="160" rx="14"/>
-    <text class="frame-label" x="130" y="115">FRAME 1 · TREADS DOWN</text>
-    <text class="frame-label" x="370" y="115">FRAME 2 · CENTER BOB</text>
+    <text class="frame-label" x="130" y="115">FRAME 1 * TREADS DOWN</text>
+    <text class="frame-label" x="370" y="115">FRAME 2 * CENTER BOB</text>
     <g style="color: #ff5a5f"><use href="#mechtron-frame-1" x="34" y="127" width="192" height="120"/></g>
     <g style="color: #ff5a5f"><use href="#mechtron-frame-2" x="274" y="127" width="192" height="120"/></g>
 
-    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS · NATIVE 48×30 PREVIEW</text>
+    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS * NATIVE 48x30 PREVIEW</text>
     <g transform="translate(20 293)">
       <rect class="frame" width="106" height="76" rx="12"/>
       <g style="color: #ff5a5f"><use href="#mechtron-frame-1" x="29" y="9" width="48" height="30"/></g>
@@ -183,16 +183,16 @@
   <g id="bonzoid-card" transform="translate(550 140)">
     <rect class="card" width="500" height="670" rx="22"/>
     <text class="species-title" x="20" y="42">BONZOID</text>
-    <text class="species-subtitle" x="20" y="66">low diamond beast · broad integrated shoulder fins</text>
+    <text class="species-subtitle" x="20" y="66">low diamond beast * broad integrated shoulder fins</text>
 
     <rect class="frame" x="20" y="90" width="220" height="160" rx="14"/>
     <rect class="frame-terrain" x="260" y="90" width="220" height="160" rx="14"/>
-    <text class="frame-label" x="130" y="115">FRAME 1 · FINS LOW</text>
-    <text class="frame-label" x="370" y="115">FRAME 2 · FINS RAISED</text>
+    <text class="frame-label" x="130" y="115">FRAME 1 * FINS LOW</text>
+    <text class="frame-label" x="370" y="115">FRAME 2 * FINS RAISED</text>
     <g style="color: #ff5a5f"><use href="#bonzoid-frame-1" x="34" y="127" width="192" height="120"/></g>
     <g style="color: #ff5a5f"><use href="#bonzoid-frame-2" x="274" y="127" width="192" height="120"/></g>
 
-    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS · NATIVE 48×30 PREVIEW</text>
+    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS * NATIVE 48x30 PREVIEW</text>
     <g transform="translate(20 293)">
       <rect class="frame" width="106" height="76" rx="12"/>
       <g style="color: #ff5a5f"><use href="#bonzoid-frame-1" x="29" y="9" width="48" height="30"/></g>
@@ -219,7 +219,7 @@
     <text class="note" x="20" y="450">The outline is a wide, low diamond with paired fins grown into the body,</text>
     <text class="note" x="20" y="471">a plated face, and a centered belly wedge. Every edge has a clean join.</text>
     <text class="note-strong" x="20" y="515">READ AT A GLANCE</text>
-    <text class="note" x="20" y="540">Low, broad, and animal-like — a deliberately different silhouette family.</text>
+    <text class="note" x="20" y="540">Low, broad, and animal-like - a deliberately different silhouette family.</text>
     <rect x="20" y="580" width="460" height="62" rx="12" fill="#e8eef0"/>
     <text class="note-strong" x="34" y="607">COLOR CONTRACT</text>
     <text class="note" x="34" y="629">Body diamond + fin span inherit currentColor.</text>
@@ -228,16 +228,16 @@
   <g id="flapper-card" transform="translate(1060 140)">
     <rect class="card" width="500" height="670" rx="22"/>
     <text class="species-title" x="20" y="42">FLAPPER</text>
-    <text class="species-subtitle" x="20" y="66">kite-moth flyer · unmistakable paired wingbeat</text>
+    <text class="species-subtitle" x="20" y="66">kite-moth flyer * unmistakable paired wingbeat</text>
 
     <rect class="frame" x="20" y="90" width="220" height="160" rx="14"/>
     <rect class="frame-terrain" x="260" y="90" width="220" height="160" rx="14"/>
-    <text class="frame-label" x="130" y="115">FRAME 1 · WINGS DOWN</text>
-    <text class="frame-label" x="370" y="115">FRAME 2 · WINGS RAISED</text>
+    <text class="frame-label" x="130" y="115">FRAME 1 * WINGS DOWN</text>
+    <text class="frame-label" x="370" y="115">FRAME 2 * WINGS RAISED</text>
     <g style="color: #ff5a5f"><use href="#flapper-frame-1" x="34" y="127" width="192" height="120"/></g>
     <g style="color: #ff5a5f"><use href="#flapper-frame-2" x="274" y="127" width="192" height="120"/></g>
 
-    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS · NATIVE 48×30 PREVIEW</text>
+    <text class="strip-label" x="20" y="280">FOUR PLAYER COLORS * NATIVE 48x30 PREVIEW</text>
     <g transform="translate(20 293)">
       <rect class="frame" width="106" height="76" rx="12"/>
       <g style="color: #ff5a5f"><use href="#flapper-frame-1" x="29" y="9" width="48" height="30"/></g>
@@ -270,5 +270,5 @@
     <text class="note" x="34" y="629">Body and the full wing span inherit currentColor.</text>
   </g>
 
-  <text class="footer" x="800" y="852">CANDIDATE D · six editable &lt;symbol&gt; definitions · 48×30 wide viewBox · currentColor ownership region · clean closed silhouettes</text>
+  <text class="footer" x="800" y="852">CANDIDATE D * six editable &lt;symbol&gt; definitions * 48x30 wide viewBox * currentColor ownership region * clean closed silhouettes</text>
 </svg>

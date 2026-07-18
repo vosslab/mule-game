@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first. Gold as a single warm
+dot; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct.
+
+Flapper: imperious sky hunter. Heraldic eagle body, long horizontal
+wingspan in frame 1, small angular beaked head, triangular tail dropping
+below. Frame 2 tucks the wings vertical for a dive; the outline goes
+from wide flat to tall narrow in one beat. Sharp forward set eyes.
+Gold: the beak tip. Ground contact: NONE, airborne. All shapes sit
+above y=232 in frame 1 and above y=272 in frame 2, so real clear air
+sits beneath at every game size.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<g id="flapper-f1-shapes">
+		<ellipse cx="100" cy="80" rx="24" ry="20"/>
+		<polygon points="52,80 88,72 88,88"/>
+		<ellipse cx="100" cy="110" rx="16" ry="18"/>
+		<ellipse cx="100" cy="150" rx="42" ry="32"/>
+		<ellipse cx="48" cy="140" rx="52" ry="18" transform="rotate(-14 48 140)"/>
+		<ellipse cx="152" cy="140" rx="52" ry="18" transform="rotate(14 152 140)"/>
+		<polygon points="88,180 112,180 100,232"/>
+	</g>
+	<g id="flapper-f1-face">
+		<circle cx="93" cy="76" r="8" fill="#ffffff"/>
+		<circle cx="110" cy="76" r="8" fill="#ffffff"/>
+		<circle cx="93" cy="77" r="4" fill="#141422"/>
+		<circle cx="110" cy="77" r="4" fill="#141422"/>
+		<polygon points="52,80 68,74 68,86" fill="#ffd23f"/>
+	</g>
+	<g id="flapper-f1-draw">
+		<use href="#flapper-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="currentColor"/>
+		<use href="#flapper-f1-face"/>
+	</g>
+
+	<g id="flapper-f2-shapes">
+		<ellipse cx="100" cy="96" rx="24" ry="20"/>
+		<polygon points="52,96 88,88 88,104"/>
+		<ellipse cx="100" cy="126" rx="16" ry="18"/>
+		<ellipse cx="100" cy="180" rx="32" ry="48"/>
+		<ellipse cx="68" cy="180" rx="20" ry="44" transform="rotate(12 68 180)"/>
+		<ellipse cx="132" cy="180" rx="20" ry="44" transform="rotate(-12 132 180)"/>
+		<polygon points="88,228 112,228 100,272"/>
+	</g>
+	<g id="flapper-f2-face">
+		<circle cx="93" cy="92" r="8" fill="#ffffff"/>
+		<circle cx="110" cy="92" r="8" fill="#ffffff"/>
+		<circle cx="93" cy="94" r="4" fill="#141422"/>
+		<circle cx="110" cy="94" r="4" fill="#141422"/>
+		<polygon points="52,96 68,90 68,102" fill="#ffd23f"/>
+	</g>
+	<g id="flapper-f2-draw">
+		<use href="#flapper-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="currentColor"/>
+		<use href="#flapper-f2-face"/>
+	</g>
+
+	<symbol id="flapper-frame1" viewBox="0 0 200 320"><use href="#flapper-f1-draw"/></symbol>
+	<symbol id="flapper-frame2" viewBox="0 0 200 320"><use href="#flapper-f2-draw"/></symbol>
+	<symbol id="flapper-head" viewBox="45 25 110 110"><use href="#flapper-f1-draw"/></symbol>
+	<symbol id="flapper-silhouette1" viewBox="0 0 200 320">
+		<use href="#flapper-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="flapper-silhouette2" viewBox="0 0 200 320">
+		<use href="#flapper-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

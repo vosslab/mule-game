@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<!-- DESIGN HYPOTHESIS (cast level, artist_3 / Pell Karo).
+Persona: Pell Karo, maker of hard-enamel lapel pins and die-cut vinyl stickers.
+Influences: hard-enamel pins, cut-vinyl stickers, and mid-century transit and park
+pictograms. Every creature is one bold, die-cut-clean pictogram silhouette. The
+white halo and dark keyline become a polished metal rim around poured currentColor
+enamel. At 18 to 32 px, the cast bets on whole-body gesture, a purpose-built bottom
+edge, and one oversized enamel eye pair. Interiors stay nearly empty. Machine bodies
+use hard rectangles; organic bodies use curves. Frame 2 swings the whole pin so the
+silhouette communicates motion.
+BONZOID: A caffeinated tread machine throws piston arms around while its solid tank base barrels forward. -->
+<defs>
+	<g id="bonzoid-f1-shapes">
+		<rect x="48" y="84" width="104" height="104" rx="14"/>
+		<rect x="62" y="42" width="76" height="56" rx="10"/>
+		<polygon points="50,100 22,70 34,50 70,92"/>
+		<circle cx="25" cy="45" r="18"/>
+		<polygon points="150,102 174,62 190,78 166,122"/>
+		<circle cx="184" cy="67" r="18"/>
+		<rect x="30" y="214" width="140" height="58" rx="29"/>
+		<rect x="58" y="180" width="84" height="48" rx="12"/></g>
+	<g id="bonzoid-f1-face">
+		<rect x="72" y="56" width="56" height="27" rx="13" fill="#ffffff"/>
+		<circle cx="86" cy="69" r="7" fill="#141422"/><circle cx="114" cy="69" r="7" fill="#141422"/>
+		<rect x="90" y="126" width="20" height="20" rx="4" fill="#ffd23f"/></g>
+	<g id="bonzoid-f1-draw">
+		<use href="#bonzoid-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f1-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f1-face"/>
+	</g>
+	<g id="bonzoid-f2-shapes">
+		<polygon points="52,92 146,78 158,180 66,194"/>
+		<polygon points="66,52 138,42 146,92 72,102"/>
+		<polygon points="62,98 24,138 12,120 48,78"/>
+		<circle cx="18" cy="132" r="18"/>
+		<polygon points="146,92 176,52 192,72 160,122"/>
+		<circle cx="184" cy="60" r="18"/>
+		<rect x="30" y="214" width="140" height="58" rx="29"/>
+		<polygon points="62,184 142,172 148,224 68,232"/></g>
+	<g id="bonzoid-f2-face">
+		<rect x="76" y="56" width="56" height="27" rx="13" fill="#ffffff"/>
+		<circle cx="89" cy="69" r="7" fill="#141422"/><circle cx="117" cy="69" r="7" fill="#141422"/>
+		<rect x="96" y="124" width="20" height="20" rx="4" fill="#ffd23f"/></g>
+	<g id="bonzoid-f2-draw">
+		<use href="#bonzoid-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#bonzoid-f2-shapes" fill="currentColor"/>
+		<use href="#bonzoid-f2-face"/>
+	</g>
+	<symbol id="bonzoid-frame1" viewBox="0 0 200 320"><use href="#bonzoid-f1-draw"/></symbol>
+	<symbol id="bonzoid-frame2" viewBox="0 0 200 320"><use href="#bonzoid-f2-draw"/></symbol>
+	<symbol id="bonzoid-head" viewBox="0 0 120 120"><g transform="translate(-40,-20)"><use href="#bonzoid-f1-draw"/></g></symbol>
+	<symbol id="bonzoid-silhouette1" viewBox="0 0 200 320"><use href="#bonzoid-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="bonzoid-silhouette2" viewBox="0 0 200 320"><use href="#bonzoid-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<!-- PREVIEW: ignored by generator -->
+<rect x="0" y="0" width="200" height="320" fill="#1a1a2e"/>
+<use href="#bonzoid-frame1" width="100" height="160" x="0" y="0" style="color:#ff5a5f"/>
+<use href="#bonzoid-frame2" width="100" height="160" x="100" y="0" style="color:#4fd8ff"/>
+</svg>

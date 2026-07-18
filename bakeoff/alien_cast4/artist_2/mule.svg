@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first. Gold as a single warm
+dot; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct.
+
+Mule: quietly dependable working machine. No face and no head crop per
+contract. A horizontal chassis body on the wide 320 by 200 canvas; four
+thin post legs with real daylight between them; a small block head on
+the right end with two long straight ears; a stubby robot tail on the
+left. A cargo bin sits on the back. Frame 1: legs planted, at rest.
+Frame 2: back left and front right legs swing forward while the other
+diagonal swings back, honest trot cycle. Gold: a cargo strap buckle on
+top of the bin (the one warm dot). Reads as a mule in silhouette (long
+ears, muzzle, long horizontal body, tail) and as an industrial machine
+(rigid segments, thin posts, exposed joints).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+<defs>
+
+	<g id="mule-f1-shapes">
+		<rect x="54" y="64" width="180" height="76" rx="8"/>
+		<rect x="100" y="32" width="110" height="36" rx="4"/>
+		<rect x="224" y="68" width="52" height="54" rx="6"/>
+		<rect x="228" y="24" width="12" height="48" rx="4"/>
+		<rect x="252" y="24" width="12" height="48" rx="4"/>
+		<rect x="270" y="90" width="22" height="24" rx="4"/>
+		<rect x="32" y="76" width="28" height="10" rx="4" transform="rotate(-14 46 81)"/>
+		<rect x="64" y="140" width="14" height="52" rx="4"/>
+		<rect x="94" y="140" width="14" height="52" rx="4"/>
+		<rect x="182" y="140" width="14" height="52" rx="4"/>
+		<rect x="212" y="140" width="14" height="52" rx="4"/>
+	</g>
+	<g id="mule-f1-accent">
+		<rect x="140" y="32" width="24" height="14" rx="2" fill="#ffd23f"/>
+	</g>
+	<g id="mule-f1-draw">
+		<use href="#mule-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f1-shapes" fill="currentColor"/>
+		<use href="#mule-f1-accent"/>
+	</g>
+
+	<g id="mule-f2-shapes">
+		<rect x="54" y="64" width="180" height="76" rx="8"/>
+		<rect x="100" y="32" width="110" height="36" rx="4"/>
+		<rect x="224" y="68" width="52" height="54" rx="6"/>
+		<rect x="228" y="24" width="12" height="48" rx="4"/>
+		<rect x="252" y="24" width="12" height="48" rx="4"/>
+		<rect x="270" y="90" width="22" height="24" rx="4"/>
+		<rect x="32" y="76" width="28" height="10" rx="4" transform="rotate(-28 46 81)"/>
+		<rect x="64" y="140" width="14" height="52" rx="4" transform="rotate(20 71 166)"/>
+		<rect x="94" y="140" width="14" height="52" rx="4" transform="rotate(-20 101 166)"/>
+		<rect x="182" y="140" width="14" height="52" rx="4" transform="rotate(-20 189 166)"/>
+		<rect x="212" y="140" width="14" height="52" rx="4" transform="rotate(20 219 166)"/>
+	</g>
+	<g id="mule-f2-accent">
+		<rect x="140" y="32" width="24" height="14" rx="2" fill="#ffd23f"/>
+	</g>
+	<g id="mule-f2-draw">
+		<use href="#mule-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mule-f2-shapes" fill="currentColor"/>
+		<use href="#mule-f2-accent"/>
+	</g>
+
+	<symbol id="mule-frame1" viewBox="0 0 320 200"><use href="#mule-f1-draw"/></symbol>
+	<symbol id="mule-frame2" viewBox="0 0 320 200"><use href="#mule-f2-draw"/></symbol>
+	<symbol id="mule-silhouette1" viewBox="0 0 320 200">
+		<use href="#mule-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="mule-silhouette2" viewBox="0 0 320 200">
+		<use href="#mule-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

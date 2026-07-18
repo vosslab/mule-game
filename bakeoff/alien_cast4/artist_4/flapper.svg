@@ -1,0 +1,59 @@
+<!-- The Expressionist. Personality drives geometry: rounded masses carry gentle and
+cheerful characters, hard angles carry sharp and stoic ones, and asymmetry carries sly or
+mournful emotion. Distinct bottom edges and one large facial gesture make each being readable
+at 18 to 32 px. Frame 2 displaces the feature most tied to each creature's temperament.
+Measured frame 1/frame 2 ink coverage: humanoid 61.7/68.0%, flapper 35.6/35.1%, bonzoid
+71.9/69.0%, gollumer 64.1/55.8%, spheroid 49.4/50.8%, leggite 59.0/58.8%, mechtron
+65.7/63.9%, packer 63.1/51.6%, mule 59.9/60.9%. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="flapper-f1-shapes">
+		<polygon points="93,74 107,74 123,117 104,166 80,120"/>
+		<polygon points="91,86 28,62 54,130 91,143"/>
+		<polygon points="109,86 172,62 146,130 109,143"/>
+		<polygon points="88,76 100,35 112,76"/>
+		<polygon points="91,159 72,195 101,176 128,198 108,158"/>
+	</g>
+	<g id="flapper-f1-face">
+		<ellipse cx="96" cy="66" rx="8" ry="5" fill="#ffffff"/>
+		<ellipse cx="106" cy="66" rx="8" ry="5" fill="#ffffff"/>
+		<circle cx="98" cy="66" r="3" fill="#141422"/>
+		<circle cx="108" cy="66" r="3" fill="#141422"/>
+		<polygon points="96,36 100,18 104,36" fill="#ffd23f"/>
+	</g>
+	<g id="flapper-f1-draw">
+		<use href="#flapper-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="currentColor"/>
+		<use href="#flapper-f1-face"/>
+	</g>
+	<g id="flapper-f2-shapes">
+		<polygon points="92,101 108,101 122,145 103,190 80,146"/>
+		<polygon points="91,119 30,37 68,122 94,157"/>
+		<polygon points="109,119 170,37 132,122 106,157"/>
+		<polygon points="88,103 100,61 112,103"/>
+		<polygon points="91,183 70,218 101,201 130,220 108,182"/>
+	</g>
+	<g id="flapper-f2-face">
+		<ellipse cx="96" cy="92" rx="8" ry="5" fill="#ffffff"/>
+		<ellipse cx="106" cy="92" rx="8" ry="5" fill="#ffffff"/>
+		<circle cx="98" cy="92" r="3" fill="#141422"/>
+		<circle cx="108" cy="92" r="3" fill="#141422"/>
+		<polygon points="96,62 100,44 104,62" fill="#ffd23f"/>
+	</g>
+	<g id="flapper-f2-draw">
+		<use href="#flapper-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="currentColor"/>
+		<use href="#flapper-f2-face"/>
+	</g>
+	<symbol id="flapper-frame1" viewBox="0 0 200 320"><use href="#flapper-f1-draw"/></symbol>
+	<symbol id="flapper-frame2" viewBox="0 0 200 320"><use href="#flapper-f2-draw"/></symbol>
+	<symbol id="flapper-head" viewBox="0 0 130 130">
+		<g transform="translate(-35,-8)"><use href="#flapper-f1-draw"/></g>
+	</symbol>
+	<symbol id="flapper-silhouette1" viewBox="0 0 200 320"><use href="#flapper-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="flapper-silhouette2" viewBox="0 0 200 320"><use href="#flapper-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<use href="#flapper-frame1" width="200" height="320"/>
+</svg>

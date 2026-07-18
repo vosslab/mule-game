@@ -1,0 +1,57 @@
+<!-- Brutalist Toy Box. Artist: industrial toy designer building alien figures as
+injection-molded playground equipment. Each creature from few large geometric primitives
+at clear seams. Readability at 18 to 32 px via: (1) unique envelope per creature,
+(2) distinct ground contact, (3) frame 2 motion displaces major masses.
+Influences: Playmobil, Soviet toy design, Charley Harper. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="gollumer-f1-shapes">
+		<polygon points="28,300 25,275 28,235 38,185 58,142 82,115 105,105 132,110 155,130 168,162 175,200 172,250 170,280 168,300"/>
+	</g>
+	<g id="gollumer-f1-face">
+		<ellipse cx="82" cy="132" rx="12" ry="14" fill="#ffffff"/>
+		<ellipse cx="118" cy="136" rx="12" ry="14" fill="#ffffff"/>
+		<circle cx="80" cy="136" r="5" fill="#141422"/>
+		<circle cx="116" cy="140" r="5" fill="#141422"/>
+	</g>
+	<g id="gollumer-f1-draw">
+		<use href="#gollumer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f1-shapes" fill="currentColor"/>
+		<use href="#gollumer-f1-face"/>
+	</g>
+	<g id="gollumer-f2-shapes">
+		<polygon points="25,300 22,278 25,245 32,195 48,150 72,120 100,108 132,105 158,118 172,148 180,190 182,240 180,278 178,300"/>
+	</g>
+	<g id="gollumer-f2-face">
+		<ellipse cx="98" cy="128" rx="12" ry="14" fill="#ffffff"/>
+		<ellipse cx="135" cy="130" rx="12" ry="14" fill="#ffffff"/>
+		<circle cx="96" cy="132" r="5" fill="#141422"/>
+		<circle cx="133" cy="134" r="5" fill="#141422"/>
+	</g>
+	<g id="gollumer-f2-draw">
+		<use href="#gollumer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#gollumer-f2-shapes" fill="currentColor"/>
+		<use href="#gollumer-f2-face"/>
+	</g>
+	<symbol id="gollumer-frame1" viewBox="0 0 200 320">
+		<use href="#gollumer-f1-draw"/>
+	</symbol>
+	<symbol id="gollumer-frame2" viewBox="0 0 200 320">
+		<use href="#gollumer-f2-draw"/>
+	</symbol>
+	<symbol id="gollumer-head" viewBox="0 0 120 120">
+		<g transform="translate(-35,-70)">
+			<use href="#gollumer-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="gollumer-silhouette1" viewBox="0 0 200 320">
+		<use href="#gollumer-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="gollumer-silhouette2" viewBox="0 0 200 320">
+		<use href="#gollumer-f2-shapes" fill="#141422"/>
+	</symbol>
+</defs>
+<use href="#gollumer-frame1" width="200" height="320"/>
+</svg>

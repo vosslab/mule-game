@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first. Gold as a single warm
+dot; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct.
+
+Packer: dopey cheerful hop. One huge egg shaped body with a wide grinning
+mouth showing a gold tongue; four tiny stubby T rex feet just clear of
+the ground under the belly. Frame 1 stands; frame 2 is airborne with all
+four feet tucked up against the belly and the body squashed slightly
+wider. Ground silhouette in frame 1: belly clear with four stubs,
+distinct from gollumer all flat and from mechtron split post. Gold:
+the tongue.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<g id="packer-f1-shapes">
+		<ellipse cx="100" cy="160" rx="80" ry="76"/>
+		<rect x="44" y="246" width="18" height="32" rx="9"/>
+		<rect x="76" y="252" width="18" height="32" rx="9"/>
+		<rect x="106" y="252" width="18" height="32" rx="9"/>
+		<rect x="138" y="246" width="18" height="32" rx="9"/>
+	</g>
+	<g id="packer-f1-face">
+		<circle cx="70" cy="142" r="18" fill="#ffffff"/>
+		<circle cx="130" cy="142" r="18" fill="#ffffff"/>
+		<circle cx="74" cy="146" r="8" fill="#141422"/>
+		<circle cx="126" cy="146" r="8" fill="#141422"/>
+		<path d="M50,178 Q100,232 150,178 Q100,214 50,178 Z" fill="#141422"/>
+		<ellipse cx="100" cy="214" rx="20" ry="8" fill="#ffd23f"/>
+	</g>
+	<g id="packer-f1-draw">
+		<use href="#packer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="currentColor"/>
+		<use href="#packer-f1-face"/>
+	</g>
+
+	<g id="packer-f2-shapes">
+		<ellipse cx="100" cy="180" rx="88" ry="68"/>
+		<rect x="48" y="228" width="18" height="22" rx="9" transform="rotate(-30 57 239)"/>
+		<rect x="76" y="228" width="18" height="22" rx="9" transform="rotate(-15 85 239)"/>
+		<rect x="106" y="228" width="18" height="22" rx="9" transform="rotate(15 115 239)"/>
+		<rect x="134" y="228" width="18" height="22" rx="9" transform="rotate(30 143 239)"/>
+	</g>
+	<g id="packer-f2-face">
+		<circle cx="70" cy="162" r="18" fill="#ffffff"/>
+		<circle cx="130" cy="162" r="18" fill="#ffffff"/>
+		<circle cx="74" cy="166" r="8" fill="#141422"/>
+		<circle cx="126" cy="166" r="8" fill="#141422"/>
+		<path d="M50,198 Q100,252 150,198 Q100,234 50,198 Z" fill="#141422"/>
+		<ellipse cx="100" cy="234" rx="20" ry="8" fill="#ffd23f"/>
+	</g>
+	<g id="packer-f2-draw">
+		<use href="#packer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="currentColor"/>
+		<use href="#packer-f2-face"/>
+	</g>
+
+	<symbol id="packer-frame1" viewBox="0 0 200 320"><use href="#packer-f1-draw"/></symbol>
+	<symbol id="packer-frame2" viewBox="0 0 200 320"><use href="#packer-f2-draw"/></symbol>
+	<symbol id="packer-head" viewBox="40 90 120 120"><use href="#packer-f1-draw"/></symbol>
+	<symbol id="packer-silhouette1" viewBox="0 0 200 320">
+		<use href="#packer-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="packer-silhouette2" viewBox="0 0 200 320">
+		<use href="#packer-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

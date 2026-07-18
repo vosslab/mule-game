@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- MECHTRON: a single rectilinear slab (head and torso fused - machine
+	geometry, not human proportion) on two posts with a 72-unit hole
+	between them, the widest deliberate gap in the cast. A flat visor slit
+	stands in for eyes - stoic doesn't blink. Frame 2 bends one leg forward
+	into a two-segment stomp while the other stays a straight post. -->
+
+	<g id="mechtron-f1-shapes">
+		<rect x="54" y="30" width="92" height="140" rx="6"/>
+		<rect x="30" y="90" width="26" height="60" rx="6"/>
+		<rect x="144" y="90" width="26" height="60" rx="6"/>
+		<rect x="36" y="168" width="28" height="112" rx="4"/>
+		<rect x="136" y="168" width="28" height="112" rx="4"/>
+		<rect x="30" y="274" width="40" height="18" rx="3"/>
+		<rect x="130" y="274" width="40" height="18" rx="3"/>
+	</g>
+
+	<g id="mechtron-f1-face">
+		<rect x="70" y="60" width="60" height="16" rx="2" fill="#ffffff"/>
+		<rect x="70" y="66" width="60" height="4" fill="#141422"/>
+		<rect x="92" y="110" width="16" height="16" fill="#ffd23f"/>
+	</g>
+
+	<g id="mechtron-f1-draw">
+		<use href="#mechtron-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f1-shapes" fill="currentColor"/>
+		<use href="#mechtron-f1-face"/>
+	</g>
+
+	<g id="mechtron-f2-shapes">
+		<rect x="50" y="32" width="92" height="138" rx="6"/>
+		<rect x="26" y="92" width="26" height="58" rx="6"/>
+		<rect x="140" y="92" width="26" height="58" rx="6"/>
+		<rect x="40" y="170" width="30" height="114" rx="4"/>
+		<rect x="118" y="170" width="32" height="60" rx="4"/>
+		<polygon points="118,224 150,224 168,268 136,272"/>
+		<rect x="26" y="280" width="42" height="18" rx="3"/>
+		<polygon points="134,268 172,268 178,286 138,286"/>
+	</g>
+
+	<g id="mechtron-f2-face">
+		<rect x="66" y="62" width="60" height="16" rx="2" fill="#ffffff"/>
+		<rect x="66" y="68" width="60" height="4" fill="#141422"/>
+		<rect x="88" y="112" width="16" height="16" fill="#ffd23f"/>
+	</g>
+
+	<g id="mechtron-f2-draw">
+		<use href="#mechtron-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#mechtron-f2-shapes" fill="currentColor"/>
+		<use href="#mechtron-f2-face"/>
+	</g>
+
+	<symbol id="mechtron-frame1" viewBox="0 0 200 320">
+		<use href="#mechtron-f1-draw"/>
+	</symbol>
+	<symbol id="mechtron-frame2" viewBox="0 0 200 320">
+		<use href="#mechtron-f2-draw"/>
+	</symbol>
+	<symbol id="mechtron-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-10)"><use href="#mechtron-f1-draw"/></g>
+	</symbol>
+	<symbol id="mechtron-silhouette1" viewBox="0 0 200 320">
+		<use href="#mechtron-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="mechtron-silhouette2" viewBox="0 0 200 320">
+		<use href="#mechtron-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

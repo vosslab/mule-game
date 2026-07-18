@@ -1,0 +1,67 @@
+<!-- Brutalist Toy Box. Artist: industrial toy designer building alien figures as
+injection-molded playground equipment. Each creature from few large geometric primitives
+at clear seams. Readability at 18 to 32 px via: (1) unique envelope per creature,
+(2) distinct ground contact, (3) frame 2 motion displaces major masses.
+Influences: Playmobil, Soviet toy design, Charley Harper. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="flapper-f1-shapes">
+		<circle cx="100" cy="112" r="18"/>
+		<polygon points="95,125 22,55 20,92 55,148 92,148"/>
+		<polygon points="105,125 178,55 180,92 145,148 108,148"/>
+		<ellipse cx="100" cy="165" rx="20" ry="30"/>
+		<polygon points="92,195 108,195 105,238 95,238"/>
+	</g>
+	<g id="flapper-f1-face">
+		<polygon points="88,107 78,104 84,115" fill="#ffffff"/>
+		<polygon points="112,107 122,104 116,115" fill="#ffffff"/>
+		<circle cx="84" cy="109" r="3" fill="#141422"/>
+		<circle cx="116" cy="109" r="3" fill="#141422"/>
+		<polygon points="96,120 104,120 100,130" fill="#ffd23f"/>
+	</g>
+	<g id="flapper-f1-draw">
+		<use href="#flapper-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f1-shapes" fill="currentColor"/>
+		<use href="#flapper-f1-face"/>
+	</g>
+	<g id="flapper-f2-shapes">
+		<circle cx="100" cy="105" r="18"/>
+		<polygon points="95,118 25,92 22,130 60,152 92,142"/>
+		<polygon points="105,118 175,92 178,130 140,152 108,142"/>
+		<ellipse cx="100" cy="158" rx="20" ry="30"/>
+		<polygon points="92,188 108,188 105,232 95,232"/>
+	</g>
+	<g id="flapper-f2-face">
+		<polygon points="88,100 78,97 84,108" fill="#ffffff"/>
+		<polygon points="112,100 122,97 116,108" fill="#ffffff"/>
+		<circle cx="84" cy="102" r="3" fill="#141422"/>
+		<circle cx="116" cy="102" r="3" fill="#141422"/>
+		<polygon points="96,113 104,113 100,123" fill="#ffd23f"/>
+	</g>
+	<g id="flapper-f2-draw">
+		<use href="#flapper-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#flapper-f2-shapes" fill="currentColor"/>
+		<use href="#flapper-f2-face"/>
+	</g>
+	<symbol id="flapper-frame1" viewBox="0 0 200 320">
+		<use href="#flapper-f1-draw"/>
+	</symbol>
+	<symbol id="flapper-frame2" viewBox="0 0 200 320">
+		<use href="#flapper-f2-draw"/>
+	</symbol>
+	<symbol id="flapper-head" viewBox="0 0 110 110">
+		<g transform="translate(-45,-57)">
+			<use href="#flapper-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="flapper-silhouette1" viewBox="0 0 200 320">
+		<use href="#flapper-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="flapper-silhouette2" viewBox="0 0 200 320">
+		<use href="#flapper-f2-shapes" fill="#141422"/>
+	</symbol>
+</defs>
+<use href="#flapper-frame1" width="200" height="320"/>
+</svg>

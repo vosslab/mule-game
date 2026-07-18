@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Cast 4, artist 2 hypothesis (opens every file):
+Persona: bold picture-book toymaker. Fat rounded primitives, one dominant
+focal feature per face, honest asymmetry, big Frame 2 pose beats that
+redraw the outline. Bottom edge anchored first. Gold as a single warm
+dot; player color body fills between the 40 halo and 20 ink.
+Coverage aim 60 to 80 pct.
+
+Leggite: sly skittering column. A tall vertical stack of body lobes with
+five legs fringing each side; small head with slit eyes on top. Frame 1
+undulates one way (left lobes push out low, right lobes push out high);
+frame 2 inverts the wave. Every leg on frame 2 tilts the opposite
+direction of frame 1: the phase flip is the motion. Ground: the many
+legged bottom fringe. Gold: a small jewel on the forehead.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<g id="leggite-f1-shapes">
+		<ellipse cx="100" cy="48" rx="28" ry="22"/>
+		<ellipse cx="100" cy="78" rx="22" ry="16"/>
+		<ellipse cx="94" cy="110" rx="28" ry="26"/>
+		<ellipse cx="110" cy="148" rx="30" ry="26"/>
+		<ellipse cx="90" cy="188" rx="28" ry="26"/>
+		<ellipse cx="108" cy="226" rx="28" ry="26"/>
+		<ellipse cx="94" cy="264" rx="28" ry="24"/>
+		<ellipse cx="100" cy="294" rx="32" ry="14"/>
+		<rect x="32" y="112" width="32" height="8" rx="4" transform="rotate(-18 48 116)"/>
+		<rect x="42" y="148" width="32" height="8" rx="4" transform="rotate(-12 58 152)"/>
+		<rect x="32" y="188" width="32" height="8" rx="4" transform="rotate(-16 48 192)"/>
+		<rect x="42" y="226" width="32" height="8" rx="4" transform="rotate(-10 58 230)"/>
+		<rect x="36" y="264" width="32" height="8" rx="4" transform="rotate(-8 52 268)"/>
+		<rect x="136" y="112" width="32" height="8" rx="4" transform="rotate(18 152 116)"/>
+		<rect x="126" y="148" width="32" height="8" rx="4" transform="rotate(12 142 152)"/>
+		<rect x="136" y="188" width="32" height="8" rx="4" transform="rotate(16 152 192)"/>
+		<rect x="126" y="226" width="32" height="8" rx="4" transform="rotate(10 142 230)"/>
+		<rect x="132" y="264" width="32" height="8" rx="4" transform="rotate(8 148 268)"/>
+	</g>
+	<g id="leggite-f1-face">
+		<rect x="82" y="44" width="10" height="6" rx="2" fill="#ffffff"/>
+		<rect x="108" y="44" width="10" height="6" rx="2" fill="#ffffff"/>
+		<rect x="84" y="45" width="4" height="4" fill="#141422"/>
+		<rect x="110" y="45" width="4" height="4" fill="#141422"/>
+		<path d="M84,60 Q100,72 116,60 Q100,66 84,60 Z" fill="#141422"/>
+		<circle cx="100" cy="30" r="8" fill="#ffd23f"/>
+	</g>
+	<g id="leggite-f1-draw">
+		<use href="#leggite-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f1-shapes" fill="currentColor"/>
+		<use href="#leggite-f1-face"/>
+	</g>
+
+	<g id="leggite-f2-shapes">
+		<ellipse cx="100" cy="48" rx="28" ry="22"/>
+		<ellipse cx="100" cy="78" rx="22" ry="16"/>
+		<ellipse cx="108" cy="110" rx="28" ry="26"/>
+		<ellipse cx="92" cy="148" rx="30" ry="26"/>
+		<ellipse cx="110" cy="188" rx="28" ry="26"/>
+		<ellipse cx="90" cy="226" rx="28" ry="26"/>
+		<ellipse cx="108" cy="264" rx="28" ry="24"/>
+		<ellipse cx="100" cy="294" rx="32" ry="14"/>
+		<rect x="32" y="112" width="32" height="8" rx="4" transform="rotate(14 48 116)"/>
+		<rect x="42" y="148" width="32" height="8" rx="4" transform="rotate(10 58 152)"/>
+		<rect x="32" y="188" width="32" height="8" rx="4" transform="rotate(14 48 192)"/>
+		<rect x="42" y="226" width="32" height="8" rx="4" transform="rotate(8 58 230)"/>
+		<rect x="36" y="264" width="32" height="8" rx="4" transform="rotate(6 52 268)"/>
+		<rect x="136" y="112" width="32" height="8" rx="4" transform="rotate(-14 152 116)"/>
+		<rect x="126" y="148" width="32" height="8" rx="4" transform="rotate(-10 142 152)"/>
+		<rect x="136" y="188" width="32" height="8" rx="4" transform="rotate(-14 152 192)"/>
+		<rect x="126" y="226" width="32" height="8" rx="4" transform="rotate(-8 142 230)"/>
+		<rect x="132" y="264" width="32" height="8" rx="4" transform="rotate(-6 148 268)"/>
+	</g>
+	<g id="leggite-f2-face">
+		<rect x="82" y="44" width="10" height="6" rx="2" fill="#ffffff"/>
+		<rect x="108" y="44" width="10" height="6" rx="2" fill="#ffffff"/>
+		<rect x="84" y="45" width="4" height="4" fill="#141422"/>
+		<rect x="110" y="45" width="4" height="4" fill="#141422"/>
+		<path d="M84,60 Q100,72 116,60 Q100,66 84,60 Z" fill="#141422"/>
+		<circle cx="100" cy="30" r="8" fill="#ffd23f"/>
+	</g>
+	<g id="leggite-f2-draw">
+		<use href="#leggite-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20"
+			stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f2-shapes" fill="currentColor"/>
+		<use href="#leggite-f2-face"/>
+	</g>
+
+	<symbol id="leggite-frame1" viewBox="0 0 200 320"><use href="#leggite-f1-draw"/></symbol>
+	<symbol id="leggite-frame2" viewBox="0 0 200 320"><use href="#leggite-f2-draw"/></symbol>
+	<symbol id="leggite-head" viewBox="45 5 110 110"><use href="#leggite-f1-draw"/></symbol>
+	<symbol id="leggite-silhouette1" viewBox="0 0 200 320">
+		<use href="#leggite-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="leggite-silhouette2" viewBox="0 0 200 320">
+		<use href="#leggite-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

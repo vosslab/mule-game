@@ -1,0 +1,59 @@
+<!-- The Expressionist. Personality drives geometry: rounded masses carry gentle and
+cheerful characters, hard angles carry sharp and stoic ones, and asymmetry carries sly or
+mournful emotion. Distinct bottom edges and one large facial gesture make each being readable
+at 18 to 32 px. Frame 2 displaces the feature most tied to each creature's temperament.
+Measured frame 1/frame 2 ink coverage: humanoid 61.7/68.0%, flapper 35.6/35.1%, bonzoid
+71.9/69.0%, gollumer 64.1/55.8%, spheroid 49.4/50.8%, leggite 59.0/58.8%, mechtron
+65.7/63.9%, packer 63.1/51.6%, mule 59.9/60.9%. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="packer-f1-shapes">
+		<ellipse cx="100" cy="146" rx="72" ry="91"/>
+		<rect x="42" y="223" width="17" height="50"/>
+		<rect x="70" y="228" width="17" height="45"/>
+		<rect x="113" y="228" width="17" height="45"/>
+		<rect x="141" y="223" width="17" height="50"/>
+	</g>
+	<g id="packer-f1-face">
+		<ellipse cx="87" cy="120" rx="16" ry="18" fill="#ffffff"/>
+		<ellipse cx="113" cy="120" rx="16" ry="18" fill="#ffffff"/>
+		<circle cx="91" cy="124" r="7" fill="#141422"/>
+		<circle cx="109" cy="124" r="7" fill="#141422"/>
+		<path d="M70 152 Q100 185 130 152 Q121 197 100 199 Q79 197 70 152" fill="#141422"/>
+	</g>
+	<g id="packer-f1-draw">
+		<use href="#packer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="currentColor"/>
+		<use href="#packer-f1-face"/>
+	</g>
+	<g id="packer-f2-shapes">
+		<ellipse cx="100" cy="112" rx="72" ry="78"/>
+		<path d="M47 174 L68 174 L79 207 L57 213 Z"/>
+		<path d="M76 181 L94 181 L98 213 L78 216 Z"/>
+		<path d="M106 181 L124 181 L122 216 L102 213 Z"/>
+		<path d="M132 174 L153 174 L143 213 L121 207 Z"/>
+	</g>
+	<g id="packer-f2-face">
+		<ellipse cx="87" cy="90" rx="16" ry="18" fill="#ffffff"/>
+		<ellipse cx="113" cy="90" rx="16" ry="18" fill="#ffffff"/>
+		<circle cx="91" cy="94" r="7" fill="#141422"/>
+		<circle cx="109" cy="94" r="7" fill="#141422"/>
+		<path d="M70 122 Q100 155 130 122 Q121 167 100 169 Q79 167 70 122" fill="#141422"/>
+	</g>
+	<g id="packer-f2-draw">
+		<use href="#packer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="currentColor"/>
+		<use href="#packer-f2-face"/>
+	</g>
+	<symbol id="packer-frame1" viewBox="0 0 200 320"><use href="#packer-f1-draw"/></symbol>
+	<symbol id="packer-frame2" viewBox="0 0 200 320"><use href="#packer-f2-draw"/></symbol>
+	<symbol id="packer-head" viewBox="0 0 140 140">
+		<g transform="translate(-30,-55)"><use href="#packer-f1-draw"/></g>
+	</symbol>
+	<symbol id="packer-silhouette1" viewBox="0 0 200 320"><use href="#packer-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="packer-silhouette2" viewBox="0 0 200 320"><use href="#packer-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<use href="#packer-frame1" width="200" height="320"/>
+</svg>

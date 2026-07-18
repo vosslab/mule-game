@@ -1,5 +1,201 @@
 # CHANGELOG.md
 
+## 2026-07-18
+
+### Behavior or Interface Changes
+
+- Bake-off tooling cleanup: promoted the reusable round-3 splitter and SVG
+  board builder plus the round-4 SVG board builder and cast validator into
+  clearly named `bakeoff/` tools. Removed obsolete root-level scratch scripts
+  for dispatch retries, process watching, one-off rendering, raster sheets,
+  coverage formatting, and resolved diagnostics. The validator now exits
+  nonzero when XML, contract lint, or interpretation checks fail.
+
+## 2026-07-17
+
+### Behavior or Interface Changes
+
+- Alien art: reduced the light outer keyline from 40 to 28 SVG units while
+  retaining the dark keyline at 20 units. This changes the visible white band
+  from 10 to 4 units per side, matching the maintainer-approved round-4 review
+  board. Updated the round-4 sources, current production SVGs, contract,
+  mechanical linter, and Artist 4's reproducible generator together.
+
+## 2026-07-16
+
+### Behavior or Interface Changes
+
+- Repo layout: all bake-off candidate art content moved out of `devel/` (which
+  `devel/DEVEL_README.md` reserves for maintainer tooling, not product or candidate content)
+  into a new repo-root `bakeoff/` folder, at the maintainer's direction: `bakeoff/alien_bakeoff`
+  (round-1 sets), `bakeoff/alien_cast` (round 2), `bakeoff/alien_cast3`, `bakeoff/alien_cast4`,
+  and `bakeoff/alien_wide_candidates`, all via `git mv`. Live references updated
+  (`_dispatch_cast4.sh`, today's changelog entries, `docs/FILE_STRUCTURE.md` gains the
+  `bakeoff/` entry); historical reports keep the `devel/` paths that were true when written.
+- Art contract: pre-dispatch consistency fixes from a second LLM-reviewer pass (reviewer
+  feedback, not maintainer decisions -- adopted because each fixes a real drift or
+  contradiction): the two written artifacts are now separated and defined once in the contract
+  (cast-level DESIGN HYPOTHESIS, a few sentences opening every SVG as its XML comment;
+  creature-level INTERPRETATIONS, one or two paragraphs each, delivered as one file whose
+  location the dispatch names), with the round-4 dispatch slimmed to output locations only so
+  the two documents stop drifting; the general personality sentence now reads "focal features
+  and pose" so a face stays non-mandatory; the mule is explicitly excepted from the face rule
+  and the face/head-crop completion check; the coverage rule is restated as PENDING
+  CALIBRATION (target band 25-75, exemplar measures 72-84, artists measure and report per
+  creature, out-of-band numbers are calibration data rather than rejections) so the acceptance
+  criterion is no longer self-contradictory; the lane map's causal claim is softened to "the
+  model is the only intentionally varied dispatch condition"; and the dispatch task list's
+  duplicate item numbering is fixed.
+- Art contract, mule row: enriched from an LLM read of the four historical M.U.L.E. reference
+  images (mule always defined by silhouette and gait: long ears, muzzle, tail, horizontal
+  body, thin legs with daylight beneath, rigid segmented assemblies, exposed joints,
+  load-bearing posture, simple geometry). Personality moves from "None. It is an appliance"
+  to "Quietly dependable, patient. A working machine, not a pet -- the mild affection you
+  would have for a favorite tractor" -- players get attached to their MULEs, and the
+  appliance framing had swung too far. Frame 2 is now "a steady, load-bearing stride." The
+  maintainer's core references stay verbatim: A LITERAL MULE, robotic; Boston Dynamics
+  BigDog as build reference.
+
+- `docs/ALIEN_ART_CONTRACT.md` rewritten as version 2, minimal: 1264 lines down to ~200. The
+  human's diagnosis: v1 suffered lockdown spec drift -- some rules were asked for, others were
+  manifested by an overly aggressive agent (the mandatory gold accent, the universal "wide
+  friendly smile", per-species numeric span/aspect/gap tables) -- and tightened until four
+  independent artists produced one design. v2 leads with the CHARACTERS (identity, locomotion,
+  the human's how-it-meets-the-ground table, and a NEW per-species personality axis with
+  maintainer-editable trait words), keeps only pipeline-required technique (palette tokens,
+  40/20 double stroke with cited evidence, flat solid shapes, frame-2-changes-outline,
+  light-eye/dark-pupil as mechanism only, optional shade, file schema, zero-origin head crop),
+  sets canvas coverage to the maintainer's 25-75 percent band (with a calibration caution:
+  the approved exemplar measures 72-84), demotes the gold accent from required to at-most-one,
+  and REQUIRES a named design hypothesis per submission -- the proven divergence mechanism.
+  v1 remains in git history; its geometry field notes stay preserved in the changelog and
+  program-status report.
+- `devel/lint_alien_svg.py`: gold-accent check relaxed from exactly-one to at-most-one per
+  face group, matching contract v2. All 32 round-3 species files and both `art/aliens/` files
+  still lint clean; the fast-lane gate `tests/test_alien_svg_lint.mjs` passes.
+- Art contract v2 loosening pass from the maintainer's line-by-line review (2026-07-16),
+  converting remaining HOW rules to WHAT: a new "Creative latitude" section in the
+  maintainer's words; a divergence paragraph at the head of the characters section ("the
+  descriptions define each species' identity, not its appearance"); body-part prohibitions
+  (only-humanoid-has-a-head, only-three-have-arms) replaced first with a design-intent
+  statement, then -- after the maintainer flagged that version as negative prompting -- with
+  the positive form: only the humanoid is a person, every other silhouette reads first as its
+  own kind of being, unusual appendage choices argued in the hypothesis block, and the
+  humanoid-convergence failure image omitted entirely (the silhouette lineup test already
+  catches it positively); frame-2 motion prescriptions rewritten as
+  outcomes ("unmistakably communicates the hop" instead of "leaves the ground entirely, limbs
+  tucked"); the bonzoid tread ground-contact row reduced from an engineering spec to "reads as
+  riding a TANK TREAD on the ground"; the symmetry default became an option ("other species
+  may use asymmetry when it strengthens the design"); and the eye rule reframed as the
+  legibility requirement with light-eye/dark-pupil kept as the evidence-backed default that an
+  artist may argue past in the hypothesis block. Eyes are NOT mandatory (maintainer's
+  question, then his wording): the face must communicate the personality at badge size, and
+  eyes, sensors, visors, apertures, or another expressive focal feature all qualify -- the
+  lint never enforced eyes, so no tooling change was needed. The maintainer also corrected the
+  framing "each creature is an ANIMAL" -- false for the robotic cast members (bonzoid,
+  mechtron, mule; spheroid is a craft) -- replaced with his sentence "each creature has a
+  fixed identity, a distinct way of moving, and a personality," with the silhouette-lineup
+  test now comparing BEINGS. And the interpretation-first step was promoted from the round-4
+  brief into the contract itself, in his words ("this interpretation becomes the creative
+  foundation for the artwork"), because the old hypothesis wording ("what you decided, and
+  why") invited retrospective explanation where an advance commitment is what produces
+  divergence. The maintainer's keep list -- distinct
+  animals, unique locomotion, silhouette readability, frame 2 changes the outline, SVG schema,
+  color system, double stroke -- stays intact as product requirements.
+- Art contract v2 character rows corrected to the maintainer's own reference words, restored
+  or captured verbatim so they stop getting lost between rounds: bonzoid rides TANK TREADS
+  (Johnny 5 in Short Circuit); spheroid is a floating War-of-the-Worlds UFO tripod (floats,
+  never walks); gollumer is a slug -- a Star Wars Hutt; flapper is a LARGE bird-like /
+  pterodactyl-like creature; the mule is A LITERAL MULE, robotic, with Boston Dynamics BigDog
+  as the build reference. The mule row REVERSES a v1 drift: v1 recorded "a BigDog, NOT an
+  animal" and retired the snout and ears as too animal-like, which inverted the maintainer's
+  actual intent ("looks like a literal Mule but robotic") -- and the round-3 verdict had
+  independently scored artist_2's mule best precisely because its snout and tail made it the
+  only one that read as an animal.
+- Packer identity settled from the maintainer's recovered session comments: his final call was
+  "maybe Packer is large monster but with 4 tiny T-rex arms for legs. could do a frog-like hop
+  ... Packer hops like toad; Gollumer slimes like snail; and Spheroid floats," which supersedes
+  his earlier astromech/R2D2/tortoise comments. Contract v1's toad recording was therefore
+  FAITHFUL for the packer; the v2 character row now carries the maintainer's words (large
+  monster, four tiny T-rex limbs, toad hop) with the airborne frame 2 restored. Gollumer's
+  earlier "snail" was likewise the maintainer's own word at the time, superseded 2026-07-16 by
+  slug / Star Wars Hutt (latest word wins; neither was agent drift).
+
+### Additions and New Features
+
+- Art (bake-off 4): prepared round 4 as six parallel model-version lanes under
+  `bakeoff/alien_cast4/artist_{1..6}/` -- opus-4-6, opus-4-7, opus-4-8, sonnet-4-6, sonnet-5,
+  fable-5, one headless `claude -p --model <id>` process per lane, launched by the human via
+  the scratch runner `_dispatch_cast4.sh` (the permissions hook routes agent-side dispatch to
+  the Agent tool, whose model parameter takes only aliases and cannot pin versions -- version
+  pinning is the whole round, so the human runs the lanes). Model-per-lane is the round's
+  single diversity variable: every lane receives the identical archived brief
+  (`bakeoff/alien_cast4/dispatch_prompt.md` -- a round-3 lesson, the prompt is now committed) and
+  the identical contract v2, so the model is the only intentionally varied dispatch condition
+  (sampling variation and each lane's self-chosen persona also shape results -- LLM-reviewer
+  correction to an earlier stronger claim). Lane-to-model mapping in
+  `bakeoff/alien_cast4/lane_map.md` (judge reads after a blind pass). The brief uses the maintainer's creative-freedom phrasing ("treat the
+  specification as a source of inspiration, not a script"; "unique interpretation while
+  remaining faithful to the core requirements"; "exercise creative judgment") and adds his
+  interpretation-first step in his words: before drawing, each artist writes one or two
+  paragraphs per creature -- what kind of being it is, how it moves, how it behaves, what its
+  personality feels like, design described in words rather than geometry -- collected in
+  `interpretations.md` per artist directory, then draws to their own words.
+- Docs: added `docs/active_plans/reports/alien_art_program_status.md`, a full stock-take of the
+  alien-art program (assets across all three rounds, tooling and its gaps, proven knowledge,
+  and the open decision fork), written before choosing the next round's direction.
+- Tooling: added pure-SVG review boards (no rasterization; vector end to end, matching the
+  shipping pipeline) via repo-root scratch `_svg_board_cast3.py`: large per-artist cast boards
+  (`cast_<artist>.svg`), cross-artist silhouette/full/green-terrain grids, and per-species
+  deep-dive boards, all under `output_smoke/aliens_cast3/sheets_svg/`. Artist defs are inlined
+  with per-artist id namespacing so identical species ids never collide.
+
+### Decisions and Failures
+
+- Round-4 launch partially failed on account limits: six parallel headless lanes hit the
+  session limit mid-round (reset 12:40pm). Artists 1 (opus-4-6), 2 (opus-4-7), and 5
+  (sonnet-5) delivered complete casts first -- all xmllint and lint clean; artist_6 (fable-5)
+  delivered 7 of 9; artist_3 (opus-4-8, also killed once earlier by the headless 600s
+  background-wait ceiling after delegating to a subagent) and artist_4 (sonnet-4-6) delivered
+  nothing. Relaunch runner for the three unfinished lanes: `_temp_relaunch_cast4_rest.sh`.
+- The round-3 headline is CONVERGENCE, not the per-artist ranking: four casts of near-identical
+  designs mean the bake-off produced almost no decision information. Recorded (with the round-1
+  vs round-2 contrast) as the convergence lesson: AI artist lanes diverge only when each lane is
+  assigned a named, mutually exclusive hypothesis; freedom alone regresses to one mean design,
+  and the current contract is tight enough to force convergence outright. The round-3 verdict
+  report is downgraded to advisory input; the cast choice belongs to the human.
+- Found while stock-taking: the game still draws the OLD hand-authored `sprites_species.ts`
+  (none of the three rounds' art has shipped); `tests/test_species_sprites_fresh.mjs` errors
+  under bare `node --test` (extensionless `./palette` import needs the tsx loader), so the
+  staleness gate is not currently protecting the generated file; the `2D-Shape-Aliens*.jpg`
+  style references remain untracked.
+
+## 2026-07-15
+
+### Additions and New Features
+
+- Docs: added `docs/active_plans/reports/alien_cast3_round3_verdict.md`, the round-3 full-cast
+  bake-off judgment over `devel/alien_cast3/` (artists 1, 2, 4, 5; artist_3 never delivered).
+  Winner: artist_2 ("GROUND CONTACT"), with two grafts from artist_4 (wide-chassis bonzoid
+  MUST-FIX, leggite leg tiers SHOULD-FIX). Evidence: 10560 rendered cells
+  (`node devel/render_alien_sheet.mjs` per artist sheet, single-file mode) assembled into
+  per-species and per-artist comparison sheets under `output_smoke/aliens_cast3/sheets/`.
+
+### Developer Tests and Notes
+
+- Lint sweep over round 3: all 32 per-species files (4 artists x 8 species, split from the
+  combined sheets into `output_smoke/aliens_cast3/split/`) pass `devel/lint_alien_svg.py`
+  clean. All four mules fail with the identical five violations caused by the lint's known
+  missing mule mode (wide canvas, no head symbol), not by the art; that tool gap now blocks a
+  clean full-cast lint and is queued in the verdict's follow-ons.
+- Round-3 systemic findings recorded in the verdict: total spheroid convergence across artists
+  (the contract's plan leaves nothing to discriminate), squat species (packer) painting far
+  fewer pixels than tall species at equal rendered height (ties to the canvas-coverage report),
+  head crops carrying two readable eyes at 18 px in every cast while full-body faces still do
+  not survive 18, and green-on-terrain readable everywhere via the double stroke. The round-1
+  unsolved mechtron-vs-leggite silhouette confusion is SOLVED in all four casts by the
+  contract's numeric wedge.
+
 ## 2026-07-12
 
 ### Additions and New Features

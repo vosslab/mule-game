@@ -1,0 +1,63 @@
+<!-- The Expressionist. Personality drives geometry: rounded masses carry gentle and
+cheerful characters, hard angles carry sharp and stoic ones, and asymmetry carries sly or
+mournful emotion. Distinct bottom edges and one large facial gesture make each being readable
+at 18 to 32 px. Frame 2 displaces the feature most tied to each creature's temperament.
+Measured frame 1/frame 2 ink coverage: humanoid 61.7/68.0%, flapper 35.6/35.1%, bonzoid
+71.9/69.0%, gollumer 64.1/55.8%, spheroid 49.4/50.8%, leggite 59.0/58.8%, mechtron
+65.7/63.9%, packer 63.1/51.6%, mule 59.9/60.9%. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="leggite-f1-shapes">
+		<path d="M83 33 Q116 43 105 94 Q93 133 113 170 Q128 213 106 287 L79 287 Q91 223 78 181 Q66 139 83 103 Z"/>
+		<path d="M82 100 L39 77 L31 91 L78 125 Z"/>
+		<path d="M105 121 L162 98 L168 114 L108 145 Z"/>
+		<path d="M79 159 L27 145 L23 162 L82 183 Z"/>
+		<path d="M111 183 L169 172 L173 189 L109 207 Z"/>
+		<path d="M84 221 L35 222 L35 240 L84 245 Z"/>
+		<path d="M108 247 L158 259 L154 276 L103 271 Z"/>
+	</g>
+	<g id="leggite-f1-face">
+		<ellipse cx="88" cy="61" rx="9" ry="6" fill="#ffffff"/>
+		<ellipse cx="105" cy="63" rx="9" ry="6" fill="#ffffff"/>
+		<circle cx="90" cy="62" r="3" fill="#141422"/>
+		<circle cx="107" cy="64" r="3" fill="#141422"/>
+		<path d="M88 78 Q101 88 113 76 Q104 94 92 91 Z" fill="#141422"/>
+	</g>
+	<g id="leggite-f1-draw">
+		<use href="#leggite-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f1-shapes" fill="currentColor"/>
+		<use href="#leggite-f1-face"/>
+	</g>
+	<g id="leggite-f2-shapes">
+		<path d="M67 35 Q104 35 110 84 Q112 119 88 153 Q73 184 103 220 Q123 248 116 287 L87 287 Q92 254 73 229 Q46 193 61 151 Q77 117 72 88 Z"/>
+		<path d="M75 96 L29 108 L33 125 L78 119 Z"/>
+		<path d="M106 112 L163 132 L157 149 L99 136 Z"/>
+		<path d="M68 158 L20 180 L28 196 L75 181 Z"/>
+		<path d="M90 175 L169 166 L171 184 L91 200 Z"/>
+		<path d="M79 220 L30 247 L39 263 L91 243 Z"/>
+		<path d="M104 248 L158 236 L162 253 L111 271 Z"/>
+	</g>
+	<g id="leggite-f2-face">
+		<ellipse cx="78" cy="59" rx="9" ry="6" fill="#ffffff"/>
+		<ellipse cx="95" cy="59" rx="9" ry="6" fill="#ffffff"/>
+		<circle cx="80" cy="60" r="3" fill="#141422"/>
+		<circle cx="97" cy="60" r="3" fill="#141422"/>
+		<path d="M78 75 Q91 85 103 73 Q94 91 82 88 Z" fill="#141422"/>
+	</g>
+	<g id="leggite-f2-draw">
+		<use href="#leggite-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f2-shapes" fill="currentColor"/>
+		<use href="#leggite-f2-face"/>
+	</g>
+	<symbol id="leggite-frame1" viewBox="0 0 200 320"><use href="#leggite-f1-draw"/></symbol>
+	<symbol id="leggite-frame2" viewBox="0 0 200 320"><use href="#leggite-f2-draw"/></symbol>
+	<symbol id="leggite-head" viewBox="0 0 130 130">
+		<g transform="translate(-35,-0)"><use href="#leggite-f1-draw"/></g>
+	</symbol>
+	<symbol id="leggite-silhouette1" viewBox="0 0 200 320"><use href="#leggite-f1-shapes" fill="#141422"/></symbol>
+	<symbol id="leggite-silhouette2" viewBox="0 0 200 320"><use href="#leggite-f2-shapes" fill="#141422"/></symbol>
+</defs>
+<use href="#leggite-frame1" width="200" height="320"/>
+</svg>

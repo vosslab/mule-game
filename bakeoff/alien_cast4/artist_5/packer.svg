@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+<defs>
+
+	<!-- ==========================================================
+	WEDGE & HALO - industrial papercraft (cast-level design hypothesis)
+	
+	Every limb, wing, tread, and leg is drawn as a tapered trapezoid wedge
+	rather than a plain rectangle, so the cast reads as cut-and-folded
+	sheet metal rather than extruded blocks; masses that must read soft
+	(gollumer's ooze, packer's cargo-hump, spheroid's saucer) fall back to
+	circles and ellipses, giving a deliberate hard/soft split between the
+	machine species and the creature species.
+	
+	Faces use the contract's proven construction - a white base shape
+	with a dark strokeless pupil - sized and tilted per species to carry
+	its personality word; two species (bonzoid, mechtron) trade the
+	twin-eye convention for a single sensor lens or a flat visor slit,
+	justified per-creature in the comment below.
+	
+	Every gap that carries a ground-contact identity (leg splits, the
+	mechtron hole, the packer's belly daylight, the mule's under-slab
+	daylight) is drawn at least 70 units wide at its narrowest, so the
+	double-stroke halo (adding 20 units per edge) cannot pinch it shut.
+	
+	At most one gold accent per creature, used as a focal mark, not
+	decoration. Coverage target: 25 to 75 percent per the contract's band;
+	measured numbers for this cast are reported at verification time, not
+	assumed in advance.
+	========================================================== -->
+
+	<!-- PACKER: one huge blob is the whole body; the head is barely a bump
+	on it, because the creature IS its own cargo (down to a gold cargo-tag
+	on its forehead). Four comically tiny T-rex legs hold up that mass
+	with real daylight underneath. Frame 2 tucks all four legs up mid-hop,
+	opening the gap even further. -->
+
+	<g id="packer-f1-shapes">
+		<ellipse cx="100" cy="140" rx="88" ry="92"/>
+		<ellipse cx="100" cy="64" rx="46" ry="40"/>
+		<polygon points="30,228 46,228 42,278 26,278"/>
+		<polygon points="18,278 50,278 50,290 18,290"/>
+		<polygon points="18,290 26,290 22,300"/>
+		<polygon points="30,290 38,290 34,300"/>
+		<polygon points="42,290 50,290 46,300"/>
+		<polygon points="68,232 82,232 80,280 66,280"/>
+		<polygon points="58,280 90,280 90,292 58,292"/>
+		<polygon points="58,292 66,292 62,302"/>
+		<polygon points="70,292 78,292 74,302"/>
+		<polygon points="82,292 90,292 86,302"/>
+		<polygon points="118,232 132,232 134,280 120,280"/>
+		<polygon points="110,280 142,280 142,292 110,292"/>
+		<polygon points="110,292 118,292 114,302"/>
+		<polygon points="122,292 130,292 126,302"/>
+		<polygon points="134,292 142,292 138,302"/>
+		<polygon points="154,228 170,228 174,278 158,278"/>
+		<polygon points="150,278 182,278 182,290 150,290"/>
+		<polygon points="150,290 158,290 154,300"/>
+		<polygon points="162,290 170,290 166,300"/>
+		<polygon points="174,290 182,290 178,300"/>
+	</g>
+
+	<g id="packer-f1-face">
+		<circle cx="76" cy="60" r="22" fill="#ffffff"/>
+		<circle cx="124" cy="58" r="24" fill="#ffffff"/>
+		<circle cx="80" cy="64" r="9" fill="#141422"/>
+		<circle cx="120" cy="62" r="10" fill="#141422"/>
+		<path d="M62,88 Q100,124 138,88 Q100,104 62,88 Z" fill="#141422"/>
+		<rect x="90" y="40" width="20" height="14" rx="3" fill="#ffd23f"/>
+	</g>
+
+	<g id="packer-f1-draw">
+		<use href="#packer-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f1-shapes" fill="currentColor"/>
+		<use href="#packer-f1-face"/>
+	</g>
+
+	<g id="packer-f2-shapes">
+		<ellipse cx="100" cy="130" rx="84" ry="96"/>
+		<ellipse cx="100" cy="50" rx="44" ry="38"/>
+		<polygon points="34,214 50,214 46,236 32,236"/>
+		<polygon points="70,220 84,220 82,242 68,242"/>
+		<polygon points="118,220 132,220 134,242 120,242"/>
+		<polygon points="152,214 168,214 172,236 156,236"/>
+	</g>
+
+	<g id="packer-f2-face">
+		<circle cx="76" cy="50" r="22" fill="#ffffff"/>
+		<circle cx="124" cy="48" r="24" fill="#ffffff"/>
+		<circle cx="80" cy="54" r="9" fill="#141422"/>
+		<circle cx="120" cy="52" r="10" fill="#141422"/>
+		<path d="M60,76 Q100,118 140,76 Q100,98 60,76 Z" fill="#141422"/>
+		<rect x="90" y="30" width="20" height="14" rx="3" fill="#ffd23f"/>
+	</g>
+
+	<g id="packer-f2-draw">
+		<use href="#packer-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#packer-f2-shapes" fill="currentColor"/>
+		<use href="#packer-f2-face"/>
+	</g>
+
+	<symbol id="packer-frame1" viewBox="0 0 200 320">
+		<use href="#packer-f1-draw"/>
+	</symbol>
+	<symbol id="packer-frame2" viewBox="0 0 200 320">
+		<use href="#packer-f2-draw"/>
+	</symbol>
+	<symbol id="packer-head" viewBox="0 0 120 120">
+		<g transform="translate(-40,-20)"><use href="#packer-f1-draw"/></g>
+	</symbol>
+	<symbol id="packer-silhouette1" viewBox="0 0 200 320">
+		<use href="#packer-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="packer-silhouette2" viewBox="0 0 200 320">
+		<use href="#packer-f2-shapes" fill="#141422"/>
+	</symbol>
+
+</defs>
+</svg>

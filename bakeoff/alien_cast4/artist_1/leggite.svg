@@ -1,0 +1,81 @@
+<!-- Brutalist Toy Box. Artist: industrial toy designer building alien figures as
+injection-molded playground equipment. Each creature from few large geometric primitives
+at clear seams. Readability at 18 to 32 px via: (1) unique envelope per creature,
+(2) distinct ground contact, (3) frame 2 motion displaces major masses.
+Influences: Playmobil, Soviet toy design, Charley Harper. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+<defs>
+	<g id="leggite-f1-shapes">
+		<polygon points="88,22 112,22 115,80 117,140 116,200 114,260 112,300 88,300 86,260 85,200 84,140 85,80"/>
+		<polygon points="85,55 50,60 85,68"/>
+		<polygon points="115,75 150,80 115,88"/>
+		<polygon points="83,95 48,100 83,108"/>
+		<polygon points="117,115 152,120 117,128"/>
+		<polygon points="84,135 48,140 84,148"/>
+		<polygon points="116,155 152,160 116,168"/>
+		<polygon points="84,175 48,180 84,188"/>
+		<polygon points="116,195 152,200 116,208"/>
+		<polygon points="86,235 50,240 86,248"/>
+		<polygon points="114,255 150,260 114,268"/>
+		<polygon points="86,275 52,280 86,288"/>
+		<polygon points="114,285 148,290 114,298"/>
+	</g>
+	<g id="leggite-f1-face">
+		<polygon points="92,30 80,34 88,42" fill="#ffffff"/>
+		<polygon points="108,30 120,34 112,42" fill="#ffffff"/>
+		<circle cx="87" cy="35" r="3" fill="#141422"/>
+		<circle cx="113" cy="35" r="3" fill="#141422"/>
+	</g>
+	<g id="leggite-f1-draw">
+		<use href="#leggite-f1-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f1-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f1-shapes" fill="currentColor"/>
+		<use href="#leggite-f1-face"/>
+	</g>
+	<g id="leggite-f2-shapes">
+		<polygon points="92,22 116,22 112,80 106,140 108,200 114,260 118,300 92,300 96,260 100,200 98,140 92,80"/>
+		<polygon points="112,55 148,52 112,65"/>
+		<polygon points="92,75 58,72 92,85"/>
+		<polygon points="106,95 142,92 106,105"/>
+		<polygon points="98,115 62,112 98,125"/>
+		<polygon points="108,135 145,132 108,145"/>
+		<polygon points="100,155 62,152 100,165"/>
+		<polygon points="108,175 145,172 108,185"/>
+		<polygon points="100,195 62,192 100,205"/>
+		<polygon points="114,235 152,232 114,245"/>
+		<polygon points="96,255 58,252 96,265"/>
+		<polygon points="118,275 155,272 118,285"/>
+		<polygon points="92,288 58,285 92,298"/>
+	</g>
+	<g id="leggite-f2-face">
+		<polygon points="96,30 84,34 92,42" fill="#ffffff"/>
+		<polygon points="112,30 124,34 116,42" fill="#ffffff"/>
+		<circle cx="91" cy="35" r="3" fill="#141422"/>
+		<circle cx="117" cy="35" r="3" fill="#141422"/>
+	</g>
+	<g id="leggite-f2-draw">
+		<use href="#leggite-f2-shapes" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f2-shapes" fill="#141422" stroke="#141422" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+		<use href="#leggite-f2-shapes" fill="currentColor"/>
+		<use href="#leggite-f2-face"/>
+	</g>
+	<symbol id="leggite-frame1" viewBox="0 0 200 320">
+		<use href="#leggite-f1-draw"/>
+	</symbol>
+	<symbol id="leggite-frame2" viewBox="0 0 200 320">
+		<use href="#leggite-f2-draw"/>
+	</symbol>
+	<symbol id="leggite-head" viewBox="0 0 100 100">
+		<g transform="translate(-50,0)">
+			<use href="#leggite-f1-draw"/>
+		</g>
+	</symbol>
+	<symbol id="leggite-silhouette1" viewBox="0 0 200 320">
+		<use href="#leggite-f1-shapes" fill="#141422"/>
+	</symbol>
+	<symbol id="leggite-silhouette2" viewBox="0 0 200 320">
+		<use href="#leggite-f2-shapes" fill="#141422"/>
+	</symbol>
+</defs>
+<use href="#leggite-frame1" width="200" height="320"/>
+</svg>
